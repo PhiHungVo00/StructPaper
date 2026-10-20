@@ -12,10 +12,13 @@ import {
   GridAreaCoords,
   FloatingElementsDesignRules,
 } from '@/types/template-builder';
+import { VNUHCM_HEALTH_SCIENCES_TEMPLATE } from '@/data/templates';
 import {
-  UNIVERSAL_PRESETS,
-  VNUHCM_HEALTH_SCIENCES_MASTER,
-} from '@/lib/template-builder/universal-presets';
+  templateRegistry,
+  exportTemplateToFile,
+  importTemplateFromFile,
+} from '@/lib/template-engine/storage';
+
 import { TemplateBuilderDock } from './TemplateBuilderDock';
 import { ResizableSplitLayout } from '@/components/editor/ResizableSplitLayout';
 import { UniversalLiveA4Preview } from './UniversalLiveA4Preview';
@@ -30,7 +33,12 @@ import { ElementsManagerView } from './elements-manager/ElementsManagerView';
 
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from '@/components/DynamicIslandToast';
-import { addChildSubZone, updateZoneDeep, deleteZoneDeep } from './nested-zones/nestedZoneUtils';
+import {
+  addChildSubZone,
+  updateZoneDeep,
+  deleteZoneDeep,
+  flattenAllZones,
+} from './nested-zones/nestedZoneUtils';
 
 interface TemplateBuilderViewProps {
   initialSchema?: UniversalTemplateSchema;
@@ -116,7 +124,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
         } catch {}
       }
     }
-    return ensureSchemaHasGrid(VNUHCM_HEALTH_SCIENCES_MASTER);
+    return ensureSchemaHasGrid(VNUHCM_HEALTH_SCIENCES_TEMPLATE);
   });
 
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -125,10 +133,12 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
     schema.zones[0]?.id || null
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevTemplateIdRef = useRef<string | null>(null);
 
-  // If initialSchema changes from parent, update state
+  // If initialSchema changes from parent (e.g. user selected another preset), update state
   useEffect(() => {
-    if (initialSchema) {
+    if (initialSchema && initialSchema.id !== prevTemplateIdRef.current) {
+      prevTemplateIdRef.current = initialSchema.id;
       const withGrid = ensureSchemaHasGrid(initialSchema);
       setSchema(withGrid);
       setSelectedElementId(withGrid.elements[0]?.id || null);
@@ -165,10 +175,11 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
     }));
   };
 
-  // Update Zones
+  // Update Zones with automatic sequential reindexing
   const handleZonesChange = (zones: LayoutZoneConfig[]) => {
+    const reindexedZones = zones.map((z, idx) => ({ ...z, order: idx + 1 }));
     setSchema((prev) => {
-      const activeZoneIds = new Set(zones.map((z) => z.id));
+      const activeZoneIds = new Set(reindexedZones.map((z) => z.id));
       const preservedElements = prev.elements.map((el) => {
         // If element belonged to a zone that was deleted, keep it safe by moving to unassigned ('')
         if (el.zoneId && !activeZoneIds.has(el.zoneId)) {
@@ -179,7 +190,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
       return {
         ...prev,
-        zones,
+        zones: reindexedZones,
         elements: preservedElements,
         updatedAt: new Date().toISOString().split('T')[0],
       };
@@ -195,63 +206,89 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
     }));
   };
 
-  // Add a new zone from paper grid overlay (strictly bound to target page)
+  // Add a new zone from paper grid overlay (strictly continuous numbering in whole template)
   const handleAddZoneWithArea = (area: GridAreaCoords, pageNumber: number = 1) => {
-    const newIndex = schema.zones.length + 1;
-    const pageScope = pageNumber === 1 ? 'first-page' : 'subsequent-pages';
-    const newZone: LayoutZoneConfig = {
-      id: `zone-${Date.now()}`,
-      name: `Phân vùng ${newIndex}${pageNumber > 1 ? ` (Trang ${pageNumber})` : ''}`,
-      description: `Vùng ${area.colSpan} cột × ${area.rowSpan} dòng`,
-      type: area.colSpan > 1 ? 'multi-column' : 'full-width',
-      columns: area.colSpan > 2 ? 3 : area.colSpan > 1 ? 2 : 1,
-      columnGap: 8,
-      showColumnRule: false,
-      columnRuleColor: '#E2E8F0',
-      order: newIndex,
-      gridArea: area,
-      page: pageNumber,
-      pageScope,
-      subZones: [],
-    };
-
-    handleZonesChange([...schema.zones, newZone]);
-    setSelectedZoneId(newZone.id);
-    toast.success(
-      'Đã tạo phân vùng',
-      `Tạo "${newZone.name}" tại C${area.colStart}${area.colSpan > 1 ? `-${area.colStart + area.colSpan - 1}` : ''} × R${area.rowStart}${area.rowSpan > 1 ? `-${area.rowStart + area.rowSpan - 1}` : ''} (Trang ${pageNumber})`
-    );
+    setSchema((prev) => {
+      const newIndex = prev.zones.length + 1;
+      const pageScope = pageNumber === 1 ? 'first-page' : 'subsequent-pages';
+      const newZone: LayoutZoneConfig = {
+        id: `zone-${Date.now()}`,
+        name: `Phân vùng ${newIndex}`,
+        description: `Vùng ${area.colSpan} cột × ${area.rowSpan} dòng`,
+        type: area.colSpan > 1 ? 'multi-column' : 'full-width',
+        columns: area.colSpan > 2 ? 3 : area.colSpan > 1 ? 2 : 1,
+        columnGap: 8,
+        showColumnRule: false,
+        columnRuleColor: '#E2E8F0',
+        order: newIndex,
+        gridArea: area,
+        page: pageNumber,
+        pageScope,
+        subZones: [],
+      };
+      setSelectedZoneId(newZone.id);
+      return {
+        ...prev,
+        zones: [...prev.zones, newZone],
+        updatedAt: new Date().toISOString().split('T')[0],
+      };
+    });
+    toast.success('Đã tạo phân vùng mới');
   };
 
   // Update a zone's gridArea
   const handleUpdateZoneArea = (zoneId: string, area: GridAreaCoords) => {
-    const nextZones = schema.zones.map((z) => (z.id === zoneId ? { ...z, gridArea: area } : z));
-    handleZonesChange(nextZones);
+    setSchema((prev) => ({
+      ...prev,
+      zones: prev.zones.map((z) => (z.id === zoneId ? { ...z, gridArea: area } : z)),
+      updatedAt: new Date().toISOString().split('T')[0],
+    }));
   };
 
   // Update a zone's secondaryGridArea (Linked flow block 2)
   const handleUpdateZoneSecondaryArea = (zoneId: string, area: GridAreaCoords | null) => {
-    const nextZones = schema.zones.map((z) =>
-      z.id === zoneId ? { ...z, secondaryGridArea: area || undefined } : z
-    );
-    handleZonesChange(nextZones);
+    setSchema((prev) => ({
+      ...prev,
+      zones: prev.zones.map((z) =>
+        z.id === zoneId ? { ...z, secondaryGridArea: area || undefined } : z
+      ),
+      updatedAt: new Date().toISOString().split('T')[0],
+    }));
   };
 
   // Delete a zone
   const handleDeleteZone = (zoneId: string) => {
-    const deleted = schema.zones.find((z) => z.id === zoneId);
-    const nextZones = schema.zones.filter((z) => z.id !== zoneId);
-    handleZonesChange(nextZones);
-    if (selectedZoneId === zoneId) {
-      setSelectedZoneId(nextZones[0]?.id || null);
-    }
-    toast.success('Đã xóa phân vùng', `Đã xóa "${deleted?.name || 'phân vùng'}"`);
+    setSchema((prev) => {
+      const deleted = prev.zones.find((z) => z.id === zoneId);
+      const nextZones = prev.zones.filter((z) => z.id !== zoneId);
+      const reindexedZones = nextZones.map((z, idx) => ({ ...z, order: idx + 1 }));
+      const activeZoneIds = new Set(reindexedZones.map((z) => z.id));
+      const preservedElements = prev.elements.map((el) => {
+        if (el.zoneId && !activeZoneIds.has(el.zoneId)) {
+          return { ...el, zoneId: '' };
+        }
+        return el;
+      });
+      if (selectedZoneId === zoneId) {
+        setSelectedZoneId(reindexedZones[0]?.id || null);
+      }
+      return {
+        ...prev,
+        zones: reindexedZones,
+        elements: preservedElements,
+        updatedAt: new Date().toISOString().split('T')[0],
+      };
+    });
+    toast.success('Đã xóa phân vùng');
   };
 
   // Update zone name inline
   const handleUpdateZoneName = (zoneId: string, name: string) => {
-    const nextZones = schema.zones.map((z) => (z.id === zoneId ? { ...z, name } : z));
-    handleZonesChange(nextZones);
+    setSchema((prev) => ({
+      ...prev,
+      zones: prev.zones.map((z) => (z.id === zoneId ? { ...z, name } : z)),
+      updatedAt: new Date().toISOString().split('T')[0],
+    }));
     toast.success('Đổi tên phân vùng', `Đã cập nhật tên thành "${name}"`);
   };
 
@@ -350,70 +387,84 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
     toast.success('Đổi màu chủ đạo', `Đã chuyển sang mã màu: ${color}`);
   };
 
+  // Drag & drop assign element to zone
+  const handleAssignElementToZone = (elementId: string, zoneId: string) => {
+    handleUpdateElement(elementId, { zoneId });
+    const flattened = flattenAllZones(schema.zones);
+    const targetZone =
+      flattened.find((f) => f.zone.id === zoneId)?.zone ||
+      schema.zones.find((z) => z.id === zoneId);
+    const targetElement = schema.elements.find((e) => e.id === elementId);
+    toast.success(
+      'Gán phân vùng thành công',
+      targetElement && targetZone
+        ? `Đã chuyển "${targetElement.name}" vào "${targetZone.name}"`
+        : 'Đã gán khối vào phân vùng mới'
+    );
+  };
+
   // Save to persistent custom templates list
-  const handleSaveToLibrary = () => {
+  const handleSaveToLibrary = async () => {
     try {
-      const existingStr = localStorage.getItem('structpaper_custom_templates_list');
-      const list: UniversalTemplateSchema[] = existingStr ? JSON.parse(existingStr) : [];
-      const updatedSchema = {
+      const updatedSchema: UniversalTemplateSchema = {
         ...schema,
         updatedAt: new Date().toISOString().split('T')[0],
       };
-      const filtered = list.filter((item) => item.id !== schema.id);
-      filtered.push(updatedSchema);
-      localStorage.setItem('structpaper_custom_templates_list', JSON.stringify(filtered));
+
+      // 1. Save to local storage registry
+      templateRegistry.saveCustomTemplate(updatedSchema);
+
+      // 2. Also sync to server storage API
+      try {
+        await fetch('/api/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedSchema),
+        });
+      } catch {}
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
-      toast.success('Lưu thành công', `Đã lưu "${schema.name}" vào Thư viện mẫu cá nhân!`);
+      toast.success('Lưu thành công', `Đã lưu "${schema.name}" vào Thư viện mẫu!`);
     } catch {
       toast.error('Lỗi khi lưu template');
     }
   };
 
-  // Export JSON Schema
+  // Export JSON Schema using standard storage file service
   const handleExportJson = () => {
     try {
-      const blob = new Blob([JSON.stringify(schema, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${schema.id || 'template'}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success('Xuất file JSON', 'Đã xuất file cấu trúc Template thành công!');
+      exportTemplateToFile(schema);
+      toast.success('Xuất file JSON', 'Đã tải xuống file template chuẩn StructPaper!');
     } catch {
       toast.error('Lỗi khi xuất file JSON');
     }
   };
 
-  // Import JSON Schema
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Import JSON Schema using standard storage file service
+  const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.pageArchitecture && parsed.zones && parsed.elements) {
-          const withGrid = ensureSchemaHasGrid(parsed);
-          setSchema(withGrid);
-          setSelectedElementId(withGrid.elements[0]?.id || null);
-          setSelectedZoneId(withGrid.zones[0]?.id || null);
-          toast.success('Nhập thành công', 'Đã nạp Universal Template Schema!');
-        } else {
-          toast.error('File JSON không đúng chuẩn UniversalTemplateSchema');
-        }
-      } catch (err) {
-        toast.error('Lỗi cú pháp khi đọc file JSON');
+    try {
+      const res = await importTemplateFromFile(file);
+      if (res.success && res.schema) {
+        const withGrid = ensureSchemaHasGrid(res.schema);
+        setSchema(withGrid);
+        setSelectedElementId(withGrid.elements[0]?.id || null);
+        setSelectedZoneId(withGrid.zones[0]?.id || null);
+        toast.success('Nhập thành công', `Đã nạp template "${withGrid.name}"!`);
+      } else {
+        const firstErr =
+          res.validation.errors[0]?.message ||
+          'File JSON không đúng chuẩn UniversalTemplateSchema';
+        toast.error('Lỗi cấu trúc', firstErr);
       }
-    };
-    reader.readAsText(file);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err: any) {
+      toast.error('Lỗi đọc file', err?.message || 'Không thể đọc file JSON');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   // 1. Left Content: Configuration & Step Editor (Controlled purely by Dock navigation)
@@ -432,14 +483,14 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
             onNavigateToGridZones={() => {
               setCurrentStep('grid-zones');
             }}
-            onPresetSelect={(presetId) => {
-              const found = UNIVERSAL_PRESETS.find((p) => p.id === presetId);
-              if (found) {
-                const withGrid = ensureSchemaHasGrid(JSON.parse(JSON.stringify(found)));
+            onPresetSelect={async (presetId) => {
+              const loaded = await templateRegistry.loadTemplate(presetId);
+              if (loaded) {
+                const withGrid = ensureSchemaHasGrid(loaded);
                 setSchema(withGrid);
                 setSelectedElementId(withGrid.elements[0]?.id || null);
                 setSelectedZoneId(withGrid.zones[0]?.id || null);
-                toast.success('Đã nạp mẫu', found.name);
+                toast.success('Đã nạp mẫu', withGrid.name);
               }
             }}
           />
@@ -581,6 +632,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
         onDeleteSubZone={handleDeleteSubZone}
         selectedZoneId={selectedZoneId}
         onSelectZone={setSelectedZoneId}
+        onAssignElementToZone={handleAssignElementToZone}
         isExpanded={isExpandedPreview}
         onToggleExpand={() => setIsExpandedPreview((prev) => !prev)}
       />

@@ -35,10 +35,13 @@ import {
   Sigma,
   Code2,
   Link2,
+  GripVertical,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from '@/components/DynamicIslandToast';
 import { Select } from '@/components/ui/Select';
 import { flattenAllZones } from '../nested-zones';
+import { AddElementModal, ACADEMIC_ELEMENT_METAS } from './AddElementModal';
 
 interface Step2ElementStructureProps {
   elements: SemanticElement[];
@@ -51,126 +54,7 @@ interface Step2ElementStructureProps {
   onNavigateForward?: () => void;
 }
 
-const ELEMENT_TYPE_METAS: {
-  type: ElementType;
-  label: string;
-  category: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description: string;
-}[] = [
-    {
-      type: 'article-title',
-      label: 'Tiêu đề bài báo',
-      category: 'Đầu bài',
-      icon: Type,
-      description: 'Tiêu đề chính kèm tiêu đề song ngữ tiếng Anh phụ',
-    },
-    {
-      type: 'author-block',
-      label: 'Khối Tác giả & Đơn vị',
-      category: 'Đầu bài',
-      icon: Users,
-      description: 'Tên tác giả, chỉ số đơn vị công tác, tác giả liên hệ, ORCID',
-    },
-    {
-      type: 'metadata-grid',
-      label: 'Lịch sử nộp bài & DOI',
-      category: 'Thông tin',
-      icon: Grid,
-      description: 'Ngày nhận, ngày duyệt, DOI, bản quyền, mã bài báo',
-    },
-    {
-      type: 'abstract-box',
-      label: 'Khối Tóm tắt (Abstract)',
-      category: 'Đầu bài',
-      icon: BoxSelect,
-      description: 'Khung tóm tắt có viền nhấn, nền màu, hỗ trợ song ngữ',
-    },
-    {
-      type: 'keywords-group',
-      label: 'Từ khoá nghiên cứu',
-      category: 'Đầu bài',
-      icon: Tag,
-      description: 'Danh sách từ khoá với dấu phân cách hoặc thẻ badge',
-    },
-    {
-      type: 'heading',
-      label: 'Tiêu đề Mục (Heading)',
-      category: 'Thân bài',
-      icon: Heading,
-      description: 'Heading cấp 1, 2, 3 với số La Mã I, II hoặc số Ả Rập',
-    },
-    {
-      type: 'body-text',
-      label: 'Đoạn văn Thân bài',
-      category: 'Thân bài',
-      icon: Baseline,
-      description: 'Văn bản nội dung có hỗ trợ chữ cái to đầu dòng (Drop Cap)',
-    },
-    {
-      type: 'callout-box',
-      label: 'Hộp Điểm nhấn (Highlights)',
-      category: 'Đặc biệt',
-      icon: Sparkles,
-      description: 'Hộp đóng khung chứa điểm nhấn nghiên cứu, lưu ý biên tập',
-    },
-    {
-      type: 'figure-box',
-      label: 'Chú thích & Khung Hình ảnh (Figure)',
-      category: 'Minh hoạ',
-      icon: Image,
-      description: 'Quy chuẩn hình vẽ, biểu đồ vector, 2 hình con (a & b) và tiền tố Hình / Fig.',
-    },
-    {
-      type: 'table-box',
-      label: 'Định dạng Bảng biểu (Table)',
-      category: 'Minh hoạ',
-      icon: Table,
-      description: 'Chuẩn bảng Booktabs khoa học (3 đường kẻ), kẻ sọc zebra, chú thích trên bảng',
-    },
-    {
-      type: 'equation-box',
-      label: 'Công thức Toán học (Equation)',
-      category: 'Minh hoạ',
-      icon: Sigma,
-      description: 'Công thức toán học có đánh số (1), căn giữa chuẩn LaTeX/MathML',
-    },
-    {
-      type: 'code-algorithm',
-      label: 'Thuật toán & Mã nguồn (Algorithm)',
-      category: 'Minh hoạ',
-      icon: Code2,
-      description: 'Khối mã nguồn hoặc mã giả thuật toán có đánh số dòng và 3 đường kẻ chuẩn xuất bản',
-    },
-    {
-      type: 'link-box',
-      label: 'Liên kết DOI & Dữ liệu mở (Link)',
-      category: 'Thông tin',
-      icon: Link2,
-      description: 'Mã định danh DOI, kho lưu trữ GitHub, URL kèm mã QR Code cho bản in',
-    },
-    {
-      type: 'biography-box',
-      label: 'Tiểu sử Tác giả (Bio)',
-      category: 'Cuối bài',
-      icon: UserCheck,
-      description: 'Khung tóm tắt học hàm, học vị và ảnh chân dung tác giả',
-    },
-    {
-      type: 'references-block',
-      label: 'Tài liệu Tham khảo',
-      category: 'Cuối bài',
-      icon: BookOpen,
-      description: 'Chuẩn Vancouver [1], IEEE, APA 7th, Harvard',
-    },
-    {
-      type: 'custom-field',
-      label: 'Trường Tự do (Custom Field)',
-      category: 'Tự do',
-      icon: FileQuestion,
-      description: 'Lời cảm ơn, nguồn tài trợ, tuyên bố đạo đức, mã nguồn Git',
-    },
-  ];
+const ELEMENT_TYPE_METAS = ACADEMIC_ELEMENT_METAS;
 
 export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
   elements,
@@ -186,6 +70,14 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
   const [targetZoneForAdd, setTargetZoneForAdd] = useState<string>(
     zones[0]?.id || ''
   );
+  const [collapsedZones, setCollapsedZones] = useState<Record<string, boolean>>({});
+
+  const toggleZoneCollapse = (zoneId: string) => {
+    setCollapsedZones((prev) => ({
+      ...prev,
+      [zoneId]: !prev[zoneId],
+    }));
+  };
 
   const flattened = flattenAllZones(zones);
   const activeZoneIds = new Set(flattened.map((f) => f.zone.id));
@@ -204,9 +96,9 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
     })),
   ];
 
-  // Add new element
+  // Add new element with academic defaults from demo template
   const handleAddNewElement = (type: ElementType) => {
-    const meta = ELEMENT_TYPE_METAS.find((m) => m.type === type);
+    const meta = ACADEMIC_ELEMENT_METAS.find((m) => m.type === type);
     const chosenZoneId = targetZoneForAdd; // Keeps '' when unassigned!
     const newElement: SemanticElement = {
       id: `elem_${type}_${Date.now()}`,
@@ -214,20 +106,35 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
       name: meta?.label || 'Thành phần mới',
       zoneId: chosenZoneId,
       order: elements.length + 1,
-      spanColumns: false,
+      spanColumns: meta?.columnSpan === 'all',
       visible: true,
       styling: {
-        fontFamily: 'Arial',
-        fontSize: type === 'article-title' ? 18 : 10,
+        fontFamily: type === 'article-title' ? 'Times New Roman' : 'Arial',
+        fontSize: type === 'article-title' ? 18 : type === 'heading' ? 12 : 10,
         fontWeight: type === 'heading' || type === 'article-title' ? 'bold' : 'normal',
-        fontStyle: 'normal',
-        textColor: '#1A1A1A',
-        textAlign: type === 'article-title' ? 'left' : 'justify',
+        fontStyle: type === 'affiliation-list' ? 'italic' : 'normal',
+        textColor: type === 'article-title' ? '#0F284E' : '#1A1A1A',
+        textAlign: type === 'article-title' ? 'left' : type === 'body-text' ? 'justify' : 'left',
         lineHeight: 1.25,
         textTransform: type === 'heading' ? 'uppercase' : 'none',
-        backgroundColor: type === 'callout-box' ? '#FFF7ED' : 'transparent',
-        borderStyle: type === 'callout-box' ? 'all-borders' : 'none',
-        borderColor: '#E2E8F0',
+        backgroundColor:
+          type === 'callout-box'
+            ? '#FFF7ED'
+            : type === 'citation-strip'
+              ? '#DBEAFE'
+              : 'transparent',
+        borderStyle:
+          type === 'callout-box'
+            ? 'left-solid'
+            : type === 'citation-strip'
+              ? 'all-borders'
+              : 'none',
+        borderColor:
+          type === 'callout-box'
+            ? '#F97316'
+            : type === 'citation-strip'
+              ? '#BFDBFE'
+              : '#E2E8F0',
         borderWidth: 1,
         borderRadius: 4,
         padding: { top: 2, right: 2, bottom: 2, left: 2 },
@@ -235,12 +142,110 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
       },
       specialProps: {
         customContentSample: `Mẫu nội dung của ${meta?.label}`,
+        ...(type === 'article-header-badge'
+          ? {
+              articleType: 'Bài tổng quan',
+              isOpenAccess: true,
+              openAccessText: 'Open Access Full Text Article',
+            }
+          : {}),
+        ...(type === 'article-title'
+          ? {
+              customContentSample:
+                'Tổng quan về loét dạ dày tá tràng ở người cao tuổi và cập nhật trong điều trị',
+            }
+          : {}),
+        ...(type === 'author-block'
+          ? {
+              authorNames: 'Hà Vũ*, Viên Vinh Phú',
+            }
+          : {}),
+        ...(type === 'affiliation-list'
+          ? {
+              affiliations: [
+                {
+                  id: 'aff_1',
+                  index: '',
+                  department: 'Bộ môn Nội - Khoa Y',
+                  institution:
+                    'Trường Đại học Khoa học Sức khỏe - Đại học Quốc Gia TP.HCM',
+                  address: 'TP. Hồ Chí Minh, Việt Nam',
+                },
+              ],
+              affiliationText:
+                'Bộ môn Nội - Khoa Y – Trường Đại học Khoa học Sức khỏe - Đại học Quốc Gia Thành phố Hồ Chí Minh',
+            }
+          : {}),
+        ...(type === 'citation-strip'
+          ? {
+              citationLabel: 'Trích dẫn bài báo này :',
+              citationText:
+                'Vũ H, Phú V V. Tổng quan về loét dạ dày tá tràng ở người cao tuổi và cập nhật trong điều trị. Sci. Tech. Dev. J. - Health Sci. 2026; 7(2):804-816.',
+              citationJournal: 'Sci. Tech. Dev. J. - Health Sci.',
+            }
+          : {}),
+        ...(type === 'metadata-grid'
+          ? {
+              metadataLayout: 'sidebar-academic',
+              historyReceived: '14-06-2025',
+              historyRevised: '10-02-2026',
+              historyAccepted: '14-04-2026',
+              historyPublished: '07-05-2026',
+              correspondenceAuthor: 'Hà Vũ',
+              correspondenceAffiliation:
+                'Bộ môn Nội - Khoa Y – Trường Đại học Khoa học Sức khỏe - Đại học Quốc Gia TP.HCM',
+              correspondenceEmail: 'hvu@uhsvnu.edu.vn',
+              doiUrl: 'https://doi.org/10.32508/vnuhcmj-hs.v7i1.630',
+              copyrightNotice:
+                '© ĐHQG Tp.HCM. Đây là bài báo công bố mở được phát hành theo các điều khoản của Creative Commons Attribution 4.0 International license.',
+            }
+          : {}),
+        ...(type === 'abstract-box'
+          ? {
+              abstractTitle: 'TÓM TẮT',
+              customContentSample:
+                'Bệnh loét dạ dày tá tràng hiện nay là một thách thức y tế lớn đối với người cao tuổi (từ 65 tuổi trở lên). Mặc dù tỷ lệ mắc bệnh chung có xu hướng giảm, nhưng tần suất biến chứng và tỷ lệ tử vong ở nhóm dân số già lại gia tăng rõ rệt...',
+            }
+          : {}),
+        ...(type === 'keywords-group'
+          ? {
+              keywords: [
+                'Bệnh loét dạ dày tá tràng',
+                'bệnh nhân cao tuổi',
+                'Helicobacter pylori',
+                'thuốc chống viêm không steroid',
+                'thuốc ức chế bơm proton',
+              ],
+            }
+          : {}),
+        ...(type === 'heading'
+          ? {
+              headingLevel: 1,
+              headingNumbering: 'ROMAN',
+              customContentSample: 'GIỚI THIỆU VỀ BỆNH LOÉT DẠ DÀY TÁ TRÀNG:',
+            }
+          : {}),
+        ...(type === 'body-text'
+          ? {
+              customContentSample:
+                'Loét dạ dày tá tràng là tình trạng tổn thương niêm mạc qua lớp cơ niêm, thường xảy ra ở vùng hang vị hoặc tá tràng dưới tác động của acid dạ dày và men pepsin...',
+              firstLineIndent: 5,
+            }
+          : {}),
+        ...(type === 'callout-box'
+          ? {
+              calloutTitle: '⚡ Điểm nhấn nghiên cứu',
+              customContentSample:
+                'Nội soi tiêu hóa trên kèm sinh thiết theo hệ thống Sydney cải tiến được coi là tiêu chuẩn vàng để xác định vị trí loét, loại trừ ung thư và đánh giá tình trạng nhiễm H. pylori.',
+            }
+          : {}),
         ...(type === 'figure-box'
           ? {
               captionPrefix: 'Hình',
               captionPosition: 'below',
-              captionText: 'Sơ đồ luồng xử lý và trích xuất cấu trúc văn bản học thuật',
-              figureSource: 'Nguồn: Nhóm nghiên cứu (2025)',
+              captionText:
+                'Sơ đồ cơ chế sinh bệnh loét dạ dày tá tràng liên quan đến nhiễm H. pylori và NSAID ở người cao tuổi',
+              figureSource: 'Nguồn: Nhóm nghiên cứu y sinh ĐHQG-HCM (2026)',
               figureAlignment: 'center',
               figureSubfigures: false,
             }
@@ -249,42 +254,100 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
           ? {
               captionPrefix: 'Bảng',
               captionPosition: 'above',
-              captionText: 'So sánh hiệu năng trích xuất và độ chính xác phân vùng',
+              captionText:
+                'So sánh các phác đồ tiệt trừ H. pylori khuyến nghị cho bệnh nhân cao tuổi',
               tableBorderMode: 'booktabs',
               zebraStriping: false,
-              tableFootnote: '* Ghi chú: Thử nghiệm thực hiện trên 100 văn bản mẫu.',
+              tableFootnote:
+                '* Ghi chú: P-CAB: Vonoprazan liều 20 mg 2 lần/ngày; PPI: Omeprazole 20 mg hoặc Esomeprazole 40 mg.',
             }
           : {}),
         ...(type === 'equation-box'
           ? {
               equationNumber: '(1)',
-              equationLatex: '\\mathcal{L}_{total} = \\alpha \\mathcal{L}_{struct} + \\beta \\mathcal{L}_{sem} + \\gamma \\|W\\|_2^2',
+              equationLatex:
+                '\\mathcal{H}_{score} = \\alpha \\cdot \\text{HpSA} + \\beta \\cdot \\text{NSAID} - \\gamma \\cdot \\text{Age}',
               equationAlign: 'center',
             }
           : {}),
         ...(type === 'code-algorithm'
           ? {
-              algorithmTitle: 'Thuật toán 1: Phân tách phân vùng bố cục văn bản',
+              algorithmTitle:
+                'Thuật toán 1: Phân tầng nguy cơ xuất huyết tiêu hóa do thuốc ở người cao tuổi',
               codeLanguage: 'Pseudocode',
               showLineNumbers: true,
-              algorithmInputs: 'Tài liệu DOCX đầu vào D',
-              algorithmOutputs: 'Ma trận phân vùng CSS Grid G',
+              algorithmInputs: 'Hồ sơ bệnh nhân P, Tiền sử NSAID N',
+              algorithmOutputs: 'Chỉ định phối hợp PPI & Phác đồ tiệt trừ H. pylori',
+            }
+          : {}),
+        ...(type === 'abbreviations-list'
+          ? {
+              abbreviations: [
+                { term: 'ASA', definition: 'Acetylsalicylic acid' },
+                { term: 'COX-1', definition: 'Cyclooxygenase-1' },
+                { term: 'HpSA', definition: 'Helicobacter pylori stool antigen' },
+                { term: 'ICU', definition: 'Intensive Care Unit (phòng chăm sóc tích cực)' },
+                { term: 'MALT', definition: 'Mucosa-associated lymphoid tissue lymphoma' },
+                { term: 'NSAID', definition: 'Non-steroidal anti-inflammatory drug' },
+                { term: 'OLGA', definition: 'Operative Link on Gastritis Assessment' },
+                { term: 'OLGIM', definition: 'Operative Link on Gastric Intestinal Metaplasia' },
+                { term: 'PPI', definition: 'Proton pump inhibitor (Thuốc ức chế bơm Proton)' },
+              ],
+            }
+          : {}),
+        ...(type === 'conflict-of-interest'
+          ? {
+              conflictText:
+                'Tác giả cam kết không có mâu thuẫn quyền lợi và không có xung đột lợi ích liên quan đến bài nghiên cứu này.',
+            }
+          : {}),
+        ...(type === 'author-contribution'
+          ? {
+              contributions: [
+                { author: 'Hà Vũ', role: 'lên ý tưởng, viết và hoàn thiện bản thảo bài báo' },
+                { author: 'Viên Vinh Phú', role: 'tham gia viết và chỉnh sửa bản thảo bài báo' },
+              ],
+            }
+          : {}),
+        ...(type === 'acknowledgement-box'
+          ? {
+              acknowledgementText:
+                'Nghiên cứu này được tài trợ bởi Đại học Quốc gia Thành phố Hồ Chí Minh (ĐHQG-HCM) trong khuôn khổ Đề tài mã số VNUHCM-2025-MED-01.',
+              grantNumber: 'VNUHCM-2025-MED-01',
+            }
+          : {}),
+        ...(type === 'references-block'
+          ? {
+              referenceHeadingText: 'TÀI LIỆU THAM KHẢO',
+              referenceItems: [
+                {
+                  num: '1',
+                  text: 'Vũ H, Phú V V. Tổng quan về loét dạ dày tá tràng ở người cao tuổi và cập nhật trong điều trị. Sci. Tech. Dev. J. - Health Sci. 2026; 7(2):804-816.',
+                  url: 'https://doi.org/10.32508/vnuhcmj-hs.v7i1.630',
+                },
+                {
+                  num: '2',
+                  text: 'Malfertheiner P, Megraud F, Rokkas T, et al. Management of Helicobacter pylori infection: the Maastricht VI/Florence consensus report. Gut. 2022; 71(9):1724-1762.',
+                  url: 'https://doi.org/10.1136/gutjnl-2022-327745',
+                },
+              ],
+            }
+          : {}),
+        ...(type === 'biography-box'
+          ? {
+              authorName: 'TS. Hà Vũ',
+              showAuthorPhoto: true,
+              bioText:
+                'Bộ môn Nội - Khoa Y – Trường Đại học Khoa học Sức khỏe - Đại học Quốc Gia TP.HCM. Hướng nghiên cứu chuyên sâu về bệnh lý tiêu hóa và quản lý dược lâm sàng ở bệnh nhân cao tuổi.',
             }
           : {}),
         ...(type === 'link-box'
           ? {
               linkType: 'doi',
               linkLabel: 'Mã định danh DOI',
-              linkUrl: 'https://doi.org/10.32508/stdj.v28i2.1234',
+              linkUrl: 'https://doi.org/10.32508/vnuhcmj-hs.v7i1.630',
               linkStyle: 'pill',
               showQrCode: true,
-            }
-          : {}),
-        ...(type === 'biography-box'
-          ? {
-              authorName: 'TS. Nguyễn Hoàng Nam',
-              showAuthorPhoto: true,
-              bioText: 'Nhận bằng Tiến sĩ Khoa học Máy tính tại ĐHQG TP.HCM. Hướng nghiên cứu chuyên sâu về bóc tách cấu trúc và hệ thống xuất bản học thuật.',
             }
           : {}),
       },
@@ -369,16 +432,29 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
     return (
       <div
         key={el.id}
-        className={`p-3.5 rounded-3xl transition-all flex flex-col gap-2.5 relative focus-within:z-30 shadow-[0_0_10px_rgba(0,0,0,0.03)] ${isSelected
+        draggable={true}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('application/structpaper-element-id', el.id);
+          e.dataTransfer.setData('text/plain', el.id);
+          e.dataTransfer.effectAllowed = 'copyMove';
+        }}
+        className={`p-3.5 rounded-3xl transition-all flex flex-col gap-2.5 relative focus-within:z-30 shadow-[0_0_10px_rgba(0,0,0,0.03)] cursor-grab active:cursor-grabbing ${isSelected
           ? 'border-2 border-[#78C841] bg-white ring-2 ring-[#78C841]/20'
           : isUnassigned
-            ? 'border border-amber-200/80 bg-white hover:bg-white'
+            ? 'border border-amber-200/90 bg-white hover:bg-amber-50/20 hover:border-amber-400'
             : 'border border-zinc-200/60 bg-white hover:bg-white hover:border-zinc-300'
           }`}
       >
-        {/* Row 1: Left: Icon, Name input, Type Badge, Staging Badge. Right: Move, Copy, Eye, Delete, Định dạng */}
+        {/* Row 1: Left: Drag Handle, Icon, Name input, Type Badge, Staging Badge. Right: Move, Copy, Eye, Delete, Định dạng */}
         <div className="flex items-center justify-between gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div
+              className="text-zinc-400 hover:text-zinc-800 cursor-grab active:cursor-grabbing p-0.5 shrink-0"
+              title="Kéo thả khối này sang lưới xem trước bên phải để gán vào phân vùng"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </div>
+
             <div className="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-700 shrink-0 shadow-2xs">
               <Icon className="w-4 h-4" />
             </div>
@@ -396,8 +472,8 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
                 {el.type}
               </span>
               {isUnassigned && (
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-200 shrink-0">
-                  Chờ phân vùng
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold border border-amber-300 shrink-0 flex items-center gap-1 shadow-2xs">
+                  <span>✋ Kéo sang lưới</span>
                 </span>
               )}
             </div>
@@ -545,6 +621,7 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
           </div>
 
           <button
+            id="btn-add-element-modal"
             type="button"
             onClick={() => {
               setTargetZoneForAdd(zones[0]?.id || '');
@@ -608,51 +685,199 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
       </div>
 
       {/* Elements grouped by Zones */}
-      <div className="space-y-2">
-        {zones.map((zone) => {
-          const zoneElements = elements
+      <div className="space-y-4">
+        {zones.map((zone, zoneIdx) => {
+          const directZoneElements = elements
             .filter((e) => e.zoneId === zone.id)
             .sort((a, b) => a.order - b.order);
+
+          const hasSubZones = Boolean(zone.subZones && zone.subZones.length > 0);
+          const isCollapsed = Boolean(collapsedZones[zone.id]);
+
+          const allSubZoneIds = hasSubZones ? zone.subZones!.map((sz) => sz.id) : [];
+          const totalChildElements = elements.filter(
+            (e) => e.zoneId && allSubZoneIds.includes(e.zoneId)
+          ).length;
+          const totalZoneElements = directZoneElements.length + totalChildElements;
 
           return (
             <div
               key={zone.id}
-              className="relative z-20 focus-within:z-40 bg-white rounded-[32px] p-5 shadow-[0_0_16px_rgba(0,0,0,0.06),0_0_4px_rgba(0,0,0,0.03)] space-y-4"
+              className="relative z-20 focus-within:z-40 bg-white rounded-[32px] p-5 shadow-[0_0_16px_rgba(0,0,0,0.06),0_0_4px_rgba(0,0,0,0.03)] space-y-4 border border-zinc-200/80 transition-all"
             >
-              <div className="flex items-center justify-between pb-2 border-b border-zinc-200/60">
-                <div className="flex items-center gap-2">
-                  <BoxSelect className="w-4 h-4 text-zinc-700" />
-                  <h3 className="font-extrabold text-xs sm:text-sm text-zinc-900 uppercase tracking-tight">
+              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-200/60 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                  {/* Zone sequential number badge */}
+                  <span className="w-6 h-6 rounded-lg bg-zinc-900 text-white flex items-center justify-center text-xs font-mono font-extrabold shadow-2xs shrink-0">
+                    {zoneIdx + 1}
+                  </span>
+
+                  <BoxSelect className="w-4 h-4 text-zinc-700 shrink-0" />
+
+                  <h3 className="font-extrabold text-xs sm:text-sm text-zinc-900 uppercase tracking-tight truncate max-w-[240px]">
                     {zone.name}
                   </h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 font-mono font-bold">
-                    {zone.type} ({zoneElements.length})
+
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-900 shadow-2xs">
+                    📄 Trang {zone.page || (zone.pageScope === 'subsequent-pages' ? 2 : 1)}
                   </span>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTargetZoneForAdd(zone.id);
-                    setShowAddModal(true);
-                  }}
-                  className="btn-pill-subtle text-xs py-1 px-2.5 flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Thêm vào phân vùng</span>
-                </button>
-              </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 font-mono font-bold">
+                    {zone.type} ({totalZoneElements})
+                  </span>
 
-              {zoneElements.length === 0 ? (
-                <div className="py-6 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-2xl">
-                  Chưa có thành phần nào trong phân vùng này. Nhấn &quot;+ Thêm&quot; để đưa khối vào.
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {zoneElements.map((el, elIdx) =>
-                    renderElementItem(el, elIdx, zoneElements.length, false)
+                  {hasSubZones && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#78C841]/15 border border-[#78C841]/40 text-[#14532D] font-bold flex items-center gap-1 shadow-2xs">
+                      <Layers className="w-3 h-3 text-[#78C841]" />
+                      <span>{zone.subZones!.length} vùng con (Cấp 2)</span>
+                    </span>
                   )}
                 </div>
+
+                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                  {/* Collapse / Expand hierarchy toggle button */}
+                  {hasSubZones && (
+                    <button
+                      type="button"
+                      onClick={() => toggleZoneCollapse(zone.id)}
+                      className="px-2.5 py-1 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-950 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                      title={isCollapsed ? 'Mở rộng xem các vùng con' : 'Thu gọn phân cấp'}
+                    >
+                      {isCollapsed ? (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                          <span>Mở rộng</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5" />
+                          <span>Thu gọn</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTargetZoneForAdd(zone.id);
+                      setShowAddModal(true);
+                    }}
+                    className="btn-pill-subtle text-xs py-1 px-2.5 flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm vào phân vùng</span>
+                  </button>
+                </div>
+              </div>
+
+              {!isCollapsed && (
+                <>
+                  {/* Direct elements of parent zone */}
+                  {directZoneElements.length > 0 && (
+                    <div className="space-y-1">
+                      {directZoneElements.map((el, elIdx) =>
+                        renderElementItem(el, elIdx, directZoneElements.length, false)
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sub-zones hierarchical branch view */}
+                  {hasSubZones && (
+                    <div className="ml-2 sm:ml-4 pl-3 sm:pl-4 border-l-2 border-[#78C841]/60 space-y-3 mt-2 pt-1">
+                      <div className="text-[11px] font-bold text-[#14532D] flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-[#78C841]" />
+                        <span>CÁC PHÂN VÙNG CON CẤP 2 ({zone.subZones!.length} VÙNG):</span>
+                      </div>
+
+                      {zone.subZones!.map((subZone, subIdx) => {
+                        const subElements = elements
+                          .filter((e) => e.zoneId === subZone.id)
+                          .sort((a, b) => a.order - b.order);
+                        const isSubCollapsed = Boolean(collapsedZones[subZone.id]);
+
+                        return (
+                          <div
+                            key={subZone.id}
+                            className="bg-[#78C841]/5 hover:bg-[#78C841]/10 border border-[#78C841]/30 rounded-2xl p-3.5 space-y-2.5 transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                <span className="px-2 py-0.5 rounded-md bg-[#14532D] text-white text-[11px] font-mono font-extrabold shadow-2xs shrink-0">
+                                  {zoneIdx + 1}.{subIdx + 1}
+                                </span>
+                                <Layers className="w-3.5 h-3.5 text-[#78C841] shrink-0" />
+                                <h4 className="font-extrabold text-xs text-zinc-950 truncate max-w-[200px]">
+                                  {subZone.name}
+                                </h4>
+                                {subZone.gridArea && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#78C841]/20 text-[#14532D] font-mono font-bold">
+                                    {subZone.gridArea.colSpan}c×{subZone.gridArea.rowSpan}r
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-zinc-500 font-semibold">
+                                  ({subElements.length} thành phần)
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                                {subElements.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleZoneCollapse(subZone.id)}
+                                    className="p-1 rounded-lg hover:bg-[#78C841]/20 text-[#14532D] text-xs font-bold transition-colors"
+                                    title={isSubCollapsed ? 'Mở rộng' : 'Thu gọn'}
+                                  >
+                                    {isSubCollapsed ? (
+                                      <ChevronDown className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <ChevronUp className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setTargetZoneForAdd(subZone.id);
+                                    setShowAddModal(true);
+                                  }}
+                                  className="text-xs py-1 px-2.5 rounded-xl bg-white hover:bg-[#78C841]/10 border border-[#78C841]/50 text-[#14532D] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                                >
+                                  <Plus className="w-3 h-3 text-[#14532D]" />
+                                  <span>Thêm vào vùng con</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {!isSubCollapsed && (
+                              <>
+                                {subElements.length === 0 ? (
+                                  <div className="py-3 px-3 text-center text-xs text-zinc-600 bg-white/70 border border-dashed border-[#78C841]/50 rounded-xl">
+                                    Chưa có thành phần nào trong vùng con này. Kéo thả khối chưa gán vào đây hoặc bấm &quot;+ Thêm&quot;.
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {subElements.map((el, elIdx) =>
+                                      renderElementItem(el, elIdx, subElements.length, false)
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Empty state if no direct elements and no subzones */}
+                  {!hasSubZones && directZoneElements.length === 0 && (
+                    <div className="py-6 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-2xl">
+                      Chưa có thành phần nào trong phân vùng này. Kéo thả khối chưa gán từ trên xuống hoặc bấm &quot;+ Thêm vào phân vùng&quot;.
+                    </div>
+                  )}
+                </>
               )}
             </div>
           );
@@ -660,91 +885,15 @@ export const Step2ElementStructure: React.FC<Step2ElementStructureProps> = ({
       </div>
 
       {/* Modal Add New Element */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#FBFBFC] rounded-[32px] max-w-2xl w-full shadow-2xl border border-[#E2E4E9] overflow-hidden flex flex-col max-h-[88vh]">
-            {/* Modal Header */}
-            <div className="px-6 py-4 bg-gray-200/50 rounded-b-[24px] flex items-center justify-between shadow-2xs flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-zinc-700" />
-                <h3 className="font-extrabold text-sm sm:text-base text-zinc-900 tracking-tight">
-                  Thêm Khối Thành Phần Mới
-                </h3>
-              </div>
+      <AddElementModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAddElement={handleAddNewElement}
+        targetZoneId={targetZoneForAdd}
+        onTargetZoneChange={setTargetZoneForAdd}
+        zones={zones}
+      />
 
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 text-zinc-600 hover:text-zinc-900 flex items-center justify-center transition-colors cursor-pointer"
-                title="Đóng (Esc)"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-              {/* Target zone picker */}
-              <div className="flex items-center gap-3 bg-white p-3.5 rounded-2xl border border-zinc-200/80 shadow-2xs">
-                <span className="text-xs font-extrabold text-zinc-700 shrink-0">
-                  Thêm vào phân vùng:
-                </span>
-                <div className="flex-1">
-                  <Select
-                    value={targetZoneForAdd}
-                    onChange={(val) => setTargetZoneForAdd(val)}
-                    variant="clean"
-                    size="sm"
-                    options={[
-                      {
-                        value: '',
-                        label: '⚡ Chưa gán phân vùng (Lưu trữ / Chờ bố cục sau)',
-                        description: 'Khối tự do, có thể xếp vào bất kỳ phân vùng nào sau này',
-                      },
-                      ...zones.map((z) => ({
-                        value: z.id,
-                        label: `${z.name} (${z.type})`,
-                      })),
-                    ]}
-                  />
-                </div>
-              </div>
-
-              {/* Grid of Element Types */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {ELEMENT_TYPE_METAS.map((meta) => {
-                  const Icon = meta.icon;
-                  return (
-                    <button
-                      key={meta.type}
-                      onClick={() => handleAddNewElement(meta.type)}
-                      className="flex items-start gap-3 p-3.5 rounded-2xl border border-zinc-200/80 bg-white hover:border-[#78C841] hover:bg-[#D9F99D]/10 text-left transition-all group shadow-2xs hover:shadow-xs cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-zinc-100 group-hover:bg-[#78C841] group-hover:text-white flex items-center justify-center text-zinc-700 shrink-0 transition-colors shadow-2xs">
-                        <Icon className="w-5 h-5" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <div className="text-xs font-extrabold text-zinc-900 group-hover:text-zinc-950">
-                            {meta.label}
-                          </div>
-                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 font-bold group-hover:bg-white shrink-0">
-                            {meta.category}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-zinc-500 leading-snug mt-1">
-                          {meta.description}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

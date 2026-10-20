@@ -19,7 +19,7 @@ import {
   LayoutGrid,
   ArrowRight,
 } from 'lucide-react';
-import { UNIVERSAL_PRESETS } from '@/lib/template-builder/universal-presets';
+import { BUILT_IN_TEMPLATES } from '@/data/templates';
 import { toast } from '@/components/DynamicIslandToast';
 import { Select } from '@/components/ui/Select';
 import { NumberInput } from '@/components/ui/NumberInput';
@@ -122,7 +122,7 @@ export const Step1PageAndZones: React.FC<Step1PageAndZonesProps> = ({
               title="Bộ mẫu này đã được chọn từ Thư viện trước khi vào trình thiết kế"
             >
               <span className="truncate">
-                {UNIVERSAL_PRESETS.find((p) => p.id === currentPresetId)?.name || templateName || 'Khung Thiết Kế Trống'}
+                {BUILT_IN_TEMPLATES.find((p) => p.id === currentPresetId)?.name || templateName || 'Khung Thiết Kế Trống'}
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-zinc-600 font-bold shrink-0 ml-2 shadow-2xs">
                 Mẫu gốc

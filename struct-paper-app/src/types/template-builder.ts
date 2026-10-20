@@ -52,6 +52,12 @@ export type ElementType =
   | 'link-box' // Liên kết ngoài, DOI, Repository mở kèm QR Code (Links)
   | 'biography-box' // Tiểu sử tác giả cuối bài (kèm ảnh chân dung)
   | 'references-block' // Danh mục tài liệu tham khảo (Vancouver, IEEE, APA...)
+  | 'abbreviations-list' // Danh mục các từ viết tắt học thuật (Abbreviations)
+  | 'conflict-of-interest' // Tuyên bố xung đột lợi ích (Conflict of Interest)
+  | 'author-contribution' // Đóng góp của các tác giả (CRediT Authorship)
+  | 'citation-strip' // Dải trích dẫn bài báo chân trang bìa (How to Cite Banner)
+  | 'article-header-badge' // Khối phân loại bài báo & Open Access đầu trang
+  | 'acknowledgement-box' // Lời cảm ơn & Nguồn tài trợ nghiên cứu (Funding)
   | 'custom-field' // Bất kỳ trường dữ liệu mới nào người dùng tự định nghĩa
   | 'custom-composite' // Khối thành phần tùy biến ghép từ các Hằng (Label) và Biến (Variable)
   | 'divider-line' // Đường kẻ phân cách trang trí
@@ -237,16 +243,23 @@ export interface SemanticElement {
     calloutTitle?: string;
     calloutIcon?: string;
     abstractLabel?: string;
+    abstractTitle?: string;
     bilingualAbstractLabel?: string;
 
     // For Keywords
     keywordLabel?: string;
     keywordSeparator?: ', ' | '; ' | ' • ';
     badgeStyle?: boolean;
+    keywords?: string[];
+
+    // For Body & Paragraph
+    dropCapEnabled?: boolean;
+    firstLineIndent?: number;
 
     // For Headings
     headingLevel?: 1 | 2 | 3 | 4;
     numberingFormat?: HeadingNumbering;
+    headingNumbering?: HeadingNumbering;
 
     // For Figures & Tables
     captionPrefix?: string; // 'Hình ' / 'Fig.' / 'Bảng ' / 'Table'
@@ -297,6 +310,30 @@ export interface SemanticElement {
     citationStyle?: CitationStyle;
     referenceHeadingText?: string;
     referenceItems?: Array<{ num: string; text: string; doi?: string; url?: string }>;
+
+    // For Abbreviations List (ID630)
+    abbreviations?: Array<{ term: string; definition: string }>;
+
+    // For Conflict of Interest Statement (ID630)
+    conflictText?: string;
+
+    // For Authors Contributions (ID630)
+    contributions?: Array<{ author: string; role: string }>;
+
+    // For Citation Strip (ID630 Bottom Banner)
+    citationLabel?: string;
+    citationText?: string;
+    citationJournal?: string;
+
+    // For Article Header Badge & Type Banner
+    articleType?: string;
+    isOpenAccess?: boolean;
+    openAccessText?: string;
+    articleJournalHeader?: string;
+
+    // For Acknowledgement / Funding Box
+    acknowledgementText?: string;
+    grantNumber?: string;
 
     // For Custom Fields / Generic Text / Flow Split
     customContentSample?: string;

@@ -1,46 +1,85 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import TemplateBuilderView from '@/components/template-builder/TemplateBuilderView';
-import {
-  UNIVERSAL_PRESETS,
-  CUSTOM_BLANK_CANVAS,
-  VNUHCM_HEALTH_SCIENCES_MASTER,
-} from '@/lib/template-builder/universal-presets';
 import { UniversalTemplateSchema } from '@/types/template-builder';
+import {
+  templateRegistry,
+  deserializeTemplatePackage,
+} from '@/lib/template-engine/storage';
+import {
+  VNUHCM_HEALTH_SCIENCES_TEMPLATE,
+  CUSTOM_BLANK_TEMPLATE,
+} from '@/data/templates';
+import { Loader2 } from 'lucide-react';
 
 function BuilderContent() {
   const searchParams = useSearchParams();
   const presetKey = searchParams.get('preset');
-
-  const initialSchema: UniversalTemplateSchema = React.useMemo(() => {
-    if (presetKey === 'blank' || presetKey === 'custom_blank_canvas') {
-      return JSON.parse(JSON.stringify(CUSTOM_BLANK_CANVAS));
-    }
-    if (presetKey) {
-      const found = UNIVERSAL_PRESETS.find((p) => p.id === presetKey);
-      if (found) return JSON.parse(JSON.stringify(found));
-
-      // Check localStorage for custom user templates
-      if (typeof window !== 'undefined') {
-        try {
-          const savedStr = localStorage.getItem('structpaper_custom_templates_list');
-          if (savedStr) {
-            const list: UniversalTemplateSchema[] = JSON.parse(savedStr);
-            const custom = list.find((item) => item.id === presetKey);
-            if (custom) return JSON.parse(JSON.stringify(custom));
-          }
-        } catch {}
-      }
-    }
-    return JSON.parse(JSON.stringify(VNUHCM_HEALTH_SCIENCES_MASTER));
-  }, [presetKey]);
-
   const pageParam = searchParams.get('page');
   const initialPage = pageParam && !isNaN(Number(pageParam)) ? Number(pageParam) : 1;
 
-  return <TemplateBuilderView initialSchema={initialSchema} initialPage={initialPage} />;
+  const [schema, setSchema] = useState<UniversalTemplateSchema | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function resolveTemplate() {
+      setLoading(true);
+      try {
+        if (presetKey === 'blank' || presetKey === 'custom_blank_canvas') {
+          if (isMounted) {
+            setSchema(JSON.parse(JSON.stringify(CUSTOM_BLANK_TEMPLATE)));
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (presetKey) {
+          // Dynamic load from registry (API / JSON file / local custom templates)
+          const loaded = await templateRegistry.loadTemplate(presetKey);
+          if (loaded && isMounted) {
+            setSchema(loaded);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Default: authentic VNUHCM Health Sciences ID630 Template from JSON specification
+        if (isMounted) {
+          setSchema(JSON.parse(JSON.stringify(VNUHCM_HEALTH_SCIENCES_TEMPLATE)));
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error resolving template schema:', err);
+        if (isMounted) {
+          setSchema(JSON.parse(JSON.stringify(VNUHCM_HEALTH_SCIENCES_TEMPLATE)));
+          setLoading(false);
+        }
+      }
+    }
+
+    resolveTemplate();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [presetKey]);
+
+  if (loading || !schema) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-600 gap-3">
+        <Loader2 className="w-6 h-6 animate-spin text-[#78C841]" />
+        <span className="text-xs font-semibold tracking-wide">
+          Đang nạp cấu trúc Template từ file dữ liệu...
+        </span>
+      </div>
+    );
+  }
+
+  return <TemplateBuilderView initialSchema={schema} initialPage={initialPage} />;
 }
 
 export default function TemplateBuilderPage() {

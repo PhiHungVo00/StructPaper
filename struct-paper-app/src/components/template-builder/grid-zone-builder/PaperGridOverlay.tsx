@@ -16,6 +16,7 @@ import { toast } from '@/components/DynamicIslandToast';
 export interface PaperGridOverlayProps {
   gridConfig: TemplateGridConfig;
   zones: LayoutZoneConfig[];
+  allZones?: LayoutZoneConfig[];
   selectedZoneId: string | null;
   focusedZoneId?: string | null;
   onSelectZone: (zoneId: string) => void;
@@ -30,6 +31,7 @@ export interface PaperGridOverlayProps {
   onDeleteSubZone?: (subZoneId: string) => void;
   selectedSubZoneId?: string | null;
   onSelectSubZone?: (subZoneId: string) => void;
+  onAssignElementToZone?: (elementId: string, zoneId: string) => void;
   bounds: {
     top: number;
     left: number;
@@ -41,6 +43,7 @@ export interface PaperGridOverlayProps {
 export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
   gridConfig,
   zones,
+  allZones,
   selectedZoneId,
   focusedZoneId = null,
   onSelectZone,
@@ -55,6 +58,7 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
   onDeleteSubZone,
   selectedSubZoneId,
   onSelectSubZone,
+  onAssignElementToZone,
   bounds,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -700,12 +704,15 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
         {zones.map((zone, idx) => {
           if (!zone.gridArea) return null;
           const isFocused = focusedZoneId === zone.id;
+          const globalIndex = allZones ? allZones.findIndex((z) => z.id === zone.id) : idx;
+          const effectiveIndex = globalIndex >= 0 ? globalIndex : idx;
+
           return (
             <React.Fragment key={zone.id}>
               {/* Primary Block (Khối 1A) */}
               <GridZoneCard
                 zone={zone}
-                index={idx}
+                index={effectiveIndex}
                 isSecondary={false}
                 isSelected={selectedZoneId === zone.id}
                 isFocused={isFocused}
@@ -721,6 +728,7 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
                 onDeleteSubZone={onDeleteSubZone}
                 selectedSubZoneId={selectedSubZoneId}
                 onSelectSubZone={onSelectSubZone}
+                onAssignElementToZone={onAssignElementToZone}
               />
 
               {/* Secondary Block (Khối 1B - Tiếp nối) */}
@@ -728,7 +736,7 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
                 <GridZoneCard
                   key={`${zone.id}-secondary`}
                   zone={zone}
-                  index={idx}
+                  index={effectiveIndex}
                   isSecondary={true}
                   isSelected={selectedZoneId === zone.id}
                   isFocused={isFocused}
@@ -741,6 +749,7 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
                   }}
                   onStartResize={handleStartResize}
                   onStartMove={handleStartMove}
+                  onAssignElementToZone={onAssignElementToZone}
                 />
               )}
             </React.Fragment>

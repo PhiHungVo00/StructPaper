@@ -58,10 +58,10 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
   };
 
   // 0. HIERARCHICAL RECURSIVE SUB-ZONES & SUB-GRID ENGINE
-  if ((zone.subZones && zone.subZones.length > 0) || zone.subGridConfig) {
+  if (zone.subZones && zone.subZones.length > 0) {
     const subGrid = zone.subGridConfig || {
       enabled: true,
-      columns: zone.subZones?.length || 2,
+      columns: zone.subZones.length,
       rows: 1,
       colGap: 6,
       rowGap: 6,
@@ -82,28 +82,7 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
         }}
         className="w-full h-full"
       >
-        {/* Render empty cell guides if subZones is empty or has slots */}
-        {(!zone.subZones || zone.subZones.length === 0) &&
-          Array.from({ length: subGrid.columns * subGrid.rows }).map((_, idx) => {
-            const col = (idx % subGrid.columns) + 1;
-            const row = Math.floor(idx / subGrid.columns) + 1;
-            return (
-              <div
-                key={`empty-sub-slot-${row}-${col}`}
-                style={{ gridRow: row, gridColumn: col }}
-                className="rounded-lg border border-dashed border-emerald-300/60 bg-emerald-50/20 flex flex-col items-center justify-center p-2 text-center"
-              >
-                <span className="text-[9px] font-mono font-bold text-emerald-800/80 bg-white/80 px-1 py-0.2 rounded border border-emerald-200">
-                  Ô con C{col} × R{row}
-                </span>
-                <span className="text-[7.5px] text-emerald-700/60 mt-0.5">
-                  (Chưa có nội dung)
-                </span>
-              </div>
-            );
-          })}
-
-        {zone.subZones?.map((sz: LayoutZoneConfig, idx: number) => {
+        {zone.subZones.map((sz: LayoutZoneConfig, idx: number) => {
           const area = sz.gridArea || {
             rowStart: 1,
             colStart: idx + 1,
@@ -122,29 +101,17 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
                 gridRow: `${area.rowStart} / span ${area.rowSpan}`,
                 gridColumn: `${area.colStart} / span ${area.colSpan}`,
               }}
-              className="min-w-0 min-h-0 relative p-1 rounded-lg border border-dashed border-emerald-500/60 bg-emerald-50/25 flex flex-col transition-all"
+              className="min-w-0 min-h-0 relative flex flex-col"
             >
-              {/* Header Badge for Child Sub-Zone */}
-              <div className="flex items-center justify-between pb-0.5 mb-0.5 border-b border-emerald-200/60">
-                <span className="text-[8px] font-extrabold text-[#14532D] bg-white/95 px-1 py-0.2 rounded font-mono truncate max-w-[110px] shadow-2xs">
-                  {sz.name}
-                </span>
-                <span className="text-[7px] font-mono font-bold text-emerald-800 bg-white/80 px-0.5 rounded">
-                  {area.colSpan}c×{area.rowSpan}r
-                </span>
-              </div>
-
-              {szElements.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center py-1 opacity-50">
-                  <span className="text-[7.5px] font-mono text-zinc-500 italic">
-                    (Vùng con trống)
-                  </span>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {szElements.map((el: SemanticElement) => renderInteractiveElement(el))}
-                </div>
-              )}
+              <PreviewZoneContent
+                zone={sz}
+                zoneElements={szElements}
+                allElements={allElements}
+                primaryColor={primaryColor}
+                floatingRules={floatingRules}
+                unitMultiplier={unitMultiplier}
+                onSelectElement={onSelectElement}
+              />
             </div>
           );
         })}

@@ -54,6 +54,18 @@ export function mapElementTypeToSemanticType(
       return 'callout-box';
     case 'references-block':
       return 'bibliography-item';
+    case 'article-header-badge':
+      return 'article-header-badge';
+    case 'citation-strip':
+      return 'citation-strip';
+    case 'abbreviations-list':
+      return 'abbreviations-list';
+    case 'conflict-of-interest':
+      return 'conflict-of-interest';
+    case 'author-contribution':
+      return 'author-contribution';
+    case 'acknowledgement-box':
+      return 'acknowledgement-box';
     default:
       return 'paragraph';
   }
@@ -94,10 +106,23 @@ export function mapSemanticTypeToElementType(
       return 'callout-box';
     case 'bibliography-item':
       return 'references-block';
+    case 'article-header-badge':
+      return 'article-header-badge';
+    case 'citation-strip':
+      return 'citation-strip';
+    case 'abbreviations-list':
+      return 'abbreviations-list';
+    case 'conflict-of-interest':
+      return 'conflict-of-interest';
+    case 'author-contribution':
+      return 'author-contribution';
+    case 'acknowledgement-box':
+      return 'acknowledgement-box';
     default:
       return 'custom-block';
   }
 }
+
 
 /**
  * Converts a SemanticElement into standard SciSpace Element Attributes

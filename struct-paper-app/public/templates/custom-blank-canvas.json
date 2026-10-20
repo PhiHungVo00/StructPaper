@@ -1,0 +1,144 @@
+{
+  "$schema": "https://structpaper.org/schemas/template-v2.json",
+  "schemaVersion": "2.0.0",
+  "id": "custom_blank_canvas",
+  "name": "Khung Trang Trắng (Tự Do Thiết Kế)",
+  "category": "custom-open",
+  "description": "Trang giấy trắng chuẩn A4 hoàn toàn trống để bạn tự do tạo dựng các phân vùng lưới CSS và thành phần học thuật từ con số 0.",
+  "author": "StructPaper Studio",
+  "institution": "StructPaper Lab",
+  "version": "2.0.0",
+  "createdAt": "2026-02-01",
+  "updatedAt": "2026-10-20",
+  "primaryColor": "#78C841",
+  "secondaryColor": "#0F172A",
+  "tags": [
+    "Trống",
+    "Tùy biến",
+    "Custom"
+  ],
+  "specification": {
+    "pageArchitecture": {
+      "size": "A4",
+      "orientation": "portrait",
+      "margins": {
+        "top": 20,
+        "bottom": 20,
+        "left": 20,
+        "right": 20
+      },
+      "pageNumbering": {
+        "position": "bottom-center",
+        "format": "arabic",
+        "prefixText": "",
+        "suppressOnFirstPage": false,
+        "startNumber": 1
+      },
+      "headers": {
+        "differentFirstPage": false,
+        "differentOddEven": false,
+        "firstPage": {
+          "leftText": "",
+          "centerText": "",
+          "rightText": "",
+          "fontFamily": "Inter",
+          "fontSize": 8,
+          "textColor": "#64748B",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        },
+        "oddPages": {
+          "leftText": "",
+          "centerText": "",
+          "rightText": "",
+          "fontFamily": "Inter",
+          "fontSize": 8,
+          "textColor": "#64748B",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        },
+        "evenPages": {
+          "leftText": "",
+          "centerText": "",
+          "rightText": "",
+          "fontFamily": "Inter",
+          "fontSize": 8,
+          "textColor": "#64748B",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        }
+      },
+      "footers": {
+        "differentFirstPage": false,
+        "differentOddEven": false,
+        "firstPage": {
+          "leftText": "",
+          "centerText": "{page_number}",
+          "rightText": "",
+          "fontFamily": "Inter",
+          "fontSize": 8,
+          "textColor": "#64748B",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        },
+        "oddPages": {
+          "leftText": "",
+          "centerText": "{page_number}",
+          "rightText": "",
+          "fontFamily": "Inter",
+          "fontSize": 8,
+          "textColor": "#64748B",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        },
+        "evenPages": {
+          "leftText": "",
+          "centerText": "{page_number}",
+          "rightText": "",
+          "fontFamily": "Inter",
+          "fontSize": 8,
+          "textColor": "#64748B",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        }
+      }
+    },
+    "gridConfig": {
+      "enabled": true,
+      "columns": 4,
+      "rows": 5,
+      "rowGap": 8,
+      "colGap": 8,
+      "gapSync": true,
+      "unit": "px"
+    },
+    "zones": [
+      {
+        "id": "zone_blank_main",
+        "name": "Vùng Dàn Trang Chính",
+        "description": "Vùng làm việc toàn trang",
+        "type": "full-width",
+        "columns": 1,
+        "columnGap": 0,
+        "showColumnRule": false,
+        "columnRuleColor": "transparent",
+        "page": 1,
+        "pageScope": "all",
+        "order": 1,
+        "gridArea": {
+          "rowStart": 1,
+          "colStart": 1,
+          "rowSpan": 5,
+          "colSpan": 4
+        }
+      }
+    ],
+    "elements": []
+  }
+}

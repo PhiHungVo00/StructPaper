@@ -41,6 +41,7 @@ export interface UniversalLiveA4PreviewProps {
   onDeleteSubZone?: (subZoneId: string) => void;
   selectedSubZoneId?: string | null;
   onSelectSubZone?: (subZoneId: string) => void;
+  onAssignElementToZone?: (elementId: string, zoneId: string) => void;
   className?: string;
   isStep4?: boolean;
   demoSpecialElements?: boolean;
@@ -233,17 +234,29 @@ function getElementsForPageZone(
   schema: UniversalTemplateSchema,
   activeElements: SemanticElement[]
 ): SemanticElement[] {
+  // 1. Always prioritize real semantic elements bound directly to this zone in activeElements
+  const bound = activeElements
+    .filter((e) => e.zoneId === zone.id && e.visible)
+    .sort((a, b) => a.order - b.order);
+
+  if (bound.length > 0) {
+    return bound;
+  }
+
+  // 2. Newly created user zones (or empty zones without bound elements) remain empty.
+  // Never inject fake synthetic demo elements into user-created zones!
+  if (!zone.id.startsWith('zone_p')) {
+    return [];
+  }
+
+  // 3. Built-in template demo fallback for ID630 demo zones only:
   if (schema.id !== 'vnuhcm_health_sciences_id630' || page === 1) {
-    return activeElements
-      .filter((e) => e.zoneId === zone.id && e.visible)
-      .sort((a, b) => a.order - b.order);
+    return [];
   }
 
   const pageData = ID630_DEMO_PAGES.find((p) => p.pageNumber === page);
   if (!pageData) {
-    return activeElements
-      .filter((e) => e.zoneId === zone.id && e.visible)
-      .sort((a, b) => a.order - b.order);
+    return [];
   }
 
   const baseHeading =
@@ -561,6 +574,7 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
   onDeleteSubZone,
   selectedSubZoneId = null,
   onSelectSubZone,
+  onAssignElementToZone,
   className = '',
   isStep4 = false,
   demoSpecialElements = false,
@@ -570,8 +584,38 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
 }) => {
   const [showPdfCompare, setShowPdfCompare] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(50);
+  const [dragOverZoneId, setDragOverZoneId] = useState<string | null>(null);
+  // Dynamically calculate all contiguous pages covered by this template's zones
+  const computeTemplatePages = (schemaZones: LayoutZoneConfig[], initPage = 1): number[] => {
+    const pageSet = new Set<number>([1]);
+    if (initPage && initPage >= 1) pageSet.add(initPage);
+    schemaZones.forEach((z) => {
+      const p = z.page || (z.pageScope === 'subsequent-pages' ? 2 : 1);
+      if (typeof p === 'number' && p >= 1) {
+        pageSet.add(p);
+      }
+    });
+    const maxPage = Math.max(1, ...Array.from(pageSet));
+    const pages: number[] = [];
+    for (let p = 1; p <= maxPage; p++) {
+      pages.push(p);
+    }
+    return pages;
+  };
+
   const [currentPage, setCurrentPage] = useState<number>(initialPage || 1);
-  const [visiblePages, setVisiblePages] = useState<number[]>([1, 2]);
+  const [visiblePages, setVisiblePages] = useState<number[]>(() =>
+    computeTemplatePages(schema.zones, initialPage || 1)
+  );
+
+  // Sync visible pages when template changes so all existing template pages are shown immediately
+  useEffect(() => {
+    const allPages = computeTemplatePages(schema.zones, initialPage || 1);
+    setVisiblePages((prev) => {
+      const merged = Array.from(new Set([...prev, ...allPages])).sort((a, b) => a - b);
+      return merged;
+    });
+  }, [schema.id]);
 
   const handleAddVisiblePage = () => {
     const lastPage = visiblePages[visiblePages.length - 1] || 1;
@@ -757,6 +801,8 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
                 ? 'min-h-full h-auto overflow-visible z-20'
                 : 'min-h-full h-auto overflow-visible';
 
+            const isDropTarget = dragOverZoneId === zone.id;
+
             return (
               <React.Fragment key={zone.id}>
                 <div
@@ -765,13 +811,50 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
                     e.stopPropagation();
                     onSelectZone?.(zone.id);
                   }}
+                  onDragOver={(e) => {
+                    if (
+                      e.dataTransfer.types.includes('application/structpaper-element-id') ||
+                      e.dataTransfer.types.includes('text/plain')
+                    ) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = 'copy';
+                      if (dragOverZoneId !== zone.id) setDragOverZoneId(zone.id);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    if (dragOverZoneId === zone.id) setDragOverZoneId(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOverZoneId(null);
+                    const elemId =
+                      e.dataTransfer.getData('application/structpaper-element-id') ||
+                      e.dataTransfer.getData('text/plain');
+                    if (elemId && onAssignElementToZone) {
+                      onAssignElementToZone(elemId, zone.id);
+                    }
+                  }}
                   style={{
                     gridRow: `${gridArea.rowStart} / span ${gridArea.rowSpan}`,
                     gridColumn: `${gridArea.colStart} / span ${gridArea.colSpan}`,
                     alignSelf: !hasSecondary && isOverflowUp ? 'end' : undefined,
                   }}
-                  className={`relative w-full min-h-0 min-w-0 px-1 pt-1 pb-0 ${primaryClass} transition-colors`}
+                  className={`relative w-full min-h-0 min-w-0 px-1 pt-1 pb-0 ${primaryClass} transition-colors ${
+                    isDropTarget ? 'ring-2 ring-[#78C841] bg-[#78C841]/15 rounded-xl shadow-lg' : ''
+                  }`}
                 >
+                  {isDropTarget && (
+                    <div className="absolute inset-0 bg-[#78C841]/25 border-2 border-dashed border-[#78C841] rounded-xl z-50 flex items-center justify-center p-2 text-center pointer-events-none animate-fadeIn backdrop-blur-2xs shadow-xl">
+                      <div className="bg-white/95 text-[#14532D] text-xs font-black px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border border-[#78C841]/50">
+                        <span className="text-sm">📥</span>
+                        <span>Thả vào {zone.name}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <PreviewZoneContent
                     zone={zone}
                     zoneElements={primaryElements}
@@ -790,13 +873,49 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
                       e.stopPropagation();
                       onSelectZone?.(zone.id);
                     }}
+                    onDragOver={(e) => {
+                      if (
+                        e.dataTransfer.types.includes('application/structpaper-element-id') ||
+                        e.dataTransfer.types.includes('text/plain')
+                      ) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.dataTransfer.dropEffect = 'copy';
+                        if (dragOverZoneId !== zone.id) setDragOverZoneId(zone.id);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      if (dragOverZoneId === zone.id) setDragOverZoneId(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverZoneId(null);
+                      const elemId =
+                        e.dataTransfer.getData('application/structpaper-element-id') ||
+                        e.dataTransfer.getData('text/plain');
+                      if (elemId && onAssignElementToZone) {
+                        onAssignElementToZone(elemId, zone.id);
+                      }
+                    }}
                     style={{
                       gridRow: `${zone.secondaryGridArea.rowStart} / span ${zone.secondaryGridArea.rowSpan}`,
                       gridColumn: `${zone.secondaryGridArea.colStart} / span ${zone.secondaryGridArea.colSpan}`,
                       alignSelf: isOverflowUp ? 'end' : undefined,
                     }}
-                    className={`relative w-full min-h-0 min-w-0 px-1 pt-0 pb-1 ${secondaryClass} transition-colors`}
+                    className={`relative w-full min-h-0 min-w-0 px-1 pt-0 pb-1 ${secondaryClass} transition-colors ${
+                      isDropTarget ? 'ring-2 ring-[#78C841] bg-[#78C841]/15 rounded-xl shadow-lg' : ''
+                    }`}
                   >
+                    {isDropTarget && (
+                      <div className="absolute inset-0 bg-[#78C841]/25 border-2 border-dashed border-[#78C841] rounded-xl z-50 flex items-center justify-center p-2 text-center pointer-events-none animate-fadeIn backdrop-blur-2xs shadow-xl">
+                        <div className="bg-white/95 text-[#14532D] text-xs font-black px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border border-[#78C841]/50">
+                          <span className="text-sm">📥</span>
+                          <span>Thả vào {zone.name}</span>
+                        </div>
+                      </div>
+                    )}
                     <PreviewZoneContent
                       zone={zone}
                       zoneElements={secondaryElements}
@@ -854,6 +973,7 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
         <PaperGridOverlay
           gridConfig={effectiveGridConfig}
           zones={zones.filter((zone) => isZoneOnPage(zone, pageNum))}
+          allZones={zones}
           selectedZoneId={selectedZoneId}
           focusedZoneId={focusedZoneId}
           onSelectZone={onSelectZone || (() => {})}
@@ -871,6 +991,7 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
           onDeleteSubZone={onDeleteSubZone}
           selectedSubZoneId={selectedSubZoneId}
           onSelectSubZone={onSelectSubZone}
+          onAssignElementToZone={onAssignElementToZone}
           bounds={{
             top: contentTopPx,
             left: padLeftPx,
@@ -916,7 +1037,7 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
             <div key={`multi-page-col-${pageNum}`} className="flex flex-col items-center flex-shrink-0">
               {/* Page Indicator Top Pill */}
               <div className="mb-2 text-xs font-bold text-slate-800 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-300 shadow-2xs flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#78C841] animate-pulse" />
                 <span>
                   Trang {pageNum}: {pageNum === 1 ? 'Trang đầu / Bìa' : 'Thân bài & Cột nội dung'}
                 </span>

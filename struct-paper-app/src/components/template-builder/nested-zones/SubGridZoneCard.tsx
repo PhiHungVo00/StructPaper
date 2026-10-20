@@ -74,7 +74,7 @@ export const SubGridZoneCard: React.FC<SubGridZoneCardProps> = ({
         isMoving
           ? 'opacity-35 border-[#78C841] scale-[0.98]'
           : isSelected
-            ? 'bg-emerald-50/80 border-[#78C841] shadow-xs ring-2 ring-[#78C841]/40'
+            ? 'bg-[#78C841]/10 border-[#78C841] shadow-xs ring-2 ring-[#78C841]/40'
             : 'bg-white hover:bg-zinc-50 border-zinc-200/90 shadow-2xs hover:border-zinc-400'
       }`}
     >
@@ -104,7 +104,7 @@ export const SubGridZoneCard: React.FC<SubGridZoneCardProps> = ({
             </div>
           ) : (
             <span
-              className="text-xs font-extrabold text-zinc-900 truncate hover:text-emerald-700 cursor-text"
+              className="text-xs font-extrabold text-zinc-900 truncate hover:text-[#14532D] cursor-text"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsEditing(true);
@@ -124,7 +124,7 @@ export const SubGridZoneCard: React.FC<SubGridZoneCardProps> = ({
               e.stopPropagation();
               onDrillDown(subZone.id);
             }}
-            className="px-1.5 py-0.5 rounded-lg bg-zinc-100 hover:bg-[#78C841]/20 hover:text-emerald-800 text-zinc-700 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+            className="px-1.5 py-0.5 rounded-lg bg-zinc-100 hover:bg-[#78C841]/20 hover:text-[#14532D] text-zinc-700 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
             title="Chia ô / Chia tiếp vùng con bên trong vùng này (Nhấp đúp chuột)"
           >
             <Layers className="w-3 h-3 text-[#78C841]" />
@@ -158,7 +158,7 @@ export const SubGridZoneCard: React.FC<SubGridZoneCardProps> = ({
           C{area.colStart}..{area.colStart + area.colSpan - 1} × R{area.rowStart}..{area.rowStart + area.rowSpan - 1}
         </span>
         {hasNestedChildren ? (
-          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-[#14532D] bg-[#78C841]/20 px-1.5 py-0.5 rounded-full">
             <Layers className="w-2.5 h-2.5" />
             {subZone.subZones?.length} vùng con
           </span>

@@ -12,7 +12,6 @@ import { ZoneCssLayoutStudio } from '../layout-engine';
 import { NestedZoneStudio } from '../nested-zones';
 import { Select } from '@/components/ui/Select';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { isZoneOnPage } from '../UniversalLiveA4Preview';
 import {
   LayoutGrid,
   Columns,
@@ -65,7 +64,6 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
   onFocusZone,
   currentPageNumber = 1,
 }) => {
-  const [pageFilter, setPageFilter] = useState<number | 'all'>('all');
   const [zoneEditModes, setZoneEditModes] = useState<Record<string, 'basic' | 'css-engine'>>({});
   const [showHelpPopup, setShowHelpPopup] = useState(false);
   const helpPopupRef = useRef<HTMLDivElement>(null);
@@ -173,10 +171,10 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
       rowSpan: Math.min(2, currentGridConfig.rows),
       colSpan: currentGridConfig.columns,
     };
-    const targetPage = typeof pageFilter === 'number' ? pageFilter : (currentPageNumber || 1);
+    const targetPage = currentPageNumber || 1;
     const newZone: LayoutZoneConfig = {
       id: `zone-${Date.now()}`,
-      name: `Phân vùng ${zones.length + 1}${targetPage > 1 ? ` (Trang ${targetPage})` : ''}`,
+      name: `Phân vùng ${zones.length + 1}`,
       description: 'Phân vùng tạo mới',
       type: 'full-width',
       columns: 1,
@@ -454,43 +452,7 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
           </div>
         </div>
 
-        {/* Multi-Page Scope Switcher Tabs */}
-        {/* Bộ lọc phân vùng theo từng trang độc lập */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-200/70 rounded-2xl w-fit flex-wrap">
-          <button
-            type="button"
-            onClick={() => setPageFilter('all')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-              pageFilter === 'all'
-                ? 'bg-zinc-900 text-white shadow-2xs'
-                : 'text-zinc-600 hover:text-zinc-900'
-            }`}
-          >
-            📄 Tất cả ({zones.length})
-          </button>
-          {[1, 2, 3].map((p) => {
-            const count = zones.filter((z) => isZoneOnPage(z, p)).length;
-            return (
-              <button
-                key={`page-filter-${p}`}
-                type="button"
-                onClick={() => setPageFilter(p)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  pageFilter === p
-                    ? 'bg-zinc-900 text-white shadow-2xs ring-2 ring-[#78C841]/50'
-                    : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-              >
-                {p === 1 ? '🌟 Trang 1 (Bìa)' : `📖 Trang ${p}`} ({count})
-              </button>
-            );
-          })}
-        </div>
-
-        {zones.filter((z) => {
-          if (pageFilter === 'all') return true;
-          return isZoneOnPage(z, pageFilter);
-        }).length === 0 ? (
+        {zones.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-zinc-50 border border-dashed border-zinc-300 space-y-3">
             <LayoutGrid className="w-8 h-8 text-zinc-400 mx-auto" />
             <p className="text-xs font-bold text-zinc-700">Chưa có phân vùng nào</p>
@@ -508,12 +470,7 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {zones
-              .filter((z) => {
-                if (pageFilter === 'all') return true;
-                return isZoneOnPage(z, pageFilter);
-              })
-              .map((zone, index) => {
+            {zones.map((zone, index) => {
               const isSelected = selectedZoneId === zone.id;
 
               return (

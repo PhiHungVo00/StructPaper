@@ -14,6 +14,7 @@ interface ZoneSubGridOverlayProps {
   onAddSubZoneWithArea?: (parentId: string, area: GridAreaCoords) => void;
   onUpdateSubZone?: (subZoneId: string, updated: Partial<LayoutZoneConfig>) => void;
   onDeleteSubZone?: (subZoneId: string) => void;
+  onAssignElementToZone?: (elementId: string, zoneId: string) => void;
 }
 
 export const ZoneSubGridOverlay: React.FC<ZoneSubGridOverlayProps> = ({
@@ -24,6 +25,7 @@ export const ZoneSubGridOverlay: React.FC<ZoneSubGridOverlayProps> = ({
   onAddSubZoneWithArea,
   onUpdateSubZone,
   onDeleteSubZone,
+  onAssignElementToZone,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const subCols = parentZone.subGridConfig?.columns || 2;
@@ -403,11 +405,11 @@ export const ZoneSubGridOverlay: React.FC<ZoneSubGridOverlayProps> = ({
                   colSpan: 1,
                 });
               }}
-              className="rounded-lg border border-dashed border-zinc-400/50 hover:border-[#78C841] bg-white/40 hover:bg-[#78C841]/15 transition-all cursor-crosshair flex flex-col items-center justify-center shadow-2xs group/subcell select-none"
+              className="rounded-lg border border-dashed border-[#78C841]/35 hover:border-[#78C841] bg-[#78C841]/5 hover:bg-[#78C841]/20 transition-all cursor-crosshair flex flex-col items-center justify-center group/subcell select-none"
               title={`Ô con [Dòng ${r}, Cột ${c}]. Kéo chuột để quét ô hoặc bấm để tạo phân vùng con`}
             >
               <Plus className="w-3 h-3 text-zinc-500 group-hover/subcell:text-[#14532D] transition-colors" />
-              <span className="text-[7px] font-mono text-zinc-400 group-hover/subcell:text-zinc-700 font-bold select-none">
+              <span className="text-[7px] font-mono text-zinc-500 group-hover/subcell:text-[#14532D] font-bold select-none">
                 {c}×{r}
               </span>
             </div>
@@ -431,6 +433,7 @@ export const ZoneSubGridOverlay: React.FC<ZoneSubGridOverlayProps> = ({
           onUpdateSubZone={onUpdateSubZone}
           onStartMove={handleStartMove}
           onStartResize={handleStartResize}
+          onAssignElementToZone={onAssignElementToZone}
         />
       ))}
     </div>

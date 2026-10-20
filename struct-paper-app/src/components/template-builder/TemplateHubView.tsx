@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UniversalTemplateSchema } from '@/types/template-builder';
 import {
-  UNIVERSAL_PRESETS,
-  CUSTOM_BLANK_CANVAS,
-} from '@/lib/template-builder/universal-presets';
+  templateRegistry,
+  importTemplateFromFile,
+  exportTemplateToFile,
+} from '@/lib/template-engine/storage';
+import { BUILT_IN_TEMPLATES, CUSTOM_BLANK_TEMPLATE } from '@/data/templates';
 import {
   Plus,
   Search,
@@ -24,6 +26,8 @@ import {
   CheckCircle2,
   FolderArchive,
   ArrowUpDown,
+  FileUp,
+  Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/DynamicIslandToast';
@@ -38,6 +42,7 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
   onCreateBlank,
 }) => {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateBlank = () => {
     if (onCreateBlank) {
@@ -59,23 +64,48 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+  const [systemTemplates, setSystemTemplates] = useState<UniversalTemplateSchema[]>(BUILT_IN_TEMPLATES);
   const [customTemplates, setCustomTemplates] = useState<UniversalTemplateSchema[]>([]);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [isLoadingRemote, setIsLoadingRemote] = useState<boolean>(false);
 
-  // Load custom templates from localStorage
+  // Load custom templates and fetch registered templates from API
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('structpaper_custom_templates_list');
-      if (saved) {
-        setCustomTemplates(JSON.parse(saved));
+    // 1. Local custom templates
+    setCustomTemplates(templateRegistry.getLocalCustomTemplates());
+
+    // 2. Fetch remote system templates dynamically from /api/templates
+    async function loadRemoteTemplates() {
+      setIsLoadingRemote(true);
+      try {
+        const res = await fetch('/api/templates');
+        if (res.ok) {
+          const manifests = await res.json();
+          if (Array.isArray(manifests) && manifests.length > 0) {
+            const loadedList: UniversalTemplateSchema[] = [];
+            for (const m of manifests) {
+              const tmpl = await templateRegistry.loadTemplate(m.id);
+              if (tmpl) loadedList.push(tmpl);
+            }
+            if (loadedList.length > 0) {
+              setSystemTemplates(loadedList);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load remote template list, fallback to built-in files:', err);
+      } finally {
+        setIsLoadingRemote(false);
       }
-    } catch {}
+    }
+
+    loadRemoteTemplates();
   }, []);
 
-  // Merge custom user templates + universal presets (deduped by id)
+  // Merge custom user templates + system templates (deduped by id)
   const allTemplates: UniversalTemplateSchema[] = [
     ...customTemplates,
-    ...UNIVERSAL_PRESETS.filter(
+    ...systemTemplates.filter(
       (p) => !customTemplates.some((c) => c.id === p.id) && p.id !== 'custom_blank_canvas'
     ),
   ];
@@ -118,34 +148,57 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
   // Delete a user-saved template
   const handleDeleteTemplate = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const updated = customTemplates.filter((t) => t.id !== id);
-      setCustomTemplates(updated);
-      localStorage.setItem('structpaper_custom_templates_list', JSON.stringify(updated));
-      toast.success('Xóa template', 'Đã xóa template khỏi thư viện');
-      setActiveMenuId(null);
-    } catch {
-      toast.error('Lỗi khi xóa template');
-    }
+    templateRegistry.deleteCustomTemplate(id);
+    setCustomTemplates(templateRegistry.getLocalCustomTemplates());
+    toast.success('Xóa template', 'Đã xóa template khỏi thư viện');
+    setActiveMenuId(null);
   };
 
   // Duplicate a template
   const handleDuplicateTemplate = (tmpl: UniversalTemplateSchema, e: React.MouseEvent) => {
     e.stopPropagation();
+    const dup = templateRegistry.duplicateTemplate(tmpl);
+    setCustomTemplates(templateRegistry.getLocalCustomTemplates());
+    toast.success('Nhân bản', `Đã nhân bản "${tmpl.name}"`);
+    setActiveMenuId(null);
+  };
+
+  // Export template to standard JSON file
+  const handleExportTemplate = (tmpl: UniversalTemplateSchema, e: React.MouseEvent) => {
+    e.stopPropagation();
+    exportTemplateToFile(tmpl);
+    toast.success('Xuất file JSON', `Đã tải xuống file template "${tmpl.name}"!`);
+    setActiveMenuId(null);
+  };
+
+  // Import external template JSON file
+  const handleImportFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     try {
-      const newTmpl: UniversalTemplateSchema = {
-        ...JSON.parse(JSON.stringify(tmpl)),
-        id: `template_copy_${Date.now()}`,
-        name: `${tmpl.name} (Bản sao)`,
-        updatedAt: new Date().toISOString().split('T')[0],
-      };
-      const updated = [newTmpl, ...customTemplates];
-      setCustomTemplates(updated);
-      localStorage.setItem('structpaper_custom_templates_list', JSON.stringify(updated));
-      toast.success('Nhân bản', `Đã nhân bản "${tmpl.name}"`);
-      setActiveMenuId(null);
-    } catch {
-      toast.error('Lỗi khi nhân bản');
+      const res = await importTemplateFromFile(file);
+      if (res.success && res.schema) {
+        templateRegistry.saveCustomTemplate(res.schema);
+        setCustomTemplates(templateRegistry.getLocalCustomTemplates());
+        toast.success(
+          'Nạp file thành công',
+          `Đã nhập và lưu template "${res.schema.name}" vào thư viện!`
+        );
+      } else {
+        const firstErr =
+          res.validation.errors[0]?.message ||
+          'File JSON không đúng chuẩn cấu trúc StructPaper UniversalTemplateSchema';
+        toast.error('Lỗi cấu trúc Template', firstErr);
+      }
+    } catch (err: any) {
+      toast.error('Lỗi nạp file', err?.message || 'Không thể đọc file JSON');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -158,7 +211,16 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* 1. Header Search Bar (Google Docs Inspired & StructPaper Styled) */}
+      {/* Hidden File Input for Importing Template JSON */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+
+      {/* 1. Header Search Bar & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
@@ -168,28 +230,41 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Chọn mẫu sẵn có để tùy biến hoặc bắt đầu từ trang trắng với Trình tạo Template phổ quát.
+            Lưu trữ, tải lên hoặc xuất file JSON template bài báo học thuật theo chuẩn quốc tế và ĐHQG-HCM.
           </p>
         </div>
 
-        {/* Search Input Box */}
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm mẫu tạp chí, chuẩn in ấn..."
-            className="w-full bg-white border border-slate-200/80 rounded-2xl pl-9 pr-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 shadow-xs transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold"
-            >
-              ✕
-            </button>
-          )}
+        {/* Search & Import Buttons */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* Import JSON File Button */}
+          <button
+            onClick={handleImportFileClick}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200/90 hover:border-[#78C841] text-slate-700 hover:text-[#2d5d11] rounded-2xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all cursor-pointer shrink-0"
+            title="Nạp file template .json từ máy tính của bạn"
+          >
+            <FileUp className="w-4 h-4 text-[#78C841]" />
+            <span>Nạp file mẫu</span>
+          </button>
+
+          {/* Search Input Box */}
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm mẫu tạp chí..."
+              className="w-full bg-white border border-slate-200/80 rounded-2xl pl-9 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 shadow-xs transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -204,7 +279,7 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
           </div>
 
           <div className="text-xs text-slate-400 font-medium hidden sm:block">
-            Nhấn vào dấu cộng để tạo mẫu từ trang trắng
+            Tất cả template được nạp động từ file JSON chuẩn StructPaper
           </div>
         </div>
 
@@ -231,8 +306,8 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Starter Presets */}
-          {UNIVERSAL_PRESETS.filter((p) => p.id !== 'custom_blank_canvas').map((preset) => (
+          {/* Quick Starter Presets loaded dynamically */}
+          {systemTemplates.slice(0, 5).map((preset) => (
             <div
               key={preset.id}
               onClick={() => handleOpenStudio(preset)}
@@ -259,11 +334,11 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
                     <div className="grid grid-cols-12 gap-1 pt-1">
                       <div className="col-span-4 bg-slate-100 rounded p-0.5 space-y-0.5">
                         <div className="h-0.5 w-full bg-slate-300" />
-                        <div className="h-0.5 w-2/3 bg-slate-300" />
+                        <div className="h-0.5 w-3/4 bg-slate-300" />
                       </div>
-                      <div className="col-span-8 bg-blue-50/70 border-l border-blue-400 rounded p-0.5 space-y-0.5">
-                        <div className="h-0.5 w-full bg-slate-400" />
-                        <div className="h-0.5 w-full bg-slate-400" />
+                      <div className="col-span-8 bg-blue-50/60 rounded p-0.5 space-y-0.5">
+                        <div className="h-0.5 w-full bg-slate-300" />
+                        <div className="h-0.5 w-4/5 bg-slate-300" />
                       </div>
                     </div>
                   ) : (
@@ -284,7 +359,7 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
 
                 {/* Bottom line */}
                 <div className="flex items-center justify-between text-[7px] text-slate-400 font-mono">
-                  <span>A4</span>
+                  <span>{preset.pageArchitecture?.size || 'A4'}</span>
                   <span
                     className="w-1.5 h-1.5 rounded-full"
                     style={{ backgroundColor: preset.primaryColor }}
@@ -317,6 +392,12 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
               {filteredTemplates.length} mẫu
             </span>
+            {isLoadingRemote && (
+              <span className="flex items-center gap-1 text-[11px] text-slate-400 ml-2">
+                <Loader2 className="w-3 h-3 animate-spin text-[#78C841]" />
+                Đang đồng bộ file...
+              </span>
+            )}
           </div>
 
           {/* Right Controls: Filters, Sort, View mode */}
@@ -353,27 +434,27 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
               <option value="name">Sắp xếp: Tên A-Z</option>
             </select>
 
-            {/* View Mode Switcher (Grid / List) */}
+            {/* View Toggle */}
             <div className="flex items-center bg-slate-100 p-1 rounded-xl">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-all ${
                   viewMode === 'grid'
                     ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-400 hover:text-slate-700'
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
-                title="Dạng lưới (Grid)"
+                title="Dạng lưới"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-lg transition-all ${
                   viewMode === 'list'
                     ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-400 hover:text-slate-700'
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
-                title="Dạng danh sách (List)"
+                title="Dạng danh sách"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
@@ -381,7 +462,7 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
           </div>
         </div>
 
-        {/* Templates Display: Grid Mode */}
+        {/* 4. Template Display Area */}
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredTemplates.map((tmpl) => {
@@ -417,7 +498,7 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
 
                         {/* Menu Dropdown */}
                         {isMenuOpen && (
-                          <div className="absolute right-0 top-6 z-20 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95">
+                          <div className="absolute right-0 top-6 z-20 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95">
                             <button
                               onClick={() => {
                                 handleOpenStudio(tmpl);
@@ -434,6 +515,13 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
                             >
                               <Copy className="w-3.5 h-3.5 text-slate-600" />
                               <span>Nhân bản mẫu</span>
+                            </button>
+                            <button
+                              onClick={(e) => handleExportTemplate(tmpl, e)}
+                              className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium"
+                            >
+                              <Download className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Tải file mẫu (.json)</span>
                             </button>
                             {isCustom && (
                               <button
@@ -533,10 +621,18 @@ export const TemplateHubView: React.FC<TemplateHubViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6 text-xs text-slate-500 shrink-0">
+                  <div className="flex items-center gap-4 text-xs text-slate-500 shrink-0">
                     <span className="hidden sm:inline font-mono">{tmpl.pageArchitecture.size}</span>
                     <span className="hidden md:inline font-medium">{tmpl.author}</span>
                     <span className="text-[11px] text-slate-400">{tmpl.updatedAt}</span>
+
+                    <button
+                      onClick={(e) => handleExportTemplate(tmpl, e)}
+                      className="p-1.5 rounded-xl border border-slate-200 hover:border-[#78C841] text-slate-600 hover:text-[#2d5d11] transition-all"
+                      title="Tải xuống file template .json"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
 
                     <button
                       onClick={(e) => {

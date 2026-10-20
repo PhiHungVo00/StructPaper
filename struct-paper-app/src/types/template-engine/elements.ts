@@ -20,7 +20,13 @@ export type StandardSemanticElementType =
   | 'callout-box'         // Hộp điểm nhấn, tóm tắt chính (Highlights, Note)
   | 'bibliography-item'   // Mục tài liệu tham khảo (References / Vancouver / APA)
   | 'running-header'      // Dòng tiêu đề đầu trang (Running Header)
-  | 'running-footer';     // Dòng chân trang & số trang (Running Footer)
+  | 'running-footer'      // Dòng chân trang & số trang (Running Footer)
+  | 'article-header-badge'// Khối phân loại bài báo & Open Access đầu trang
+  | 'citation-strip'      // Dải trích dẫn bài báo chân trang bìa
+  | 'abbreviations-list'  // Danh mục các từ viết tắt học thuật
+  | 'conflict-of-interest'// Tuyên bố xung đột lợi ích
+  | 'author-contribution' // Đóng góp của các tác giả (CRediT)
+  | 'acknowledgement-box';// Lời cảm ơn & Nguồn tài trợ nghiên cứu
 
 export type ElementCategory =
   | 'frontmatter'   // Phần đầu bài báo (Tiêu đề, tác giả, tóm tắt)
@@ -39,6 +45,13 @@ export interface SemanticElementMeta {
 
 export const SEMANTIC_ELEMENTS_CATALOG: SemanticElementMeta[] = [
   // Frontmatter
+  {
+    type: 'article-header-badge',
+    label: 'Thẻ đầu trang & Loại bài báo',
+    category: 'frontmatter',
+    description: 'Thẻ Open Access Full Text Article và loại bài báo (Bài tổng quan)',
+    defaultColumnSpan: 'all',
+  },
   {
     type: 'article-title',
     label: 'Tựa đề bài báo',
@@ -59,6 +72,13 @@ export const SEMANTIC_ELEMENTS_CATALOG: SemanticElementMeta[] = [
     category: 'frontmatter',
     description: 'Viện trường, khoa bộ môn, địa chỉ công tác',
     defaultColumnSpan: 'single',
+  },
+  {
+    type: 'citation-strip',
+    label: 'Dải trích dẫn bài báo',
+    category: 'frontmatter',
+    description: 'Dải hướng dẫn cách trích dẫn bài báo chân trang bìa (#DBEAFE)',
+    defaultColumnSpan: 'all',
   },
   {
     type: 'metadata-sidebar',
@@ -146,6 +166,34 @@ export const SEMANTIC_ELEMENTS_CATALOG: SemanticElementMeta[] = [
 
   // Backmatter
   {
+    type: 'abbreviations-list',
+    label: 'Danh mục từ viết tắt',
+    category: 'backmatter',
+    description: 'Bảng từ viết tắt học thuật 2 cột chuẩn y sinh (ASA, PPI, COX-1...)',
+    defaultColumnSpan: 'single',
+  },
+  {
+    type: 'conflict-of-interest',
+    label: 'Xung đột lợi ích',
+    category: 'backmatter',
+    description: 'Tuyên bố đạo đức xuất bản về mâu thuẫn quyền lợi',
+    defaultColumnSpan: 'single',
+  },
+  {
+    type: 'author-contribution',
+    label: 'Đóng góp của các tác giả',
+    category: 'backmatter',
+    description: 'Phân định chi tiết vai trò của tác giả theo phân loại CRediT',
+    defaultColumnSpan: 'single',
+  },
+  {
+    type: 'acknowledgement-box',
+    label: 'Lời cảm ơn & Tài trợ',
+    category: 'backmatter',
+    description: 'Ghi nhận đóng góp và công bố mã số đề tài tài trợ nghiên cứu',
+    defaultColumnSpan: 'single',
+  },
+  {
     type: 'bibliography-item',
     label: 'Tài liệu tham khảo (References)',
     category: 'backmatter',
@@ -167,6 +215,7 @@ export const SEMANTIC_ELEMENTS_CATALOG: SemanticElementMeta[] = [
     defaultColumnSpan: 'all',
   },
 ];
+
 
 // --- FINITE ATTRIBUTE SETS (Kiểu SciSpace) ---
 

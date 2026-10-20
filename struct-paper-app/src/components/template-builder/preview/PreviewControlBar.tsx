@@ -58,12 +58,12 @@ export const PreviewControlBar: React.FC<PreviewControlBarProps> = ({
             onClick={onToggleGridOverlay}
             className={`h-8 px-3 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-200 select-none cursor-pointer ${
               showGridOverlay
-                ? 'bg-[#14532D] text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
+                ? 'bg-[#78C841] text-zinc-950 font-extrabold shadow-sm ring-2 ring-[#78C841]/40 hover:bg-[#6cb938]'
+                : 'bg-lime-50/80 hover:bg-lime-100/90 text-[#14532D] border border-[#78C841]/40'
             }`}
             title="Bật/Tắt Lớp phủ Lưới Phân vùng trên trang giấy"
           >
-            <LayoutGrid strokeWidth={2.5} className="w-3.5 h-3.5 text-[#78C841]" />
+            <LayoutGrid strokeWidth={2.5} className={`w-3.5 h-3.5 ${showGridOverlay ? 'text-zinc-950' : 'text-[#78C841]'}`} />
             <span>Lưới: {showGridOverlay ? 'Bật' : 'Tắt'}</span>
           </button>
         )}

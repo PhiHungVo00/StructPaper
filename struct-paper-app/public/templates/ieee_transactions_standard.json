@@ -1,0 +1,221 @@
+{
+  "$schema": "https://structpaper.org/schemas/template-v2.json",
+  "schemaVersion": "2.0.0",
+  "id": "ieee_transactions_standard",
+  "name": "IEEE Transactions Standard",
+  "category": "journal-article",
+  "description": "Mẫu chuẩn bài báo khoa học kỹ thuật IEEE: Drop cap đầu dòng, thân bài 2 cột sát lề, chỉ số trích dẫn trong ngoặc vuông [1].",
+  "author": "IEEE Publication Services",
+  "institution": "IEEE",
+  "version": "2.0.0",
+  "createdAt": "2026-02-01",
+  "updatedAt": "2026-10-20",
+  "primaryColor": "#00629B",
+  "secondaryColor": "#0F172A",
+  "tags": [
+    "IEEE",
+    "Kỹ thuật",
+    "Công nghệ",
+    "2 Cột"
+  ],
+  "specification": {
+    "pageArchitecture": {
+      "size": "Letter",
+      "orientation": "portrait",
+      "margins": {
+        "top": 18,
+        "bottom": 18,
+        "left": 14,
+        "right": 14
+      },
+      "pageNumbering": {
+        "position": "bottom-center",
+        "format": "arabic",
+        "prefixText": "",
+        "suppressOnFirstPage": false,
+        "startNumber": 1
+      },
+      "headers": {
+        "differentFirstPage": true,
+        "differentOddEven": false,
+        "firstPage": {
+          "leftText": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+          "centerText": "",
+          "rightText": "VOL. 46, NO. 10, OCTOBER 2026",
+          "fontFamily": "Times New Roman",
+          "fontSize": 7.5,
+          "textColor": "#475569",
+          "showDividerLine": true,
+          "dividerLineColor": "#CBD5E1",
+          "dividerLineThickness": 0.5
+        },
+        "oddPages": {
+          "leftText": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+          "centerText": "",
+          "rightText": "{page_number}",
+          "fontFamily": "Times New Roman",
+          "fontSize": 7.5,
+          "textColor": "#00629B",
+          "showDividerLine": true,
+          "dividerLineColor": "#00629B",
+          "dividerLineThickness": 0.5
+        },
+        "evenPages": {
+          "leftText": "{page_number}",
+          "centerText": "",
+          "rightText": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+          "fontFamily": "Times New Roman",
+          "fontSize": 7.5,
+          "textColor": "#00629B",
+          "showDividerLine": true,
+          "dividerLineColor": "#00629B",
+          "dividerLineThickness": 0.5
+        }
+      },
+      "footers": {
+        "differentFirstPage": false,
+        "differentOddEven": false,
+        "firstPage": {
+          "leftText": "",
+          "centerText": "",
+          "rightText": "",
+          "fontFamily": "Times New Roman",
+          "fontSize": 7,
+          "textColor": "#94A3B8",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        },
+        "oddPages": {
+          "leftText": "",
+          "centerText": "",
+          "rightText": "",
+          "fontFamily": "Times New Roman",
+          "fontSize": 7,
+          "textColor": "#94A3B8",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        },
+        "evenPages": {
+          "leftText": "",
+          "centerText": "",
+          "rightText": "",
+          "fontFamily": "Times New Roman",
+          "fontSize": 7,
+          "textColor": "#94A3B8",
+          "showDividerLine": false,
+          "dividerLineColor": "transparent",
+          "dividerLineThickness": 0
+        }
+      }
+    },
+    "gridConfig": {
+      "enabled": true,
+      "columns": 4,
+      "rows": 5,
+      "rowGap": 8,
+      "colGap": 8,
+      "gapSync": true,
+      "unit": "px"
+    },
+    "zones": [
+      {
+        "id": "zone_ieee_header",
+        "name": "Tiêu đề & Tác giả (Full-Width Trang 1)",
+        "description": "Tiêu đề bài báo IEEE",
+        "type": "full-width",
+        "columns": 1,
+        "columnGap": 0,
+        "showColumnRule": false,
+        "columnRuleColor": "transparent",
+        "page": 1,
+        "pageScope": "first-page",
+        "order": 1,
+        "gridArea": {
+          "rowStart": 1,
+          "colStart": 1,
+          "rowSpan": 1,
+          "colSpan": 4
+        }
+      },
+      {
+        "id": "zone_ieee_body_p1",
+        "name": "Thân bài 2 Cột (Trang 1)",
+        "description": "Tóm tắt & Thân bài 2 cột mở đầu",
+        "type": "multi-column",
+        "columns": 2,
+        "columnGap": 4.8,
+        "showColumnRule": false,
+        "columnRuleColor": "transparent",
+        "page": 1,
+        "pageScope": "first-page",
+        "order": 2,
+        "gridArea": {
+          "rowStart": 2,
+          "colStart": 1,
+          "rowSpan": 4,
+          "colSpan": 4
+        }
+      },
+      {
+        "id": "zone_ieee_body_subsequent",
+        "name": "Thân bài 2 Cột (Trang 2+)",
+        "description": "Thân bài 2 cột liên tục",
+        "type": "multi-column",
+        "columns": 2,
+        "columnGap": 4.8,
+        "showColumnRule": false,
+        "columnRuleColor": "transparent",
+        "page": 2,
+        "pageScope": "subsequent-pages",
+        "order": 3,
+        "gridArea": {
+          "rowStart": 1,
+          "colStart": 1,
+          "rowSpan": 5,
+          "colSpan": 4
+        }
+      }
+    ],
+    "elements": [
+      {
+        "id": "elem_ieee_title",
+        "type": "article-title",
+        "name": "Tiêu đề IEEE",
+        "zoneId": "zone_ieee_header",
+        "order": 1,
+        "spanColumns": true,
+        "visible": true,
+        "styling": {
+          "fontFamily": "Times New Roman",
+          "fontSize": 22,
+          "fontWeight": "bold",
+          "fontStyle": "normal",
+          "textColor": "#0F172A",
+          "textAlign": "center",
+          "lineHeight": 1.15,
+          "textTransform": "none",
+          "backgroundColor": "transparent",
+          "borderStyle": "none",
+          "borderColor": "transparent",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "margin": {
+            "top": 0,
+            "bottom": 6
+          }
+        },
+        "specialProps": {
+          "customContentSample": "Deep Residual Learning for Image Recognition"
+        }
+      }
+    ]
+  }
+}

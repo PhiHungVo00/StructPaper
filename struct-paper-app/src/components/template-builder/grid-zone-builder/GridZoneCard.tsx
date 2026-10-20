@@ -33,6 +33,7 @@ interface GridZoneCardProps {
   onDeleteSubZone?: (subZoneId: string) => void;
   selectedSubZoneId?: string | null;
   onSelectSubZone?: (subZoneId: string) => void;
+  onAssignElementToZone?: (elementId: string, zoneId: string) => void;
 }
 
 const ZONE_TINTS = [
@@ -87,9 +88,11 @@ export const GridZoneCard: React.FC<GridZoneCardProps> = ({
   onDeleteSubZone,
   selectedSubZoneId,
   onSelectSubZone,
+  onAssignElementToZone,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(zone.name);
+  const [isCardDropTarget, setIsCardDropTarget] = useState(false);
 
   const blockType = isSecondary ? 'secondary' : 'primary';
   const gridArea = (isSecondary ? zone.secondaryGridArea : zone.gridArea) || {
@@ -131,20 +134,57 @@ export const GridZoneCard: React.FC<GridZoneCardProps> = ({
         e.stopPropagation();
         onDrillDown?.(zone.id);
       }}
+      onDragOver={(e) => {
+        if (
+          e.dataTransfer.types.includes('application/structpaper-element-id') ||
+          e.dataTransfer.types.includes('text/plain')
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = 'copy';
+          if (!isCardDropTarget) setIsCardDropTarget(true);
+        }
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        setIsCardDropTarget(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCardDropTarget(false);
+        const elemId =
+          e.dataTransfer.getData('application/structpaper-element-id') ||
+          e.dataTransfer.getData('text/plain');
+        if (elemId && onAssignElementToZone) {
+          onAssignElementToZone(elemId, zone.id);
+        }
+      }}
       style={{
         gridRow: `${gridArea.rowStart} / span ${gridArea.rowSpan}`,
         gridColumn: `${gridArea.colStart} / span ${gridArea.colSpan}`,
       }}
       className={`group relative rounded-xl select-none cursor-grab active:cursor-grabbing border-2 border-dashed transition-all ${
-        isFocused
-          ? 'ring-4 ring-[#78C841] shadow-[0_0_24px_rgba(120,200,65,0.4)] border-[#78C841] bg-white/70 z-30'
-          : isMoving
-            ? 'opacity-35 border-[#78C841] scale-[0.98]'
-            : isSelected
-              ? tint.selected
-              : `${tint.base} hover:border-zinc-700`
+        isCardDropTarget
+          ? 'ring-3 ring-[#78C841] bg-[#78C841]/20 border-[#78C841] z-50 shadow-xl'
+          : isFocused
+            ? 'ring-3 ring-[#78C841] shadow-[0_0_20px_rgba(120,200,65,0.25)] border-[#78C841] bg-emerald-500/5 z-30'
+            : isMoving
+              ? 'opacity-35 border-[#78C841] scale-[0.98]'
+              : isSelected
+                ? tint.selected
+                : `${tint.base} hover:border-zinc-700`
       }`}
     >
+      {/* Center Drag & Drop Target Overlay */}
+      {isCardDropTarget && (
+        <div className="absolute inset-0 bg-[#78C841]/25 border-2 border-dashed border-[#78C841] rounded-xl z-50 flex items-center justify-center p-2 text-center pointer-events-none animate-fadeIn backdrop-blur-2xs shadow-xl">
+          <div className="bg-white/95 text-[#14532D] text-xs font-black px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border border-[#78C841]/50">
+            <span className="text-sm">📥</span>
+            <span>Thả vào {zone.name}</span>
+          </div>
+        </div>
+      )}
       {/* Floating Top Zone Badge - absolute position */}
       <div className="absolute -top-3 left-1.5 flex items-center gap-1 z-40 pointer-events-auto select-none max-w-[calc(100%-60px)]">
         {/* Numeric index pill */}
@@ -260,6 +300,7 @@ export const GridZoneCard: React.FC<GridZoneCardProps> = ({
             onAddSubZoneWithArea={onAddSubZoneWithArea}
             onUpdateSubZone={onUpdateSubZone}
             onDeleteSubZone={onDeleteSubZone}
+            onAssignElementToZone={onAssignElementToZone}
           />
           <div className="absolute bottom-1.5 left-7 pointer-events-auto z-30">
             <span className="inline-flex items-center gap-1 text-[9px] font-bold text-zinc-900 bg-white/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-zinc-200/80 shadow-2xs">
