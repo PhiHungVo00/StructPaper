@@ -17,6 +17,7 @@ import { PreviewZoneContent } from './preview/PreviewZoneContent';
 import { ElementStyleContextMenu } from './preview/ElementStyleContextMenu';
 import { toast } from '@/components/DynamicIslandToast';
 import { ID630_DEMO_PAGES } from '@/lib/template-builder/id630-demo-pages';
+import { findZoneDeep } from './nested-zones/nestedZoneUtils';
 import { Plus } from 'lucide-react';
 
 export interface UniversalLiveA4PreviewProps {
@@ -1116,26 +1117,6 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
         primaryColor={primaryColor}
       />
 
-      {/* Active Focus Floating Banner on Canvas */}
-      {focusedZoneId && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-zinc-950/95 text-white backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-2xl border border-[#78C841]/60 flex items-center gap-2.5 text-xs font-bold animate-fadeIn pointer-events-auto">
-          <span className="w-2 h-2 rounded-full bg-[#78C841] animate-ping" />
-          <span>
-            Đang phân chia vùng con:{' '}
-            <span className="text-[#78C841] font-mono">
-              {zones.find((z) => z.id === focusedZoneId)?.name || 'Phân vùng'}
-            </span>
-          </span>
-          <button
-            type="button"
-            onClick={() => onFocusZone?.(null)}
-            className="px-2 py-0.5 rounded-full bg-white/20 hover:bg-white text-white hover:text-zinc-950 text-[10px] font-extrabold cursor-pointer transition-all ml-1 shadow-2xs"
-            title="Thoát chế độ phân chia vùng con để quay lại ma trận trang chính"
-          >
-            ✕ Thoát Focus
-          </button>
-        </div>
-      )}
 
       {/* Interactive Paper Grid Overlay - Active when toggled ON or when focused on a zone */}
       {(showGridOverlay || Boolean(focusedZoneId)) && onAddZoneWithArea && onUpdateZoneArea && onDeleteZone && (

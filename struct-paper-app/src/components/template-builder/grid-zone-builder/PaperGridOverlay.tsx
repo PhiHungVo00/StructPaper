@@ -10,6 +10,7 @@ import {
   getZoneAtCell,
 } from '@/types/grid-zones';
 import { GridZoneCard } from './GridZoneCard';
+import { findZoneDeep } from '../nested-zones/nestedZoneUtils';
 import { Plus, Move } from 'lucide-react';
 import { toast } from '@/components/DynamicIslandToast';
 
@@ -703,7 +704,10 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
         {/* 2. Positioned Active Zone Blocks (Primary & Secondary) */}
         {zones.map((zone, idx) => {
           if (!zone.gridArea) return null;
-          const isFocused = focusedZoneId === zone.id;
+          const containsFocused = Boolean(
+            focusedZoneId && zone.subZones && findZoneDeep(zone.subZones, focusedZoneId)
+          );
+          const isFocused = focusedZoneId === zone.id || containsFocused;
           const globalIndex = allZones ? allZones.findIndex((z) => z.id === zone.id) : idx;
           const effectiveIndex = globalIndex >= 0 ? globalIndex : idx;
 

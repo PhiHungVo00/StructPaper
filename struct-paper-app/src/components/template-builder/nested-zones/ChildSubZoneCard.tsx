@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LayoutZoneConfig } from '@/types/template-builder';
-import { X, Layers, Edit2 } from 'lucide-react';
+import { X, Layers, Move } from 'lucide-react';
 
 interface ChildSubZoneCardProps {
   subZone: LayoutZoneConfig;
@@ -20,34 +20,36 @@ interface ChildSubZoneCardProps {
   onAssignElementToZone?: (elementId: string, zoneId: string) => void;
 }
 
-const SUBZONE_TINTS = [
+const ZONE_TINTS = [
   {
-    base: 'bg-[#78C841]/12 hover:bg-[#78C841]/22 border-[#78C841] hover:border-[#6cb938] text-zinc-950',
-    selected: 'bg-[#78C841]/25 border-[#78C841] ring-2 ring-[#78C841]/60 shadow-md z-20',
-    indexBg: 'bg-[#14532D] text-white',
-    labelBg: 'bg-white/90 text-[#14532D] border-[#78C841]/40',
-    badge: 'bg-white/90 text-[#14532D] border-[#78C841]/30',
+    base: 'bg-emerald-500/15 border-emerald-600/70',
+    selected: 'bg-emerald-500/25 border-emerald-600 ring-2 ring-emerald-500/50 shadow-md',
+    badge: 'bg-emerald-50 text-emerald-800 border-emerald-200/60',
+    indexBg: 'bg-emerald-800',
   },
   {
-    base: 'bg-blue-500/12 hover:bg-blue-500/22 border-blue-600/70 hover:border-blue-600 text-blue-950',
-    selected: 'bg-blue-500/25 border-blue-600 ring-2 ring-blue-500/60 shadow-md z-20',
-    indexBg: 'bg-blue-800 text-white',
-    labelBg: 'bg-white/85 text-blue-950 border-blue-200/80',
-    badge: 'bg-white/85 text-blue-900 border-blue-200/60',
+    base: 'bg-blue-500/15 border-blue-600/70',
+    selected: 'bg-blue-500/25 border-blue-600 ring-2 ring-blue-500/50 shadow-md',
+    badge: 'bg-blue-50 text-blue-800 border-blue-200/60',
+    indexBg: 'bg-blue-800',
   },
   {
-    base: 'bg-purple-500/12 hover:bg-purple-500/22 border-purple-600/70 hover:border-purple-600 text-purple-950',
-    selected: 'bg-purple-500/25 border-purple-600 ring-2 ring-purple-500/60 shadow-md z-20',
-    indexBg: 'bg-purple-800 text-white',
-    labelBg: 'bg-white/85 text-purple-950 border-purple-200/80',
-    badge: 'bg-white/85 text-purple-900 border-purple-200/60',
+    base: 'bg-amber-500/15 border-amber-600/70',
+    selected: 'bg-amber-500/25 border-amber-600 ring-2 ring-amber-500/50 shadow-md',
+    badge: 'bg-amber-50 text-amber-800 border-amber-200/60',
+    indexBg: 'bg-amber-800',
   },
   {
-    base: 'bg-amber-500/12 hover:bg-amber-500/22 border-amber-600/70 hover:border-amber-600 text-amber-950',
-    selected: 'bg-amber-500/25 border-amber-600 ring-2 ring-amber-500/60 shadow-md z-20',
-    indexBg: 'bg-amber-800 text-white',
-    labelBg: 'bg-white/85 text-amber-950 border-amber-200/80',
-    badge: 'bg-white/85 text-amber-900 border-amber-200/60',
+    base: 'bg-purple-500/15 border-purple-600/70',
+    selected: 'bg-purple-500/25 border-purple-600 ring-2 ring-purple-500/50 shadow-md',
+    badge: 'bg-purple-50 text-purple-800 border-purple-200/60',
+    indexBg: 'bg-purple-800',
+  },
+  {
+    base: 'bg-rose-500/15 border-rose-600/70',
+    selected: 'bg-rose-500/25 border-rose-600 ring-2 ring-rose-500/50 shadow-md',
+    badge: 'bg-rose-50 text-rose-800 border-rose-200/60',
+    indexBg: 'bg-rose-800',
   },
 ];
 
@@ -69,7 +71,7 @@ export const ChildSubZoneCard: React.FC<ChildSubZoneCardProps> = ({
   const [tempName, setTempName] = useState(subZone.name);
   const [isSubDropTarget, setIsSubDropTarget] = useState(false);
 
-  const tint = SUBZONE_TINTS[index % SUBZONE_TINTS.length];
+  const tint = ZONE_TINTS[index % ZONE_TINTS.length];
 
   useEffect(() => {
     setTempName(subZone.name);
@@ -104,6 +106,12 @@ export const ChildSubZoneCard: React.FC<ChildSubZoneCardProps> = ({
         e.stopPropagation();
         onSelect(subZone.id);
       }}
+      onDoubleClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button, input, [data-sub-resize]')) return;
+        e.stopPropagation();
+        onDrillDown?.(subZone.id);
+      }}
       onDragOver={(e) => {
         if (
           e.dataTransfer.types.includes('application/structpaper-element-id') ||
@@ -134,16 +142,16 @@ export const ChildSubZoneCard: React.FC<ChildSubZoneCardProps> = ({
         gridRow: `${area.rowStart} / span ${area.rowSpan}`,
         gridColumn: `${area.colStart} / span ${area.colSpan}`,
       }}
-      className={`group/subcard relative rounded-xl border-2 transition-all flex flex-col justify-between p-1.5 select-none ${
+      className={`group/subcard relative rounded-xl border-2 border-dashed transition-all select-none cursor-grab active:cursor-grabbing ${
         isSubDropTarget
           ? 'ring-3 ring-[#78C841] bg-[#78C841]/25 border-[#78C841] z-50 shadow-lg'
           : isMoving || isResizing
-            ? 'border-dashed border-[#78C841] bg-[#78C841]/20 opacity-50 scale-[0.98]'
+            ? 'opacity-35 border-[#78C841] scale-[0.98]'
             : isSelected
               ? tint.selected
-              : `${tint.base} shadow-xs cursor-grab active:cursor-grabbing`
+              : `${tint.base} hover:border-zinc-700`
       }`}
-      title={`Vùng con "${subZone.name}" (C${area.colStart}..${area.colStart + area.colSpan - 1} × R${area.rowStart}..${area.rowStart + area.rowSpan - 1}). Nhấp đúp tên để đổi tên, kéo góc để co giãn ô`}
+      title={`Phân vùng con "${subZone.name}" (${area.colSpan}c × ${area.rowSpan}r). Bấm đúp để chia vùng con tiếp theo.`}
     >
       {/* Drop Target Overlay */}
       {isSubDropTarget && (
@@ -154,120 +162,118 @@ export const ChildSubZoneCard: React.FC<ChildSubZoneCardProps> = ({
           </div>
         </div>
       )}
-      {/* 1. TOP-LEFT Corner Resize Handle (nw) */}
+
+      {/* Floating Top Zone Badge - absolute position (identical to GridZoneCard) */}
+      <div className="absolute -top-3 left-1.5 flex items-center gap-1 z-40 pointer-events-auto select-none max-w-[calc(100%-60px)]">
+        {/* Numeric index pill */}
+        <span
+          className={`px-1.5 h-5 rounded-md ${tint.indexBg} text-white flex items-center justify-center text-[10px] font-extrabold font-mono shadow-xs shrink-0`}
+          title={`Phân vùng con số ${index + 1}`}
+        >
+          {index + 1}
+        </span>
+
+        {/* Inline editable zone name */}
+        {isEditing ? (
+          <input
+            type="text"
+            value={tempName}
+            autoFocus
+            onChange={(e) => setTempName(e.target.value)}
+            onBlur={handleFinishEditing}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleFinishEditing();
+              if (e.key === 'Escape') {
+                setTempName(subZone.name);
+                setIsEditing(false);
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[10px] font-extrabold text-zinc-900 bg-white border border-[#78C841] rounded px-1 py-0.5 outline-none shadow-xs max-w-[120px]"
+          />
+        ) : (
+          <span
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setIsEditing(true);
+            }}
+            className="text-[10px] font-extrabold text-zinc-800 bg-white/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-zinc-200/80 shadow-2xs truncate max-w-[120px] hover:text-[#14532D]"
+            title={`${subZone.name} (Bấm đúp để đổi tên)`}
+          >
+            {subZone.name}
+          </span>
+        )}
+
+        {/* Grid coordinates tag */}
+        <span
+          className={`text-[9px] px-1.5 py-0.5 rounded-md ${tint.badge} border font-mono shadow-2xs shrink-0 font-bold`}
+        >
+          {area.colSpan}c×{area.rowSpan}r
+        </span>
+      </div>
+
+      {/* Center Drag to Move Grip Hint on Hover */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover/subcard:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full border border-zinc-200/90 shadow-sm text-[10px] font-extrabold text-zinc-700 pointer-events-none select-none">
+          <Move className="w-3 h-3 text-[#78C841]" />
+          <span>Kéo thả vùng con</span>
+        </div>
+      </div>
+
+      {/* Floating Drill Down Button (Layers) */}
+      {onDrillDown && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDrillDown(subZone.id);
+          }}
+          className="absolute -top-2.5 right-7 w-5 h-5 rounded-md bg-zinc-900 hover:bg-black text-white flex items-center justify-center text-[10px] font-bold cursor-pointer transition-transform hover:scale-110 active:scale-95 shadow-xs z-40 pointer-events-auto shrink-0"
+          title="Bấm đúp hoặc nhấn đây để phân chia vùng con cấp tiếp theo"
+        >
+          <Layers className="w-3 h-3 text-[#78C841]" />
+        </button>
+      )}
+
+      {/* Floating Delete Button */}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(subZone.id);
+          }}
+          className="absolute -top-2.5 right-1.5 w-5 h-5 rounded-md bg-[#DF4D89] hover:bg-[#c93c75] text-white flex items-center justify-center text-[10px] font-bold cursor-pointer transition-transform hover:scale-110 active:scale-95 shadow-xs z-40 pointer-events-auto shrink-0"
+          title="Xóa phân vùng con này"
+        >
+          <X className="w-3 h-3 stroke-[3]" />
+        </button>
+      )}
+
+      {/* 1. TOP-LEFT corner resize handle (Opposite corner ⌜) */}
       <div
         data-sub-resize="nw"
         onMouseDown={(e) => {
           e.stopPropagation();
           onStartResize?.(subZone.id, 'nw', e);
         }}
-        className="absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded bg-white/90 border border-zinc-300 text-zinc-600 hover:text-[#78C841] hover:border-[#78C841] cursor-nw-resize shadow-2xs hover:scale-110 active:scale-95 transition-transform flex items-center justify-center z-30 pointer-events-auto"
-        title="Kéo góc trên-trái để co giãn vùng con"
+        className="absolute top-1 left-1 p-1 rounded-md bg-white/90 border border-zinc-300 text-zinc-900 hover:text-[#78C841] hover:border-[#78C841] cursor-nw-resize transition-transform hover:scale-110 shadow-xs z-40 pointer-events-auto"
+        title="Kéo góc trên-trái để thay đổi kích thước & vị trí"
       >
-        <div className="w-2 h-2 border-l-2 border-t-2 border-current rounded-tl-[1px]" />
+        <div className="w-3 h-3 border-l-2 border-t-2 border-current rounded-tl-[2px]" />
       </div>
 
-      {/* Header: Index pill, name (editable), drill-down, delete */}
-      <div className="flex items-center justify-between gap-1 pl-3.5">
-        <div className="flex items-center gap-1 min-w-0">
-          <span className={`w-3.5 h-3.5 rounded ${tint.indexBg} text-white flex items-center justify-center text-[7.5px] font-mono font-bold shrink-0 shadow-2xs`}>
-            {index + 1}
-          </span>
-
-          {isEditing ? (
-            <input
-              type="text"
-              autoFocus
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              onBlur={handleFinishEditing}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleFinishEditing();
-                if (e.key === 'Escape') {
-                  setTempName(subZone.name);
-                  setIsEditing(false);
-                }
-              }}
-              className="text-[8.5px] font-extrabold text-zinc-900 bg-white/95 border border-[#78C841] rounded px-1 py-0.2 outline-none w-20 shadow-2xs"
-            />
-          ) : (
-            <span
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                setIsEditing(true);
-              }}
-              className={`text-[8.5px] font-extrabold ${tint.labelBg} backdrop-blur-xs px-1.5 py-0.5 rounded-md border truncate max-w-[95px] cursor-text hover:underline shadow-2xs`}
-              title="Nhấp đúp để đổi tên phân vùng con"
-            >
-              {subZone.name}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-            }}
-            className="p-0.5 rounded bg-white/70 hover:bg-white text-zinc-500 hover:text-zinc-900 border border-zinc-200/50 cursor-pointer opacity-0 group-hover/subcard:opacity-100 transition-opacity shadow-2xs"
-            title="Đổi tên"
-          >
-            <Edit2 className="w-2.5 h-2.5" />
-          </button>
-          {onDrillDown && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDrillDown(subZone.id);
-              }}
-              className="p-0.5 rounded bg-white/70 hover:bg-white text-zinc-600 hover:text-zinc-900 border border-zinc-200/50 cursor-pointer shadow-2xs"
-              title="Chia ô tiếp bên trong (Cấp L3)"
-            >
-              <Layers className="w-2.5 h-2.5 text-[#78C841]" />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(subZone.id);
-              }}
-              className="p-0.5 rounded bg-white/70 hover:bg-red-50 text-zinc-400 hover:text-red-500 border border-zinc-200/50 cursor-pointer shadow-2xs"
-              title="Xóa vùng con này"
-            >
-              <X className="w-2.5 h-2.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Footer: Coordinate tag & L3 depth info */}
-      <div className="flex items-center justify-between text-[7px] font-mono font-bold mt-1 pr-3.5">
-        <span className={`px-1 py-0.2 rounded border shadow-2xs backdrop-blur-xs ${tint.badge}`}>
-          {area.colSpan}c×{area.rowSpan}r
-        </span>
-        {subZone.subZones && subZone.subZones.length > 0 && (
-          <span className="text-[#14532D] bg-white/90 border border-[#78C841]/30 px-1 py-0.2 rounded font-extrabold shadow-2xs">
-            {subZone.subZones.length} L3
-          </span>
-        )}
-      </div>
-
-      {/* 2. BOTTOM-RIGHT Corner Resize Handle (se) */}
+      {/* 2. BOTTOM-RIGHT corner resize handle (⌟) */}
       <div
         data-sub-resize="se"
         onMouseDown={(e) => {
           e.stopPropagation();
           onStartResize?.(subZone.id, 'se', e);
         }}
-        className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded bg-white/90 border border-zinc-300 text-zinc-600 hover:text-[#78C841] hover:border-[#78C841] cursor-se-resize shadow-2xs hover:scale-110 active:scale-95 transition-transform flex items-center justify-center z-30 pointer-events-auto"
-        title="Kéo góc dưới-phải để co giãn vùng con"
+        className="absolute bottom-1 right-1 p-1 rounded-md bg-white/90 border border-zinc-300 text-zinc-900 hover:text-[#78C841] hover:border-[#78C841] cursor-se-resize transition-transform hover:scale-110 shadow-xs z-40 pointer-events-auto"
+        title="Kéo góc dưới-phải để thay đổi số cột & dòng chiếm chỗ"
       >
-        <div className="w-2 h-2 border-r-2 border-b-2 border-current rounded-br-[1px]" />
+        <div className="w-3 h-3 border-r-2 border-b-2 border-current rounded-br-[2px]" />
       </div>
     </div>
   );

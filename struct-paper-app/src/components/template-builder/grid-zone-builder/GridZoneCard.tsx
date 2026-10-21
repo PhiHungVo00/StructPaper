@@ -302,12 +302,6 @@ export const GridZoneCard: React.FC<GridZoneCardProps> = ({
             onDeleteSubZone={onDeleteSubZone}
             onAssignElementToZone={onAssignElementToZone}
           />
-          <div className="absolute bottom-1.5 left-7 pointer-events-auto z-30">
-            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-zinc-900 bg-white/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-zinc-200/80 shadow-2xs">
-              <Layers className="w-2.5 h-2.5 text-[#78C841]" />
-              {zone.subZones?.length || 0} vùng con ({subCols}×{subRows})
-            </span>
-          </div>
         </>
       )}
 
