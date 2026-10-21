@@ -17,6 +17,18 @@ interface PreviewZoneContentProps {
   floatingRules?: FloatingElementsDesignRules;
   unitMultiplier: number;
   onSelectElement?: (elementId: string) => void;
+  onUpdateElement?: (elementId: string, updated: Partial<SemanticElement>) => void;
+  onDuplicateElement?: (elementId: string) => void;
+  onDeleteElement?: (elementId: string) => void;
+  onNavigateToStep?: (step: string) => void;
+  showGridOverlay?: boolean;
+  editingElementId?: string | null;
+  editText?: string;
+  setEditText?: (text: string) => void;
+  onStartInlineEdit?: (element: SemanticElement) => void;
+  onSaveInlineEdit?: (elementId: string, text: string) => void;
+  onCancelInlineEdit?: () => void;
+  onContextMenuElement?: (element: SemanticElement, e: React.MouseEvent) => void;
 }
 
 /**
@@ -30,8 +42,91 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
   floatingRules,
   unitMultiplier,
   onSelectElement,
+  onUpdateElement,
+  onDuplicateElement,
+  onDeleteElement,
+  onNavigateToStep,
+  showGridOverlay = false,
+  editingElementId = null,
+  editText = '',
+  setEditText,
+  onStartInlineEdit,
+  onSaveInlineEdit,
+  onCancelInlineEdit,
+  onContextMenuElement,
 }) => {
   const renderInteractiveElement = (el: SemanticElement) => {
+    const isEditing = editingElementId === el.id;
+
+    if (isEditing) {
+      return (
+        <div
+          key={el.id}
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="relative z-50 my-1.5 p-2 bg-white rounded-xl border-2 border-[#78C841] shadow-2xl ring-4 ring-[#78C841]/20 animate-fadeIn"
+        >
+          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-zinc-200 text-[10px] text-zinc-600 select-none">
+            <span className="font-extrabold text-[#14532D] flex items-center gap-1.5">
+              <span>✏️ Sửa văn bản trực tiếp:</span>
+              <span className="text-zinc-800 font-bold truncate max-w-[140px]">{el.name}</span>
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-400 text-[9px] hidden sm:inline">Enter để lưu • Esc hủy</span>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSaveInlineEdit?.(el.id, editText);
+                }}
+                className="px-2 py-0.5 rounded bg-[#78C841] text-zinc-950 font-bold hover:bg-[#68B237] cursor-pointer text-[10px]"
+              >
+                Lưu ✓
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onCancelInlineEdit?.();
+                }}
+                className="px-1.5 py-0.5 rounded bg-zinc-200 hover:bg-zinc-300 text-zinc-700 cursor-pointer text-[10px]"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <textarea
+            autoFocus
+            rows={Math.min(6, Math.max(2, Math.ceil(editText.length / 50)))}
+            value={editText}
+            onChange={(e) => setEditText?.(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                onSaveInlineEdit?.(el.id, editText);
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                onCancelInlineEdit?.();
+              }
+            }}
+            onBlur={() => {
+              onSaveInlineEdit?.(el.id, editText);
+            }}
+            style={{
+              fontSize: `${el.styling?.fontSize || 10}pt`,
+              fontFamily: el.styling?.fontFamily || "'Times New Roman', serif",
+              fontWeight: el.styling?.fontWeight === 'bold' || el.styling?.fontWeight === 'extrabold' ? 700 : 400,
+              fontStyle: el.styling?.fontStyle || 'normal',
+              textAlign: (el.styling?.textAlign as any) || 'left',
+              color: el.styling?.textColor || '#111827',
+            }}
+            className="w-full bg-zinc-50/70 rounded-lg p-2 outline-none border border-zinc-200 focus:border-[#78C841] focus:bg-white resize-y font-serif text-sm leading-relaxed shadow-inner"
+          />
+        </div>
+      );
+    }
+
     return (
       <div
         key={el.id}
@@ -40,12 +135,25 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
           e.stopPropagation();
           onSelectElement?.(el.id);
         }}
+        onDoubleClick={(e) => {
+          if (!showGridOverlay) {
+            e.stopPropagation();
+            e.preventDefault();
+            onStartInlineEdit?.(el);
+          }
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onContextMenuElement?.(el, e);
+        }}
         className="relative group cursor-pointer transition-all duration-150 rounded-sm select-none hover:outline-2 hover:outline-dashed hover:outline-[#78C841] hover:outline-offset-2 hover:bg-[#78C841]/5"
-        title={el.name}
+        title={`${el.name} (Kích đúp để sửa chữ trực tiếp, Chuột phải để chỉnh định dạng Word/Excel)`}
       >
         {/* Floating Tag Badge: Only on hover, clean name text only */}
-        <span className="absolute -top-3 right-1.5 bg-slate-900/90 text-white text-[8pt] font-medium px-2 py-0.5 rounded-full shadow-md z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          {el.name}
+        <span className="absolute -top-3.5 right-1.5 bg-slate-900/95 text-white text-[8pt] font-medium px-2 py-0.5 rounded-full shadow-md z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap flex items-center gap-1.5">
+          <span>{el.name}</span>
+          <span className="text-[7pt] text-zinc-400 font-mono">✎ Đúp chuột / Phải chuột</span>
         </span>
 
         <DynamicElementRenderer
@@ -111,6 +219,18 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
                 floatingRules={floatingRules}
                 unitMultiplier={unitMultiplier}
                 onSelectElement={onSelectElement}
+                onUpdateElement={onUpdateElement}
+                onDuplicateElement={onDuplicateElement}
+                onDeleteElement={onDeleteElement}
+                onNavigateToStep={onNavigateToStep}
+                showGridOverlay={showGridOverlay}
+                editingElementId={editingElementId}
+                editText={editText}
+                setEditText={setEditText}
+                onStartInlineEdit={onStartInlineEdit}
+                onSaveInlineEdit={onSaveInlineEdit}
+                onCancelInlineEdit={onCancelInlineEdit}
+                onContextMenuElement={onContextMenuElement}
               />
             </div>
           );

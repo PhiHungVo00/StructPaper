@@ -14,6 +14,8 @@ import { PreviewControlBar } from './preview/PreviewControlBar';
 import { PreviewHeader } from './preview/PreviewHeader';
 import { PreviewFooter } from './preview/PreviewFooter';
 import { PreviewZoneContent } from './preview/PreviewZoneContent';
+import { ElementStyleContextMenu } from './preview/ElementStyleContextMenu';
+import { toast } from '@/components/DynamicIslandToast';
 import { ID630_DEMO_PAGES } from '@/lib/template-builder/id630-demo-pages';
 import { Plus } from 'lucide-react';
 
@@ -42,6 +44,10 @@ export interface UniversalLiveA4PreviewProps {
   selectedSubZoneId?: string | null;
   onSelectSubZone?: (subZoneId: string) => void;
   onAssignElementToZone?: (elementId: string, zoneId: string) => void;
+  onUpdateElement?: (elementId: string, updated: Partial<SemanticElement>) => void;
+  onDuplicateElement?: (elementId: string) => void;
+  onDeleteElement?: (elementId: string) => void;
+  onNavigateToStep?: (step: string) => void;
   className?: string;
   isStep4?: boolean;
   demoSpecialElements?: boolean;
@@ -575,6 +581,10 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
   selectedSubZoneId = null,
   onSelectSubZone,
   onAssignElementToZone,
+  onUpdateElement,
+  onDuplicateElement,
+  onDeleteElement,
+  onNavigateToStep,
   className = '',
   isStep4 = false,
   demoSpecialElements = false,
@@ -585,6 +595,53 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
   const [showPdfCompare, setShowPdfCompare] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(50);
   const [dragOverZoneId, setDragOverZoneId] = useState<string | null>(null);
+
+  // Direct Inline Text Editing on Preview (Double-Click)
+  const [editingElementId, setEditingElementId] = useState<string | null>(null);
+  const [editText, setEditText] = useState<string>('');
+
+  // Right-Click Floating Style Context Menu (Word / Excel Style)
+  const [contextMenu, setContextMenu] = useState<{
+    element: SemanticElement;
+    position: { x: number; y: number };
+  } | null>(null);
+
+  const handleStartInlineEdit = (el: SemanticElement) => {
+    const initialText =
+      el.specialProps?.customContentSample ??
+      ((el.specialProps as any)?.authorNames || el.name || '');
+    setEditText(initialText);
+    setEditingElementId(el.id);
+  };
+
+  const handleSaveInlineEdit = (elementId: string, newText: string) => {
+    const el = schema.elements.find((e) => e.id === elementId);
+    if (!el) return;
+    const isTitleOrHeading = el.type === 'heading' || el.type === 'article-title';
+    const isAuthor = el.type === 'author-block';
+
+    onUpdateElement?.(elementId, {
+      specialProps: {
+        ...el.specialProps,
+        customContentSample: newText,
+        ...(isAuthor ? ({ authorNames: newText } as any) : {}),
+      },
+      ...(isTitleOrHeading ? { name: newText.slice(0, 60) } : {}),
+    });
+    setEditingElementId(null);
+    toast.success('Đã lưu nội dung', `Đã cập nhật văn bản cho "${el.name}"`);
+  };
+
+  const handleCancelInlineEdit = () => {
+    setEditingElementId(null);
+  };
+
+  const handleContextMenuElement = (el: SemanticElement, e: React.MouseEvent) => {
+    setContextMenu({
+      element: el,
+      position: { x: e.clientX, y: e.clientY },
+    });
+  };
   // Dynamically calculate all contiguous pages covered by this template's zones
   const computeTemplatePages = (schemaZones: LayoutZoneConfig[], initPage = 1): number[] => {
     const pageSet = new Set<number>([1]);
@@ -863,6 +920,18 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
                     floatingRules={floatingRules}
                     unitMultiplier={unitMultiplier}
                     onSelectElement={onSelectElement}
+                    onUpdateElement={onUpdateElement}
+                    onDuplicateElement={onDuplicateElement}
+                    onDeleteElement={onDeleteElement}
+                    onNavigateToStep={onNavigateToStep}
+                    showGridOverlay={showGridOverlay}
+                    editingElementId={editingElementId}
+                    editText={editText}
+                    setEditText={setEditText}
+                    onStartInlineEdit={handleStartInlineEdit}
+                    onSaveInlineEdit={handleSaveInlineEdit}
+                    onCancelInlineEdit={handleCancelInlineEdit}
+                    onContextMenuElement={handleContextMenuElement}
                   />
                 </div>
 
@@ -924,6 +993,18 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
                       floatingRules={floatingRules}
                       unitMultiplier={unitMultiplier}
                       onSelectElement={onSelectElement}
+                      onUpdateElement={onUpdateElement}
+                      onDuplicateElement={onDuplicateElement}
+                      onDeleteElement={onDeleteElement}
+                      onNavigateToStep={onNavigateToStep}
+                      showGridOverlay={showGridOverlay}
+                      editingElementId={editingElementId}
+                      editText={editText}
+                      setEditText={setEditText}
+                      onStartInlineEdit={handleStartInlineEdit}
+                      onSaveInlineEdit={handleSaveInlineEdit}
+                      onCancelInlineEdit={handleCancelInlineEdit}
+                      onContextMenuElement={handleContextMenuElement}
                     />
                   </div>
                 )}
@@ -1133,6 +1214,31 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
             </div>
           )}
         </div>
+
+      {/* Floating Style Context Menu (Word / Excel Toolbar style) */}
+      {contextMenu && (
+        <ElementStyleContextMenu
+          element={contextMenu.element}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onUpdateElement={(id, updated) => {
+            onUpdateElement?.(id, updated);
+            setContextMenu((prev) =>
+              prev && prev.element.id === id
+                ? { ...prev, element: { ...prev.element, ...updated } }
+                : prev
+            );
+          }}
+          onStartInlineEdit={(el) => {
+            handleStartInlineEdit(el);
+            setContextMenu(null);
+          }}
+          onDuplicateElement={onDuplicateElement}
+          onDeleteElement={onDeleteElement}
+          onNavigateToStep={onNavigateToStep}
+          primaryColor={primaryColor}
+        />
+      )}
     </div>
   );
 };

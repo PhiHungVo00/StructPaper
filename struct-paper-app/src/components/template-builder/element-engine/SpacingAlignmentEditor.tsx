@@ -25,7 +25,7 @@ export const SpacingAlignmentEditor: React.FC<SpacingAlignmentEditorProps> = ({
             Khoảng Cách & Căn Lề Đoạn (Typst #set par)
           </h4>
         </div>
-        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#78C841]/15 text-[#14532D] border border-[#78C841]/40">
           #set par(justify: {attributes.textAlign === 'justify' ? 'true' : 'false'})
         </span>
       </div>

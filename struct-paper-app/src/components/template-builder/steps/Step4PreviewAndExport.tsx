@@ -92,7 +92,7 @@ export const Step4PreviewAndExport: React.FC<Step4PreviewAndExportProps> = ({
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/80">
+          <span className="text-[11px] font-mono font-bold text-[#14532D] bg-[#78C841]/15 px-2.5 py-1 rounded-xl border border-[#78C841]/40">
             Typst Compilation Engine (.typ)
           </span>
         </div>
@@ -113,7 +113,7 @@ export const Step4PreviewAndExport: React.FC<Step4PreviewAndExportProps> = ({
           >
             <Code2 className="w-3.5 h-3.5 text-[#78C841]" />
             <span>Mã Typst (.typ)</span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-extrabold">
+            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#78C841]/20 text-[#14532D] font-extrabold">
               Engine chính
             </span>
           </button>

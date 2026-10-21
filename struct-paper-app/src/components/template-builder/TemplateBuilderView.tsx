@@ -633,6 +633,13 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
         selectedZoneId={selectedZoneId}
         onSelectZone={setSelectedZoneId}
         onAssignElementToZone={handleAssignElementToZone}
+        onUpdateElement={handleUpdateElement}
+        onDuplicateElement={(id) => {
+          const el = schema.elements.find((e) => e.id === id);
+          if (el) handleDuplicateElement(el);
+        }}
+        onDeleteElement={handleDeleteElement}
+        onNavigateToStep={(step) => setCurrentStep(step as BuilderStudioStep)}
         isExpanded={isExpandedPreview}
         onToggleExpand={() => setIsExpandedPreview((prev) => !prev)}
       />

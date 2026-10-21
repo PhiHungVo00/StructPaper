@@ -23,7 +23,7 @@ export const LayoutScopeEditor: React.FC<LayoutScopeEditorProps> = ({
             Phạm Vi Cột & Hiển Thị (Typst Layout Scope)
           </h4>
         </div>
-        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#78C841]/15 text-[#14532D] border border-[#78C841]/40">
           {attributes.columnSpan === 'all' ? 'Span All (100%)' : 'In Column'}
         </span>
       </div>

@@ -124,25 +124,6 @@ export const ElementStudioMain: React.FC<ElementStudioMainProps> = ({
           </button>
         </div>
 
-        {/* Live Attribute Preview Card */}
-        <div className="p-3.5 bg-white rounded-3xl border border-zinc-200/80 shadow-[0_0_10px_rgba(0,0,0,0.03)] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-            <span className="flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5 text-zinc-500" />
-              Xem trước thuộc tính hiển thị (Live Preview)
-            </span>
-            <span className="text-emerald-800 font-mono font-bold text-[10px] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-              #set text(size: {currentAttributes.typography.fontSizePt}pt, font: &quot;{currentAttributes.typography.fontFamily.split(',')[0]}&quot;)
-            </span>
-          </div>
-
-          <div className="p-4 bg-zinc-50/70 rounded-2xl border border-dashed border-zinc-200/90 overflow-hidden flex items-center justify-center min-h-[64px]">
-            <div style={previewCssStyle} className="max-w-full truncate">
-              {selectedElement.name} — Mẫu báo cáo nghiên cứu khoa học VNUHCM
-            </div>
-          </div>
-        </div>
-
         {/* Attribute Category Tabs (Pill style matching StructPaper) */}
         <div className="flex items-center gap-1 overflow-x-auto p-1 bg-zinc-200/70 rounded-2xl no-scrollbar scrollbar-none w-full select-none">
           {[
