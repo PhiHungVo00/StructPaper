@@ -92,7 +92,7 @@ export interface ZoneCssLayout {
   columns?: CssColumnsConfig;
   boxModel: CssBoxModelConfig;
   allowOverflowPush?: boolean;
-  overflowBehavior?: 'push-down' | 'overflow-up' | 'clip';
+  overflowBehavior?: 'push-down' | 'overflow-up' | 'clip' | 'auto-fit';
   subSlots?: LayoutSubSlot[]; // Cho phép hòa trộn đa cấp (Hybrid / Nesting)
 }
 

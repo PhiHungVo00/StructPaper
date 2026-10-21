@@ -663,7 +663,7 @@ export const PaperGridOverlay: React.FC<PaperGridOverlayProps> = ({
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${rows}, minmax(min-content, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
           columnGap: `${effectiveColGap}px`,
           rowGap: `${effectiveRowGap}px`,
           width: '100%',

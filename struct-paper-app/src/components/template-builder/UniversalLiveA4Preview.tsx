@@ -872,7 +872,33 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
           height: `${contentHeightPx}px`,
           display: 'grid',
           gridTemplateColumns: `repeat(${effectiveGridConfig.columns || 4}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${effectiveGridConfig.rows || 5}, minmax(0, 1fr))`,
+          gridTemplateRows: showGridOverlay
+            ? `repeat(${effectiveGridConfig.rows || 5}, minmax(0, 1fr))`
+            : (() => {
+                const totalRows = effectiveGridConfig.rows || 5;
+                const autoRowIndices = new Set<number>();
+                zones
+                  .filter((zone) => isZoneOnPage(zone, pageNum))
+                  .forEach((zone) => {
+                    const isAutoFit =
+                      zone.overflowBehavior === 'auto-fit' ||
+                      zone.autoFitHeight ||
+                      zone.heightMode === 'auto';
+                    if (isAutoFit) {
+                      const start = zone.gridArea?.rowStart || 1;
+                      const span = zone.gridArea?.rowSpan || 1;
+                      for (let r = start; r < start + span && r <= totalRows; r++) {
+                        autoRowIndices.add(r);
+                      }
+                    }
+                  });
+                if (autoRowIndices.size === 0 || autoRowIndices.size >= totalRows) {
+                  return `repeat(${totalRows}, minmax(0, 1fr))`;
+                }
+                return Array.from({ length: totalRows }, (_, i) =>
+                  autoRowIndices.has(i + 1) ? 'auto' : 'minmax(0, 1fr)'
+                ).join(' ');
+              })(),
           columnGap: `${colGapPx}px`,
           rowGap: `${rowGapPx}px`,
         }}

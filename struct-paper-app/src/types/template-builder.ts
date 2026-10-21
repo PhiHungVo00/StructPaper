@@ -129,6 +129,8 @@ export interface TemplateGridConfig {
   unit?: 'px' | 'mm'; // default 'px'
 }
 
+export type ZoneHeightMode = 'auto' | 'grid';
+
 // --- Layout Zone Model ---
 export interface LayoutZoneConfig {
   id: string;
@@ -143,7 +145,9 @@ export interface LayoutZoneConfig {
   balanceLastPageColumns?: boolean;
   order: number;
   gridArea?: GridAreaCoords;
-  overflowBehavior?: 'push-down' | 'overflow-up' | 'clip'; // Cơ chế khi tràn
+  autoFitHeight?: boolean; // Tự động co dãn theo chiều dọc khi tắt lưới: ôm sát nội dung chữ, các vùng dưới tự động đẩy sát lên
+  heightMode?: ZoneHeightMode; // 'auto': Tự co dãn theo chữ khi tắt lưới | 'grid': Theo ô lưới mặc định
+  overflowBehavior?: 'push-down' | 'overflow-up' | 'clip' | 'auto-fit'; // Cơ chế khi tràn
   allowOverflowPush?: boolean; // Tự động đẩy phân vùng dưới
   secondaryGridArea?: GridAreaCoords; // Khối tiếp nối biệt lập: khi khối 1 đầy thì tự động đổ tiếp sang khối 2
   page?: number; // Trang mục tiêu hiển thị độc lập (1, 2, 3...)

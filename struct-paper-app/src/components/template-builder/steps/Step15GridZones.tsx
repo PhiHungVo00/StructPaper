@@ -287,8 +287,8 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                 type="button"
                 onClick={() => setShowHelpPopup((prev) => !prev)}
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all cursor-pointer select-none ${showHelpPopup
-                    ? 'bg-zinc-900 text-white shadow-xs scale-105'
-                    : 'bg-zinc-200/80 hover:bg-zinc-300 text-zinc-700 hover:text-zinc-950 active:scale-95'
+                  ? 'bg-zinc-900 text-white shadow-xs scale-105'
+                  : 'bg-zinc-200/80 hover:bg-zinc-300 text-zinc-700 hover:text-zinc-950 active:scale-95'
                   }`}
                 title="Xem hướng dẫn thao tác Lưới Phân vùng"
                 aria-label="Hướng dẫn thao tác"
@@ -410,9 +410,6 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
               )}
             </div>
           </div>
-          <div className="text-xs font-mono font-bold text-zinc-600 bg-zinc-100 px-2.5 py-1 rounded-xl border border-zinc-200/80">
-            {currentGridConfig.columns} cột × {currentGridConfig.rows} dòng • Gap: {currentGridConfig.colGap}{currentGridConfig.unit || 'px'}
-          </div>
         </div>
       </div>
 
@@ -483,7 +480,7 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                     }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <span className="w-7 h-7 rounded-xl bg-zinc-900 text-white flex items-center justify-center text-xs font-extrabold font-mono shadow-2xs shrink-0">
                         {index + 1}
                       </span>
@@ -492,20 +489,8 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                         value={zone.name}
                         onChange={(e) => handleUpdateZone(zone.id, { name: e.target.value })}
                         onClick={(e) => e.stopPropagation()}
-                        className="font-extrabold text-xs text-zinc-900 bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-[#78C841] outline-none px-1.5 py-0.5"
+                        className="font-extrabold text-xs text-zinc-900 bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-[#78C841] outline-none px-1.5 py-0.5 flex-1 min-w-0"
                       />
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-zinc-200 text-zinc-700 font-mono font-bold shadow-2xs">
-                        {zone.type}
-                      </span>
-                      {zone.gridArea && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 font-mono font-bold shadow-2xs flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          Grid: C{zone.gridArea.colStart}{zone.gridArea.colSpan > 1 ? `-${zone.gridArea.colStart + zone.gridArea.colSpan - 1}` : ''} × R{zone.gridArea.rowStart}{zone.gridArea.rowSpan > 1 ? `-${zone.gridArea.rowStart + zone.gridArea.rowSpan - 1}` : ''}
-                        </span>
-                      )}
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold shadow-2xs bg-indigo-50 border border-indigo-200 text-indigo-900">
-                        📄 Trang {zone.page || (zone.pageScope === 'subsequent-pages' ? 2 : 1)}
-                      </span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -574,11 +559,10 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                           e.stopPropagation();
                           setZoneEditModes((prev) => ({ ...prev, [zone.id]: 'basic' }));
                         }}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                          (zoneEditModes[zone.id] || 'basic') === 'basic'
+                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${(zoneEditModes[zone.id] || 'basic') === 'basic'
                             ? 'bg-zinc-900 text-white shadow-2xs'
                             : 'text-zinc-600 hover:text-zinc-900'
-                        }`}
+                          }`}
                       >
                         <Sliders className="w-3.5 h-3.5 text-zinc-400" />
                         <span>Cơ bản (Lưới trang)</span>
@@ -589,11 +573,10 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                           e.stopPropagation();
                           setZoneEditModes((prev) => ({ ...prev, [zone.id]: 'css-engine' }));
                         }}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                          zoneEditModes[zone.id] === 'css-engine'
+                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${zoneEditModes[zone.id] === 'css-engine'
                             ? 'bg-zinc-900 text-white shadow-2xs ring-2 ring-[#78C841]/50'
                             : 'text-zinc-600 hover:text-zinc-900'
-                        }`}
+                          }`}
                       >
                         <Code2 className="w-3.5 h-3.5 text-[#78C841]" />
                         <span>Bố cục CSS Engine (Grid / Flexbox / Box Model)</span>
@@ -703,11 +686,17 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                             <Select
                               label="Cơ chế tràn khi quá dài:"
                               labelClassName="text-[10px] font-bold text-zinc-600 mb-1"
-                              value={zone.overflowBehavior || 'push-down'}
+                              value={
+                                zone.overflowBehavior === 'auto-fit' || zone.autoFitHeight || zone.heightMode === 'auto'
+                                  ? 'auto-fit'
+                                  : (zone.overflowBehavior || 'push-down')
+                              }
                               onChange={(val) =>
                                 handleUpdateZone(zone.id, {
-                                  overflowBehavior: val as 'push-down' | 'overflow-up' | 'clip',
-                                  allowOverflowPush: val === 'push-down' || val === 'overflow-up',
+                                  overflowBehavior: val as 'push-down' | 'overflow-up' | 'clip' | 'auto-fit',
+                                  allowOverflowPush: val === 'push-down' || val === 'overflow-up' || val === 'auto-fit',
+                                  autoFitHeight: val === 'auto-fit',
+                                  heightMode: val === 'auto-fit' ? 'auto' : 'grid',
                                 })
                               }
                               variant="flat-white"
@@ -716,31 +705,7 @@ export const Step15GridZones: React.FC<Step15GridZonesProps> = ({
                                 { value: 'push-down', label: '⤋ Tràn xuống (Tự đẩy phân vùng dưới)' },
                                 { value: 'overflow-up', label: '⤊ Tràn lên trên (Tràn lên vùng phía trên)' },
                                 { value: 'clip', label: '✂ Cắt gọn (Cố định trong ô, không tràn)' },
-                              ]}
-                            />
-                          </div>
-
-                          {/* Trang áp dụng trong Template */}
-                          <div>
-                            <Select
-                              label="Trang hiển thị trong Template:"
-                              labelClassName="text-[10px] font-bold text-zinc-600 mb-1"
-                              value={String(zone.page || (zone.pageScope === 'subsequent-pages' ? 2 : 1))}
-                              onChange={(val) => {
-                                const p = parseInt(val, 10);
-                                handleUpdateZone(zone.id, {
-                                  page: p,
-                                  pageScope: p === 1 ? 'first-page' : 'subsequent-pages',
-                                });
-                              }}
-                              variant="flat-white"
-                              size="xs"
-                              options={[
-                                { value: '1', label: '🌟 Trang 1 (Trang đầu / Bìa / Frontmatter)' },
-                                { value: '2', label: '📖 Trang 2 (Thân bài / Phân vùng tiếp theo)' },
-                                { value: '3', label: '📖 Trang 3' },
-                                { value: '4', label: '📖 Trang 4' },
-                                { value: '5', label: '📖 Trang 5' },
+                                { value: 'auto-fit', label: '↕ Ôm sát nội dung (Tự co dãn khi tắt lưới)' },
                               ]}
                             />
                           </div>

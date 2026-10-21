@@ -83,11 +83,8 @@ export const ElementStudioMain: React.FC<ElementStudioMainProps> = ({
           <div className="flex items-center gap-2">
             <Type className="w-4 h-4 text-zinc-700" />
             <h3 className="font-extrabold text-sm sm:text-base text-zinc-900">
-              Bước 4: Định dạng Sâu & Thuộc tính Typst
+              Bước 4: Định dạng & Thuộc tính
             </h3>
-          </div>
-          <div className="text-xs font-mono font-bold text-zinc-600 bg-zinc-100 px-2.5 py-1 rounded-xl border border-zinc-200/80">
-            SciSpace Finite Model & Typst Direct Mapping
           </div>
         </div>
       </div>
@@ -120,7 +117,7 @@ export const ElementStudioMain: React.FC<ElementStudioMainProps> = ({
             title="Đặt lại thuộc tính mặc định chuẩn xuất bản quốc tế"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Đặt lại chuẩn học thuật</span>
+            <span>Đặt lại</span>
           </button>
         </div>
 
@@ -139,11 +136,10 @@ export const ElementStudioMain: React.FC<ElementStudioMainProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none flex-1 min-w-fit ${
-                  isActive
-                    ? 'bg-white text-zinc-900 shadow-2xs border border-zinc-200/60 font-extrabold'
-                    : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
-                }`}
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none flex-1 min-w-fit ${isActive
+                  ? 'bg-white text-zinc-900 shadow-2xs border border-zinc-200/60 font-extrabold'
+                  : 'text-zinc-600 hover:text-zinc-950 hover:bg-white/60'
+                  }`}
               >
                 <span className={isActive ? 'text-[#78C841]' : 'text-zinc-400'}>
                   {tab.icon}
