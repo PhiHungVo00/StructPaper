@@ -8,6 +8,7 @@ import {
 } from '@/types/template-builder';
 import { resolveZoneCssStyle } from '@/lib/template-engine/css-style-resolver';
 import { DynamicElementRenderer } from './DynamicElementRenderer';
+import { InlineWordEditor } from './InlineWordEditor';
 
 interface PreviewZoneContentProps {
   zone: LayoutZoneConfig;
@@ -62,66 +63,26 @@ export const PreviewZoneContent: React.FC<PreviewZoneContentProps> = ({
       return (
         <div
           key={el.id}
+          id={`preview-el-${el.id}-editing`}
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
-          className="relative z-50 my-1.5 p-2 bg-white rounded-xl border-2 border-[#78C841] shadow-2xl ring-4 ring-[#78C841]/20 animate-fadeIn"
+          className="relative transition-all duration-150 rounded-sm outline-2 outline-dashed outline-[#78C841] outline-offset-2 bg-[#78C841]/5 select-text"
         >
-          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-zinc-200 text-[10px] text-zinc-600 select-none">
-            <span className="font-extrabold text-[#14532D] flex items-center gap-1.5">
-              <span>✏️ Sửa văn bản trực tiếp:</span>
-              <span className="text-zinc-800 font-bold truncate max-w-[140px]">{el.name}</span>
-            </span>
-            <div className="flex items-center gap-1">
-              <span className="text-zinc-400 text-[9px] hidden sm:inline">Enter để lưu • Esc hủy</span>
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onSaveInlineEdit?.(el.id, editText);
-                }}
-                className="px-2 py-0.5 rounded bg-[#78C841] text-zinc-950 font-bold hover:bg-[#68B237] cursor-pointer text-[10px]"
-              >
-                Lưu ✓
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onCancelInlineEdit?.();
-                }}
-                className="px-1.5 py-0.5 rounded bg-zinc-200 hover:bg-zinc-300 text-zinc-700 cursor-pointer text-[10px]"
-              >
-                ✕
-              </button>
-            </div>
+          {/* Subtle Floating Status Pill - Floats unobtrusively above without altering layout */}
+          <div className="absolute -top-6 left-0 z-50 pointer-events-none flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/95 text-white text-[9px] font-sans shadow-lg animate-fadeIn whitespace-nowrap border border-white/10 select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#78C841] animate-pulse" />
+            <span className="font-semibold text-lime-300">Đang sửa trực tiếp ({el.name}):</span>
+            <span className="text-zinc-300">Bấm ra ngoài để lưu • Esc hủy</span>
           </div>
 
-          <textarea
-            autoFocus
-            rows={Math.min(6, Math.max(2, Math.ceil(editText.length / 50)))}
-            value={editText}
-            onChange={(e) => setEditText?.(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                onSaveInlineEdit?.(el.id, editText);
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                onCancelInlineEdit?.();
-              }
-            }}
-            onBlur={() => {
-              onSaveInlineEdit?.(el.id, editText);
-            }}
-            style={{
-              fontSize: `${el.styling?.fontSize || 10}pt`,
-              fontFamily: el.styling?.fontFamily || "'Times New Roman', serif",
-              fontWeight: el.styling?.fontWeight === 'bold' || el.styling?.fontWeight === 'extrabold' ? 700 : 400,
-              fontStyle: el.styling?.fontStyle || 'normal',
-              textAlign: (el.styling?.textAlign as any) || 'left',
-              color: el.styling?.textColor || '#111827',
-            }}
-            className="w-full bg-zinc-50/70 rounded-lg p-2 outline-none border border-zinc-200 focus:border-[#78C841] focus:bg-white resize-y font-serif text-sm leading-relaxed shadow-inner"
+          <InlineWordEditor
+            element={el}
+            initialText={editText}
+            primaryColor={primaryColor}
+            floatingRules={floatingRules}
+            onSave={(newText) => onSaveInlineEdit?.(el.id, newText)}
+            onCancel={() => onCancelInlineEdit?.()}
           />
         </div>
       );

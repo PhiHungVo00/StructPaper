@@ -165,6 +165,9 @@ function splitZoneElementsForFlow(
         customContentSample: part1Text,
         isContinuation: false,
         isFlowSource: true,
+        originalBaseId: el.id,
+        flowPart: 1,
+        siblingPartText: part2Text,
       },
     };
 
@@ -180,6 +183,9 @@ function splitZoneElementsForFlow(
         ...el.specialProps,
         customContentSample: part2Text,
         isContinuation: true,
+        originalBaseId: el.id,
+        flowPart: 2,
+        siblingPartText: part1Text,
       },
     };
 
@@ -238,7 +244,8 @@ function getElementsForPageZone(
   zone: LayoutZoneConfig,
   page: number,
   schema: UniversalTemplateSchema,
-  activeElements: SemanticElement[]
+  activeElements: SemanticElement[],
+  demoContentOverrides: Record<string, string> = {}
 ): SemanticElement[] {
   // 1. Always prioritize real semantic elements bound directly to this zone in activeElements
   const bound = activeElements
@@ -288,8 +295,9 @@ function getElementsForPageZone(
 
   // 1. Figure on this page
   if (pageData.hasFigure && pageData.figureData) {
+    const figId = `elem_demo_p${page}_fig`;
     pageElements.push({
-      id: baseFigure?.id || 'elem_figure',
+      id: figId,
       type: 'figure-box',
       name: `Hình ${pageData.figureData.number}: ${pageData.figureData.title.slice(0, 35)}...`,
       zoneId: zone.id,
@@ -325,8 +333,9 @@ function getElementsForPageZone(
 
   // 2. Table on this page
   if (pageData.hasTable && pageData.tableData) {
+    const tblId = `elem_demo_p${page}_tbl`;
     pageElements.push({
-      id: baseTable?.id || 'elem_table',
+      id: tblId,
       type: 'table-box',
       name: `Bảng ${pageData.tableData.number}: ${pageData.tableData.title.slice(0, 35)}...`,
       zoneId: zone.id,
@@ -373,8 +382,9 @@ function getElementsForPageZone(
   rawBlocks.forEach((block, idx) => {
     // Reference entry (e.g. "1. Pilotto AF...")
     if (/^\d+\.\s/.test(block.content)) {
+      const refId = `elem_demo_p${page}_ref_${idx}`;
       pageElements.push({
-        id: baseRef?.id || 'elem_references',
+        id: refId,
         type: 'references-block',
         name: `Tài liệu tham khảo`,
         zoneId: zone.id,
@@ -411,8 +421,9 @@ function getElementsForPageZone(
       block.content.includes('LỜI CẢM ƠN') ||
       /^[A-Za-z0-9\-\/]{2,10}:\s/.test(block.content)
     ) {
+      const grantId = `elem_demo_p${page}_grant_${idx}`;
       pageElements.push({
-        id: baseGrant?.id || 'elem_funding_grant',
+        id: grantId,
         type: 'custom-field',
         name: block.content.slice(0, 30),
         zoneId: zone.id,
@@ -445,8 +456,9 @@ function getElementsForPageZone(
 
     // Heading
     if (block.type === 'heading') {
+      const hId = `elem_demo_p${page}_h_${idx}`;
       pageElements.push({
-        id: baseHeading?.id || 'elem_h1',
+        id: hId,
         type: 'heading',
         name: `Tiêu đề: ${block.content.slice(0, 25)}...`,
         zoneId: zone.id,
@@ -473,7 +485,8 @@ function getElementsForPageZone(
         },
         specialProps: {
           headingLevel: 1,
-          customContentSample: block.content,
+          customContentSample: demoContentOverrides[hId] ?? block.content,
+          originalBaseId: baseHeading?.id || 'elem_h1',
         },
       });
       return;
@@ -481,10 +494,11 @@ function getElementsForPageZone(
 
     // Subheading
     if (block.type === 'subheading') {
+      const subhId = `elem_demo_p${page}_subh_${idx}`;
       pageElements.push({
-        id: 'elem_subheading',
+        id: subhId,
         type: 'heading',
-        name: `Tiểu mục: ${block.content.slice(0, 25)}...`,
+        name: `Tiêu đề phụ: ${block.content.slice(0, 25)}...`,
         zoneId: zone.id,
         order: 10 + idx,
         spanColumns: false,
@@ -509,15 +523,17 @@ function getElementsForPageZone(
         },
         specialProps: {
           headingLevel: 2,
-          customContentSample: block.content,
+          customContentSample: demoContentOverrides[subhId] ?? block.content,
+          originalBaseId: baseHeading?.id || 'elem_h1',
         },
       });
       return;
     }
 
     // Standard body paragraph
+    const bodyId = `elem_demo_p${page}_body_${idx}`;
     pageElements.push({
-      id: baseBody?.id || 'elem_body_p',
+      id: bodyId,
       type: 'body-text',
       name: `Đoạn văn (${idx + 1})`,
       zoneId: zone.id,
@@ -544,7 +560,8 @@ function getElementsForPageZone(
         dropCap: false,
       },
       specialProps: {
-        customContentSample: block.content,
+        customContentSample: demoContentOverrides[bodyId] ?? block.content,
+        originalBaseId: baseBody?.id || 'elem_body_p',
       },
     });
   });
@@ -599,6 +616,12 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
   // Direct Inline Text Editing on Preview (Double-Click)
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
+  const [editingFlowMeta, setEditingFlowMeta] = useState<{
+    baseId: string;
+    flowPart?: number;
+    siblingPartText?: string;
+  } | null>(null);
+  const [demoContentOverrides, setDemoContentOverrides] = useState<Record<string, string>>({});
 
   // Right-Click Floating Style Context Menu (Word / Excel Style)
   const [contextMenu, setContextMenu] = useState<{
@@ -607,6 +630,15 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
   } | null>(null);
 
   const handleStartInlineEdit = (el: SemanticElement) => {
+    const sp = el.specialProps as any;
+    const baseId = sp?.originalBaseId || el.id.replace(/_flow_p[12]$/, '');
+
+    setEditingFlowMeta({
+      baseId,
+      flowPart: sp?.flowPart,
+      siblingPartText: sp?.siblingPartText,
+    });
+
     const initialText =
       el.specialProps?.customContentSample ??
       ((el.specialProps as any)?.authorNames || el.name || '');
@@ -615,25 +647,54 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
   };
 
   const handleSaveInlineEdit = (elementId: string, newText: string) => {
-    const el = schema.elements.find((e) => e.id === elementId);
-    if (!el) return;
-    const isTitleOrHeading = el.type === 'heading' || el.type === 'article-title';
-    const isAuthor = el.type === 'author-block';
+    // Merge multi-column flow parts cleanly so text in the other column is preserved
+    let finalContent = newText;
+    if (editingFlowMeta?.flowPart === 1 && editingFlowMeta.siblingPartText) {
+      finalContent = `${newText.trim()} ${editingFlowMeta.siblingPartText.trim()}`;
+    } else if (editingFlowMeta?.flowPart === 2 && editingFlowMeta.siblingPartText) {
+      finalContent = `${editingFlowMeta.siblingPartText.trim()} ${newText.trim()}`;
+    }
 
-    onUpdateElement?.(elementId, {
-      specialProps: {
-        ...el.specialProps,
-        customContentSample: newText,
-        ...(isAuthor ? ({ authorNames: newText } as any) : {}),
-      },
-      ...(isTitleOrHeading ? { name: newText.slice(0, 60) } : {}),
-    });
+    // If it's a demo block on pages 2-13, isolate and store in demoContentOverrides
+    if (elementId.startsWith('elem_demo_')) {
+      const demoId = elementId.replace(/_flow_p[12]$/, '');
+      setDemoContentOverrides((prev) => ({
+        ...prev,
+        [demoId]: finalContent,
+      }));
+      setEditingElementId(null);
+      setEditingFlowMeta(null);
+      toast.success('Đã lưu nội dung', 'Đã cập nhật văn bản');
+      return;
+    }
+
+    const baseId = editingFlowMeta?.baseId || elementId.replace(/_flow_p[12]$/, '');
+    const el = schema.elements.find((e) => e.id === baseId);
+
+    if (el) {
+      const isTitleOrHeading = el.type === 'heading' || el.type === 'article-title';
+      const isAuthor = el.type === 'author-block';
+
+      onUpdateElement?.(baseId, {
+        specialProps: {
+          ...el.specialProps,
+          customContentSample: finalContent,
+          ...(isAuthor ? ({ authorNames: finalContent } as any) : {}),
+        },
+        ...(isTitleOrHeading ? { name: finalContent.slice(0, 60) } : {}),
+      });
+      toast.success('Đã lưu nội dung', `Đã cập nhật văn bản cho "${el.name}"`);
+    } else {
+      toast.info('Đã cập nhật hiển thị', 'Nội dung xem trước đã được làm mới');
+    }
+
     setEditingElementId(null);
-    toast.success('Đã lưu nội dung', `Đã cập nhật văn bản cho "${el.name}"`);
+    setEditingFlowMeta(null);
   };
 
   const handleCancelInlineEdit = () => {
     setEditingElementId(null);
+    setEditingFlowMeta(null);
   };
 
   const handleContextMenuElement = (el: SemanticElement, e: React.MouseEvent) => {
@@ -825,7 +886,8 @@ export const UniversalLiveA4Preview: React.FC<UniversalLiveA4PreviewProps> = ({
               zone,
               pageNum,
               schema,
-              activeElements
+              activeElements,
+              demoContentOverrides
             );
 
             const gridArea = zone.gridArea || {

@@ -128,6 +128,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
   });
 
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [mobilePane, setMobilePane] = useState<'editor' | 'preview'>('editor');
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(
     schema.zones[0]?.id || null
@@ -143,6 +144,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
       setSchema(withGrid);
       setSelectedElementId(withGrid.elements[0]?.id || null);
       setSelectedZoneId(withGrid.zones[0]?.id || null);
+      setIsDirty(false);
     }
   }, [initialSchema]);
 
@@ -168,6 +170,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update Page Architecture
   const handlePageChange = (updated: Partial<PageArchitectureConfig>) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       pageArchitecture: { ...prev.pageArchitecture, ...updated },
@@ -177,6 +180,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update Zones with automatic sequential reindexing
   const handleZonesChange = (zones: LayoutZoneConfig[]) => {
+    setIsDirty(true);
     const reindexedZones = zones.map((z, idx) => ({ ...z, order: idx + 1 }));
     setSchema((prev) => {
       const activeZoneIds = new Set(reindexedZones.map((z) => z.id));
@@ -199,6 +203,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update Grid Config
   const handleGridConfigChange = (gridConfig: TemplateGridConfig) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       gridConfig,
@@ -208,6 +213,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Add a new zone from paper grid overlay (strictly continuous numbering in whole template)
   const handleAddZoneWithArea = (area: GridAreaCoords, pageNumber: number = 1) => {
+    setIsDirty(true);
     setSchema((prev) => {
       const newIndex = prev.zones.length + 1;
       const pageScope = pageNumber === 1 ? 'first-page' : 'subsequent-pages';
@@ -238,6 +244,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update a zone's gridArea
   const handleUpdateZoneArea = (zoneId: string, area: GridAreaCoords) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       zones: prev.zones.map((z) => (z.id === zoneId ? { ...z, gridArea: area } : z)),
@@ -247,6 +254,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update a zone's secondaryGridArea (Linked flow block 2)
   const handleUpdateZoneSecondaryArea = (zoneId: string, area: GridAreaCoords | null) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       zones: prev.zones.map((z) =>
@@ -258,6 +266,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Delete a zone
   const handleDeleteZone = (zoneId: string) => {
+    setIsDirty(true);
     setSchema((prev) => {
       const deleted = prev.zones.find((z) => z.id === zoneId);
       const nextZones = prev.zones.filter((z) => z.id !== zoneId);
@@ -284,6 +293,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update zone name inline
   const handleUpdateZoneName = (zoneId: string, name: string) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       zones: prev.zones.map((z) => (z.id === zoneId ? { ...z, name } : z)),
@@ -294,6 +304,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Add child sub-zone
   const handleAddSubZoneWithArea = (parentId: string, area: GridAreaCoords) => {
+    setIsDirty(true);
     const { updatedZones, newChild } = addChildSubZone(schema.zones, parentId, area);
     handleZonesChange(updatedZones);
     toast.success('Đã tạo phân vùng con', `Đã tạo "${newChild.name}"`);
@@ -301,12 +312,14 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update a sub-zone at any depth
   const handleUpdateSubZone = (subZoneId: string, updated: Partial<LayoutZoneConfig>) => {
+    setIsDirty(true);
     const updatedZones = updateZoneDeep(schema.zones, subZoneId, updated);
     handleZonesChange(updatedZones);
   };
 
   // Delete a sub-zone at any depth
   const handleDeleteSubZone = (subZoneId: string) => {
+    setIsDirty(true);
     const updatedZones = deleteZoneDeep(schema.zones, subZoneId);
     handleZonesChange(updatedZones);
     toast.success('Đã xóa phân vùng con');
@@ -314,6 +327,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update Elements
   const handleElementsChange = (elements: SemanticElement[]) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       elements,
@@ -323,6 +337,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update a single element
   const handleUpdateElement = (id: string, updated: Partial<SemanticElement>) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       elements: prev.elements.map((el) => (el.id === id ? { ...el, ...updated } : el)),
@@ -332,6 +347,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Delete element
   const handleDeleteElement = (id: string) => {
+    setIsDirty(true);
     const deleted = schema.elements.find((el) => el.id === id);
     setSchema((prev) => ({
       ...prev,
@@ -343,6 +359,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Duplicate element
   const handleDuplicateElement = (element: SemanticElement) => {
+    setIsDirty(true);
     const duplicated: SemanticElement = {
       ...element,
       id: `${element.type}-${Date.now()}`,
@@ -359,6 +376,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Add new element (e.g. from CompositeElementBuilder)
   const handleAddElement = (element: SemanticElement) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       elements: [...prev.elements, element],
@@ -370,6 +388,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update Global Floating Rules for Special Elements
   const handleUpdateFloatingRules = (floatingRules: FloatingElementsDesignRules) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       floatingRules,
@@ -379,6 +398,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
 
   // Update Primary Color
   const handleColorChange = (color: string) => {
+    setIsDirty(true);
     setSchema((prev) => ({
       ...prev,
       primaryColor: color,
@@ -424,6 +444,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
       } catch {}
 
       setSaveSuccess(true);
+      setIsDirty(false);
       setTimeout(() => setSaveSuccess(false), 2500);
       toast.success('Lưu thành công', `Đã lưu "${schema.name}" vào Thư viện mẫu!`);
     } catch {
@@ -453,6 +474,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
         setSchema(withGrid);
         setSelectedElementId(withGrid.elements[0]?.id || null);
         setSelectedZoneId(withGrid.zones[0]?.id || null);
+        setIsDirty(false);
         toast.success('Nhập thành công', `Đã nạp template "${withGrid.name}"!`);
       } else {
         const firstErr =
@@ -668,6 +690,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
           primaryColor={schema.primaryColor}
           onColorChange={handleColorChange}
           saveSuccess={saveSuccess}
+          isDirty={isDirty}
         />
       )}
 

@@ -126,6 +126,7 @@ interface TemplateBuilderDockProps {
   primaryColor?: string;
   onColorChange?: (color: string) => void;
   saveSuccess?: boolean;
+  isDirty?: boolean;
 }
 
 const COLOR_PALETTE = [
@@ -146,6 +147,7 @@ export const TemplateBuilderDock: React.FC<TemplateBuilderDockProps> = ({
   primaryColor = '#2B74B7',
   onColorChange,
   saveSuccess = false,
+  isDirty = false,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
 
@@ -261,13 +263,28 @@ export const TemplateBuilderDock: React.FC<TemplateBuilderDockProps> = ({
         {/* Save to library */}
         <DockIconButton
           onClick={onSaveToLibrary}
-          label="Lưu vào Kho mẫu"
+          label={
+            saveSuccess
+              ? 'Đã lưu thành công!'
+              : isDirty
+                ? 'Có thay đổi chưa lưu (bấm để lưu)'
+                : 'Lưu vào Kho mẫu'
+          }
           icon={
             saveSuccess ? (
               <Check className="w-5 h-5 text-[#78C841] stroke-[2.8]" />
             ) : (
               <Save className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />
             )
+          }
+          badge={
+            saveSuccess ? (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-2xs">
+                <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+              </span>
+            ) : isDirty ? (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white animate-pulse" />
+            ) : null
           }
         />
 

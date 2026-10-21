@@ -339,6 +339,9 @@ export interface SemanticElement {
     customContentSample?: string;
     isContinuation?: boolean;
     isFlowSource?: boolean;
+    originalBaseId?: string;
+    flowPart?: number;
+    siblingPartText?: string;
 
     // For Custom Composite (Biến & Hằng kết hợp)
     compositeLayout?: 'inline' | 'stacked' | 'split-cols';

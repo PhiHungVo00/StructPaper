@@ -32,6 +32,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { toast } from '@/components/DynamicIslandToast';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 export interface ElementStyleContextMenuProps {
   element: SemanticElement;
@@ -45,7 +46,7 @@ export interface ElementStyleContextMenuProps {
   primaryColor?: string;
 }
 
-const COMMON_FONTS = [
+const COMMON_FONT_OPTIONS: SelectOption[] = [
   { label: 'Times New Roman', value: "'Times New Roman', serif" },
   { label: 'Arial', value: 'Arial, sans-serif' },
   { label: 'Roboto', value: "'Roboto', sans-serif" },
@@ -210,17 +211,16 @@ export const ElementStyleContextMenu: React.FC<ElementStyleContextMenuProps> = (
       <div className="bg-zinc-50/90 p-1.5 rounded-xl border border-zinc-200/70 space-y-1.5">
         {/* Row 1: Font Family Selector & Font Size Stepper */}
         <div className="flex items-center gap-1">
-          <select
-            value={typo.fontFamily || "'Times New Roman', serif"}
-            onChange={(e) => updateTypo({ fontFamily: e.target.value })}
-            className="flex-1 min-w-0 text-[11px] font-semibold bg-white border border-zinc-300 rounded-lg px-2 py-1 outline-none text-zinc-900 focus:border-[#78C841] cursor-pointer shadow-2xs"
-          >
-            {COMMON_FONTS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex-1 min-w-0">
+            <Select
+              options={COMMON_FONT_OPTIONS}
+              value={typo.fontFamily || "'Times New Roman', serif"}
+              onChange={(val) => updateTypo({ fontFamily: val })}
+              size="xs"
+              variant="clean"
+              fullWidth
+            />
+          </div>
 
           {/* Font size - / + buttons */}
           <div className="flex items-center bg-white border border-zinc-300 rounded-lg overflow-hidden shadow-2xs shrink-0">
