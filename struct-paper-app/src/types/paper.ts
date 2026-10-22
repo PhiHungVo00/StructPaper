@@ -7,11 +7,15 @@ export interface Author {
   orcid?: string;
 }
 
+export type PaperAuthor = Author;
+
 export interface Affiliation {
   id: number;
   name: string;
   nameEn?: string;
 }
+
+export type PaperAffiliation = Affiliation;
 
 export interface PaperDates {
   received: string;
@@ -551,5 +555,10 @@ export interface CompletePaper {
   sections: PaperSection[];
   references: PaperReference[];
   layoutSettings?: LayoutSettings;
+  templateId?: string;
+  templateName?: string;
+  updatedAt?: string;
+  createdAt?: string;
+  status?: 'draft' | 'review' | 'ready';
 }
 

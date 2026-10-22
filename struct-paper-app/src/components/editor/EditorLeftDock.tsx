@@ -144,6 +144,9 @@ interface EditorLeftDockProps {
   errorCount?: number;
   warningCount?: number;
   onOpenQCTab?: () => void;
+  homeHref?: string;
+  onDownloadTypst?: () => void;
+  isExportingTypst?: boolean;
 }
 
 export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
@@ -167,6 +170,9 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
   errorCount = 0,
   warningCount = 0,
   onOpenQCTab,
+  homeHref = '/upload',
+  onDownloadTypst,
+  isExportingTypst = false,
 }) => {
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const downloadBtnRef = useRef<HTMLDivElement>(null);
@@ -215,7 +221,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
     };
   }, [isDownloadOpen]);
 
-  const isAnyExporting = isExportingDocx || isExportingZip || isExportingPdf;
+  const isAnyExporting = isExportingDocx || isExportingZip || isExportingPdf || isExportingTypst;
 
   return (
     <aside
@@ -225,8 +231,8 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       {/* TOP SECTION: HOME ICON */}
       <div className="relative z-10 flex flex-col items-center gap-2.5">
         <DockIconButton
-          href="/upload"
-          label="Quay lại trang chủ (Tải file)"
+          href={homeHref}
+          label="Quay lại danh sách bài báo"
           icon={<Home className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
         />
       </div>
@@ -481,6 +487,38 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
               </div>
               {isExportingZip && <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600 flex-shrink-0" />}
             </button>
+
+            {/* 4. Tải file Typst (.typ) nếu ở chế độ Typst */}
+            {onDownloadTypst && (
+              <button
+                id="download-typst-btn"
+                type="button"
+                onClick={() => {
+                  setIsDownloadOpen(false);
+                  onDownloadTypst();
+                }}
+                disabled={isExportingTypst}
+                className="w-full px-2.5 py-2 rounded-xl hover:bg-lime-50 hover:text-lime-900 flex items-center gap-2.5 font-semibold text-left cursor-pointer transition-colors group"
+              >
+                <div className="w-4 h-4 rounded bg-[#78C841] text-white flex items-center justify-center font-bold text-[9px] flex-shrink-0">
+                  T
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-zinc-800 group-hover:text-lime-950">
+                      Bản thảo Typst
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded">
+                      .typ
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-normal truncate">
+                    Mã nguồn Typst dàn trang hiện đại
+                  </p>
+                </div>
+                {isExportingTypst && <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#78C841] flex-shrink-0" />}
+              </button>
+            )}
           </div>,
           document.body
         )}

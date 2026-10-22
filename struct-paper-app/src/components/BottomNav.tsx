@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UploadCloud, FolderArchive, User, Settings, LayoutTemplate } from 'lucide-react';
+import { UploadCloud, FolderArchive, User, Settings, LayoutTemplate, FilePenLine } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
   const pathname = usePathname();
@@ -11,6 +11,7 @@ export const BottomNav: React.FC = () => {
   const tabs = [
     { path: '/upload', label: 'Tải bài', icon: UploadCloud },
     { path: '/templates', label: 'Tạo mẫu', icon: LayoutTemplate },
+    { path: '/papers', label: 'Soạn bài', icon: FilePenLine },
     { path: '/history', label: 'Kho bài', icon: FolderArchive },
     { path: '/account', label: 'Tài khoản', icon: User },
     { path: '/settings', label: 'Cài đặt', icon: Settings },

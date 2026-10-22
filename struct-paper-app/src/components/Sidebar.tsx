@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   LayoutTemplate,
+  FilePenLine,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -29,6 +30,12 @@ const NAV_ITEMS = [
     label: 'Tạo Template',
     description: 'Thiết kế & tuỳ biến mẫu',
     icon: LayoutTemplate,
+  },
+  {
+    path: '/papers',
+    label: 'Soạn bài báo',
+    description: 'Tạo bài báo theo mẫu Typst',
+    icon: FilePenLine,
   },
   {
     path: '/history',

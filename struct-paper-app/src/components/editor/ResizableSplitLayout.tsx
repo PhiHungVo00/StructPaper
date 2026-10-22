@@ -112,7 +112,7 @@ export const ResizableSplitLayout: React.FC<ResizableSplitLayoutProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full flex flex-col lg:flex-row items-stretch select-none ${
+      className={`relative w-full h-full min-h-0 flex flex-col lg:flex-row items-stretch select-none ${
         isDragging ? 'cursor-col-resize' : ''
       } ${className}`}
     >
