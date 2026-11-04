@@ -8,6 +8,19 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:structpaper;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 structpaper:
   latex:
@@ -16,6 +29,8 @@ structpaper:
     auto-font-fallback: true
     xelatex-path: xelatex
     tectonic-path: ""
+  storage:
+    asset-dir: ${STRUCTPAPER_ASSET_DIR:./data/assets}
 
 # OpenAPI / Swagger UI
 springdoc:

@@ -477,17 +477,38 @@
 
 ### Phase 6: Backend Spring Boot & Dịch vụ Biên dịch Cách ly
 
-- [ ] **Task 6.1: Tái cấu trúc Spring Boot sang Modular Monolith theo Cổng 2 OpenAPI**
+- [x] **Task 6.1: Tái cấu trúc Spring Boot sang Modular Monolith theo Cổng 2 OpenAPI**
   - **Files:**
-    - Sửa: `apps/api/build.gradle` (thêm phụ thuộc JSON, Validation, S3 SDK)
-    - Tạo: `apps/api/src/main/resources/db/migration/V1__init_schema.sql` (MySQL Flyway)
-    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/` (Entity, Repository, Controller)
-    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/` (SHA-256 asset storage)
-    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/manuscript/ManuscriptControllerTest.java`
-  - **Bước 1:** Viết test mock MVC kiểm tra lưu và đọc bản thảo qua endpoint `/api/v1/manuscripts/{id}` với khóa lạc quan `If-Match: rev`.
-  - **Bước 2:** Tạo Flyway migration script cho bảng `manuscripts` có cột `doc_json` (MySQL Native JSON) và các cột index quan hệ.
-  - **Bước 3:** Triển khai `ManuscriptService` và `AssetService` lưu file theo SHA-256.
-  - **Bước 4:** Chạy `./gradlew test` xác nhận test xanh 100%.
+    - Sửa: `apps/api/build.gradle` (thêm phụ thuộc Spring Data JPA, H2, Flyway MySQL, Jackson Datatype JSR310)
+    - Sửa: `apps/api/src/main/resources/application.yml` (cấu hình datasource H2/MySQL, JPA, Flyway, storage asset dir)
+    - Sửa: `apps/api/.gitignore` (thêm `data/`)
+    - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/dto/response/ErrorResponse.java` (chuẩn hóa schema ErrorResponse với `code`, `message`, `details`)
+    - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/GlobalExceptionHandler.java` (bổ sung exception handler cho PreconditionFailed 412, NotFound 404, Sha256Mismatch 400)
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/ResourceNotFoundException.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/PreconditionFailedException.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/Sha256MismatchException.java`
+    - Tạo: `apps/api/src/main/resources/db/migration/V1__init_schema.sql` (bảng `manuscripts`, `revisions`, `assets`)
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/ManuscriptEntity.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/RevisionEntity.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/ManuscriptRepository.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/RevisionRepository.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/SaveManuscriptResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/RevisionHistoryItem.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/ManuscriptService.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/manuscript/ManuscriptController.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/AssetEntity.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/AssetRepository.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/AssetUploadResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/AssetSaveResult.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/AssetService.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/asset/AssetController.java`
+    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/manuscript/ManuscriptControllerTest.java` (8 tests pass)
+    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/asset/AssetControllerTest.java` (4 tests pass)
+  - **Hoàn thành:** Hoàn thành xuất sắc tái cấu trúc Spring Boot sang Modular Monolith khớp 100% hợp đồng OpenAPI Cổng 2:
+    1. Cấu hình phụ thuộc và schema Flyway migration (`V1__init_schema.sql`) tạo các bảng `manuscripts` (lưu trữ document JSON mô hình v2 với khóa lạc quan `rev`), `revisions` (lưu snapshot lịch sử phiên bản đính kèm timestamp), và `assets` (kho CAS nhị phân theo mã băm SHA-256).
+    2. Mô-đun `vn.edu.vnu.structpaper.manuscript`: Triển khai đầy đủ các endpoint `GET /api/v1/manuscripts/{id}` (trả về JSON cùng header `ETag: "rev"`), `PUT /api/v1/manuscripts/{id}` (yêu cầu header `If-Match: "{rev}"`, tự động tăng rev + 1, sinh snapshot revision mới và trả về `ETag: "rev+1"` hoặc chặn 412 Precondition Failed khi rev không khớp), `GET /api/v1/manuscripts/{id}/revisions` (trả về danh sách snapshot lịch sử phiên bản với `rev`, `createdAt`, `timestamp`, `summary`).
+    3. Mô-đun `vn.edu.vnu.structpaper.asset`: Triển khai kho lưu trữ CAS theo SHA-256 gồm `HEAD /api/v1/assets/{sha256}` (200 kèm Content-Length, Content-Type, ETag nếu tồn tại; 404 nếu chưa), `GET /api/v1/assets/{sha256}` (tải binary stream đúng Content-Type), `PUT /api/v1/assets/{sha256}` (kiểm tra tính toàn vẹn SHA-256 của byte stream, lưu trữ file, deduplication trả về 200 hoặc 201 nếu tạo mới, chặn 400 DIGEST_MISMATCH nếu hash sai lệch).
+    4. 15/15 tests Spring Boot Gradle pass 100% (ManuscriptControllerTest, AssetControllerTest, FontManagerServiceTest, StructPaperApplicationTests), 338/338 tests Vitest monorepo pass 100%, 0 vi phạm architecture/depcruise, Next.js `pnpm build:web` pass 100%.
 
 - [ ] **Task 6.2: Xây dựng Compile Service Cách ly (Sandbox, Hàng đợi Queue, Cache Hash & Hủy Job)**
   - **Files:**

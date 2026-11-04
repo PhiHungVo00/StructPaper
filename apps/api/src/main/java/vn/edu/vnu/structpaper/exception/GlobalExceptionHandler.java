@@ -61,6 +61,48 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(PreconditionFailedException.class)
+    public ResponseEntity<ErrorResponse> handlePreconditionFailed(PreconditionFailedException ex) {
+        log.warn("Xung đột phiên bản (Precondition Failed): {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.PRECONDITION_FAILED.value(),
+                "PRECONDITION_FAILED",
+                ex.getMessage(),
+                "ManuscriptService",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(error);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn("Không tìm thấy tài nguyên: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.NOT_FOUND.value(),
+                "NOT_FOUND",
+                ex.getMessage(),
+                "Repository",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(Sha256MismatchException.class)
+    public ResponseEntity<ErrorResponse> handleSha256Mismatch(Sha256MismatchException ex) {
+        log.warn("Sai lệch mã băm SHA-256: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "DIGEST_MISMATCH",
+                ex.getMessage(),
+                "AssetService",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Lỗi hệ thống không mong muốn: ", ex);

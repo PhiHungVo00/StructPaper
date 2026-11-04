@@ -1,4 +1,4 @@
-﻿# ==========================================
+# ==========================================
 # struct-paper-backend .gitignore
 # ==========================================
 
@@ -26,3 +26,6 @@ replay_pid*.log
 # OS files
 .DS_Store
 Thumbs.db
+
+# Storage data
+data/

@@ -22,6 +22,16 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Database & Migrations
+    implementation 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
+    // Jackson JSON & Java Time
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     // OpenAPI 3 / Swagger Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
