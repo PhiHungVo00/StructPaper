@@ -513,9 +513,61 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BatchProcessResponse'
+                $ref: '#/components/schemas/BatchUploadResponse'
         '400':
           description: Invalid zip file or unsupported archive format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/batches/{batchId}:
+    get:
+      summary: Get batch processing status and progress
+      description: Returns real-time progress and individual file status for a submitted batch.
+      operationId: getBatchStatus
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Batch job identifier
+      responses:
+        '200':
+          description: Current batch status and item progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchStatusResponse'
+        '404':
+          description: Batch not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/batches/{batchId}/report:
+    get:
+      summary: Get comprehensive batch processing report
+      description: Returns detailed aggregate results and metrics for a completed or in-progress batch.
+      operationId: getBatchReport
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Batch job identifier
+      responses:
+        '200':
+          description: Detailed batch execution report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchReportResponse'
+        '404':
+          description: Batch not found
           content:
             application/json:
               schema:
@@ -1671,9 +1723,146 @@ components:
         fileCount:
           type: integer
           minimum: 0
+        totalFiles:
+          type: integer
+          minimum: 0
         status:
           type: string
-          enum: [queued, processing, completed, failed]
+          enum: [queued, processing, completed, failed, PENDING, PROCESSING, COMPLETED, FAILED]
+        createdAt:
+          type: string
+          format: date-time
+
+    BatchUploadResponse:
+      type: object
+      required:
+        - batchId
+        - totalFiles
+        - status
+        - createdAt
+      properties:
+        batchId:
+          type: string
+        totalFiles:
+          type: integer
+          minimum: 0
+        fileCount:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+        createdAt:
+          type: string
+          format: date-time
+
+    BatchItemStatus:
+      type: object
+      required:
+        - fileName
+        - status
+      properties:
+        fileName:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, SUCCESS, FAILED]
+        manuscriptId:
+          type: string
+        title:
+          type: string
+        durationMs:
+          type: integer
+        error:
+          type: string
+
+    BatchStatusResponse:
+      type: object
+      required:
+        - batchId
+        - status
+        - totalFiles
+        - processedFiles
+        - successfulFiles
+        - failedFiles
+        - progressPercent
+        - createdAt
+        - items
+      properties:
+        batchId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+        totalFiles:
+          type: integer
+        processedFiles:
+          type: integer
+        successfulFiles:
+          type: integer
+        failedFiles:
+          type: integer
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemStatus'
+
+    BatchReportResponse:
+      type: object
+      required:
+        - batchId
+        - status
+        - totalFiles
+        - successfulFiles
+        - failedFiles
+        - progressPercent
+        - totalDurationMs
+        - createdAt
+        - summary
+        - items
+      properties:
+        batchId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+        totalFiles:
+          type: integer
+        successfulFiles:
+          type: integer
+        failedFiles:
+          type: integer
+        progressPercent:
+          type: integer
+        totalDurationMs:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        summary:
+          type: object
+          properties:
+            successRate:
+              type: number
+            averageDurationMs:
+              type: number
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchItemStatus'
 
     PrepressRequest:
       type: object

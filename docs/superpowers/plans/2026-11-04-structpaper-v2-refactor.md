@@ -582,14 +582,29 @@
     4. Triển khai `PrepressController` với endpoint `POST /api/v1/prepress`: hỗ trợ đa hình thức tải lên (`multipart/form-data`, `application/pdf` binary stream, `application/json` base64), trả về trực tiếp file PDF/X đính kèm header chuẩn (`X-Prepress-Compliant`, `X-Prepress-ColorSpace`, `X-Prepress-Fonts-Embedded`, `X-Prepress-Mock`) hoặc JSON báo cáo `PrepressReport`.
     5. Kiểm định chất lượng toàn diện: 43/43 tests Spring Boot Gradle pass 100% (10 tests mới cho PrepressServiceTest), 340/340 tests Vitest monorepo pass 100%, 0 lỗi depcruise (653 modules), Next.js `pnpm build:web` pass 100%.
 
-- [ ] **Task 7.2: Xây dựng Dịch vụ Batch Ingest Nhiều Tệp DOCX**
+- [x] **Task 7.2: Xây dựng Dịch vụ Batch Ingest Nhiều Tệp DOCX (Hoàn tất Phase 7)**
   - **Files:**
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchIngestController.java`
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchWorker.java`
-    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/batch/BatchIngestTest.java`
-  - **Bước 1:** Viết test nạp một file ZIP chứa 5 bài báo Word, kiểm tra hệ thống giải nén và xử lý tuần tự từng bài qua pipeline Ingest $\rightarrow$ QC $\rightarrow$ Compile.
-  - **Bước 2:** Triển khai `BatchWorker` báo cáo tiến độ và xuất file tổng hợp kết quả.
-  - **Bước 3:** Chạy test kiểm tra hoàn thành xử lý hàng loạt.
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchService.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchJob.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchStatus.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchItemState.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchItemStatus.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchUploadResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchStatusResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchReportResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/BatchSummary.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/batch/UlidGenerator.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/InvalidArchiveException.java`
+    - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/GlobalExceptionHandler.java` (thêm handler cho `InvalidArchiveException` 400)
+    - Sửa: `contracts/openapi.yaml` (bổ sung route `GET /api/v1/batches/{batchId}`, `GET /api/v1/batches/{batchId}/report`, schemas `BatchUploadResponse`, `BatchStatusResponse`, `BatchReportResponse`, `BatchItemStatus`)
+    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/batch/BatchIngestTest.java` (5 tests pass 100%)
+  - **Hoàn thành:** Hoàn thành toàn diện Task 7.2 và chính thức hoàn tất Phase 7:
+    1. Khớp 100% hợp đồng OpenAPI Cổng 2 cho batch: `POST /api/v1/batches` nhận file ZIP (trả về 202 Accepted với `BatchUploadResponse` chứa `batchId`, `totalFiles`, `status: "PENDING"`, `createdAt`), `GET /api/v1/batches/{batchId}` theo dõi tiến độ thời gian thực (trả về `status`, `totalFiles`, `processedFiles`, `successfulFiles`, `failedFiles`, `progressPercent`, `items`), và `GET /api/v1/batches/{batchId}/report` xuất báo cáo chi tiết kèm `successRate` và `averageDurationMs`.
+    2. Triển khai `BatchWorker` xử lý bất đồng bộ qua thread pool: giải nén ZIP trong thư mục tạm bảo vệ chống tấn công Zip Slip, tự động bỏ qua các thư mục con hoặc tệp rác macOS (`__MACOSX`, `.DS_Store`), trích xuất metadata và nội dung Word OpenXML, tạo bản ghi Manuscript v2 vào CSDL, đo lường `durationMs` cho từng bài báo và tự động dọn dẹp sạch sẽ thư mục tạm sau khi hoàn tất.
+    3. Xử lý lỗi kiên cường: Chặn tệp ZIP rỗng hoặc sai định dạng bằng 400 `INVALID_ARCHIVE`; tệp DOCX hỏng hoặc sai cấu trúc bên trong ZIP sẽ được đánh dấu riêng lẻ `FAILED` với thông báo lỗi cụ thể mà không làm sập tiến trình batch hay ảnh hưởng tới các file hợp lệ khác.
+    4. Kiểm định chất lượng toàn diện: 48/48 tests Spring Boot Gradle pass 100% (5 tests mới cho BatchIngestTest), 340/340 tests Vitest monorepo pass 100%, 0 vi phạm cấu trúc (depcruise 653 modules), Next.js `pnpm build:web` pass 100%.
 
 ---
 

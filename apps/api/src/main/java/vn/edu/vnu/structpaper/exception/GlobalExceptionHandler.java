@@ -161,6 +161,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
+    @ExceptionHandler(InvalidArchiveException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidArchive(InvalidArchiveException ex) {
+        log.warn("Tệp ZIP lưu trữ không hợp lệ: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_ARCHIVE",
+                ex.getMessage(),
+                "BatchService",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Lỗi hệ thống không mong muốn: ", ex);
