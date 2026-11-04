@@ -510,17 +510,28 @@
     3. Mô-đun `vn.edu.vnu.structpaper.asset`: Triển khai kho lưu trữ CAS theo SHA-256 gồm `HEAD /api/v1/assets/{sha256}` (200 kèm Content-Length, Content-Type, ETag nếu tồn tại; 404 nếu chưa), `GET /api/v1/assets/{sha256}` (tải binary stream đúng Content-Type), `PUT /api/v1/assets/{sha256}` (kiểm tra tính toàn vẹn SHA-256 của byte stream, lưu trữ file, deduplication trả về 200 hoặc 201 nếu tạo mới, chặn 400 DIGEST_MISMATCH nếu hash sai lệch).
     4. 15/15 tests Spring Boot Gradle pass 100% (ManuscriptControllerTest, AssetControllerTest, FontManagerServiceTest, StructPaperApplicationTests), 338/338 tests Vitest monorepo pass 100%, 0 vi phạm architecture/depcruise, Next.js `pnpm build:web` pass 100%.
 
-- [ ] **Task 6.2: Xây dựng Compile Service Cách ly (Sandbox, Hàng đợi Queue, Cache Hash & Hủy Job)**
+- [x] **Task 6.2: Xây dựng Compile Service Cách ly (Sandbox, Hàng đợi Queue, Cache Hash & Hủy Job)**
   - **Files:**
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileQueueManager.java`
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileSandboxService.java`
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileCacheService.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileJob.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileJobRequest.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileJobStatusResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CancelJobResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileJobStatus.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileCacheEntry.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/compile/CompileSandboxResult.java`
+    - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/config/LatexCompilerProperties.java`
+    - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/model/CompilerEngine.java`
     - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/controller/LatexCompilerController.java`
     - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/compile/CompileQueueTest.java`
-  - **Bước 1:** Viết test kiểm tra hàng đợi biên dịch: chỉ cho phép 1 job đang chạy cho một bản thảo, tự động hủy job cũ khi có job mới, và trả kết quả tức thì nếu hash nội dung trùng khớp.
-  - **Bước 2:** Cấu hình tiến trình chạy XeLaTeX/Tectonic với cờ an toàn `--no-shell-escape`, thư mục tạm riêng cho từng job, timeout 30 giây.
-  - **Bước 3:** Triển khai endpoint biên dịch bất đồng bộ qua `/api/v1/compile`.
-  - **Bước 4:** Chạy test kiểm tra toàn bộ pipeline biên dịch an toàn và có kiểm soát.
+  - **Kết quả thực hiện:**
+    1. Chuẩn hóa API Cổng 2 OpenAPI cho `/api/v1/compile`: `POST /api/v1/compile` (202 Accepted với `CompileJobStatusResponse`, hoặc 200 OK ngay lập tức với `fromCache: true` nếu trùng hash), `GET /api/v1/compile/{jobId}` (polling logs, durationMs, error), `DELETE /api/v1/compile/{jobId}` (hủy job sang CANCELLED và giải phóng tiến trình), `GET /api/v1/compile/{jobId}/pdf` (tải binary PDF).
+    2. Quản lý hàng đợi `CompileQueueManager`: Đảm bảo chỉ 1 job chạy cho mỗi `paperId`, tự động hủy process/task job cũ khi có job mới cho cùng paperId.
+    3. Cách ly Sandbox `CompileSandboxService`: Thư mục độc lập `java.io.tmpdir/structpaper-jobs/<jobId>`, tự động copy assets từ CAS (`AssetService`), thực thi Tectonic / XeLaTeX với cờ an toàn bắt buộc `--no-shell-escape`, timeout tối đa 30 giây, tự động dọn dẹp sạch thư mục tạm sau khi hoàn tất hoặc lỗi.
+    4. Bộ nhớ đệm `CompileCacheService`: Tính SHA-256 từ mã nguồn TeX + asset hashes/images để cache kết quả PDF và logs.
+    5. Kiểm thử toàn diện: 22/22 tests Spring Boot Gradle pass 100% (7 test mới cho CompileQueueTest kiểm tra hủy job cũ, cache hit tức thì, hủy thủ công DELETE, xử lý lỗi cú pháp, timeout, download PDF, dọn dẹp sandbox), 338/338 tests Vitest monorepo pass 100%, `pnpm build:web` pass 100%.
 
 - [ ] **Task 6.3: Xây dựng AI Proxy Chính thức Phía Backend Spring Boot**
   - **Files:**

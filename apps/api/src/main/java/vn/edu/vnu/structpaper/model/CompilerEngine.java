@@ -3,7 +3,8 @@ package vn.edu.vnu.structpaper.model;
 public enum CompilerEngine {
     XELATEX("XeLaTeX"),
     TECTONIC("Tectonic"),
-    AUTO("Auto");
+    AUTO("Auto"),
+    MOCK("Mock");
 
     private final String displayName;
 

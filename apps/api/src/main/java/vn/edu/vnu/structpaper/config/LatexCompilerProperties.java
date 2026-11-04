@@ -35,7 +35,21 @@ public class LatexCompilerProperties {
      */
     private boolean autoFontFallback = true;
 
+    /**
+     * Fallback to mock compilation engine if no TeX binary (XeLaTeX or Tectonic) is installed.
+     * Useful for CI and lightweight local environments.
+     */
+    private boolean mockFallbackEnabled = true;
+
     // Getters and Setters
+    public boolean isMockFallbackEnabled() {
+        return mockFallbackEnabled;
+    }
+
+    public void setMockFallbackEnabled(boolean mockFallbackEnabled) {
+        this.mockFallbackEnabled = mockFallbackEnabled;
+    }
+
     public String getEngine() {
         return engine;
     }
