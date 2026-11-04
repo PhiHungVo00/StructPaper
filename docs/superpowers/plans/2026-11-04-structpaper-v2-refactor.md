@@ -418,21 +418,26 @@
     - Test: `apps/web/tests/components/preflight-qc.test.tsx` (2/2 pass)
   - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/qc-engine` theo Specification Pattern. Triển khai các tập luật specification kiểm tra độ dài tóm tắt (275-500 từ theo profile VNUHCM-HS), từ khóa (3-5), tích hợp `computeNumbering` phát hiện trích dẫn dangling/uncited và firstMentionBeforeFloat, phát hiện ảnh DPI < 300 và bảng/hình thiếu caption. `QcEngine` chuẩn hóa bảng điểm 0-100/100 chia đều theo 6 trụ cột cấu trúc (IMRaD, Hình ảnh, Bảng biểu, Trích dẫn, Tác giả & Tóm tắt, Định dạng) và hỗ trợ quickFix. Nối trực tiếp vào `PreflightQCTab.tsx` bảo toàn 100% giao diện và nút "Sửa ngay". 17/17 tests mới và 300/300 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 5.2: Xây dựng Bộ Sinh Mã `LatexExporter` Hợp nhất & Tệp Khuôn mẫu `structpaper-hs.cls`**
+- [x] **Task 5.2: Xây dựng Bộ Sinh Mã `LatexExporter` Hợp nhất & Tệp Khuôn mẫu `structpaper-hs.cls`**
   - **Files:**
     - Tạo: `packages/exporters/package.json`
+    - Tạo: `packages/exporters/tsconfig.json`
+    - Tạo: `packages/exporters/src/index.ts`
+    - Tạo: `packages/exporters/src/latex/index.ts`
     - Tạo: `packages/exporters/src/latex/latex-exporter.ts`
     - Tạo: `packages/exporters/src/latex/escape-tex.ts`
     - Tạo: `packages/exporters/src/latex/templates/structpaper-hs.cls`
-    - Tạo: `packages/exporters/src/latex/blocks/table-to-latex.ts`
-    - Tạo: `packages/exporters/src/latex/blocks/figure-to-latex.ts`
+    - Tạo: `packages/exporters/src/latex/blocks/inlines-to-latex.ts`
     - Tạo: `packages/exporters/src/latex/blocks/equation-to-latex.ts`
-    - Test: `packages/exporters/tests/latex-exporter.test.ts`
-  - **Bước 1:** Viết golden test xuất mã LaTeX từ cây `Manuscript` mẫu, đối chiếu với file TeX kỳ vọng.
-  - **Bước 2:** Xây dựng hàm an toàn `escapeTex` bắt buộc cho mọi chuỗi văn bản (thoát các ký tự `%`, `&`, `_`, `#`, `$` an toàn).
-  - **Bước 3:** Chèn ghi chú ẩn `%%BLOCK:<id>` trước mỗi block phục vụ tính năng SyncTeX và tra cứu ngược vị trí lỗi.
-  - **Bước 4:** Triển khai `structpaper-hs.cls` định nghĩa các macro trang bìa `\spTitle`, `\spAuthors`, `\spAbstract`.
-  - **Bước 5:** Chạy test xuất LaTeX và kiểm tra biên dịch XeLaTeX thành công.
+    - Tạo: `packages/exporters/src/latex/blocks/figure-to-latex.ts`
+    - Tạo: `packages/exporters/src/latex/blocks/table-to-latex.ts`
+    - Tạo: `packages/exporters/src/latex/blocks/block-dispatcher.ts`
+    - Tạo: `packages/exporters/src/latex/blocks/index.ts`
+    - Sửa: `vitest.workspace.ts`
+    - Test: `packages/exporters/tests/escape-tex.test.ts` (6/6 pass)
+    - Test: `packages/exporters/tests/blocks-to-latex.test.ts` (12/12 pass)
+    - Test: `packages/exporters/tests/latex-exporter.test.ts` (4/4 pass, bao gồm test biên dịch thực tế bằng Tectonic binary)
+  - **Hoàn thành:** Khởi tạo thành công package độc lập `@structpaper/exporters` phụ thuộc `@structpaper/doc-model` và `@structpaper/journal-profiles` (0 phụ thuộc React/DOM). Triển khai `escapeTex` an toàn thoát 10 ký tự đặc biệt LaTeX (`%`, `&`, `_`, `#`, `$`, `\`, `^`, `{`, `}`, `~`) và bảo toàn công thức toán học inline/display. Xây dựng document class chuẩn `structpaper-hs.cls` (2 cột, font tiếng Việt Times New Roman qua `fontspec`, lề 20mm, macros `\spTitle`, `\spTitleEn`, `\spAuthors`, `\spAffiliations`, `\spAbstract`, `\spKeywords`, `\spDates`, `\spDoi`, `\spArticleType`, `\spJournal`, `\makeSPTitle`). Triển khai bộ chuyển đổi block-to-latex: `tableToLatex` (thuật toán ma trận ô 2D hỗ trợ colSpan `\multicolumn`, rowSpan `\multirow`, alignment, booktabs `\toprule`/`\midrule`/`\bottomrule`), `figureToLatex` (1 cột / 2 cột `figure*`, scale, caption, nguồn, cơ chế fallback an toàn tránh lỗi thiếu ảnh), `equationToLatex` (đánh số `\begin{equation}` hoặc `\[...\]`), `inlinesToLatex` (bold, italic, sup, sub, code, Vancouver cite `\cite{...}`, xref `\ref{...}`, math `$latex$`). `LatexExporter` tự động gắn comment ẩn `%%BLOCK:<id>` trước mỗi block phục vụ truy vết vị trí / SyncTeX, duyệt đệ quy các phân cấp đề mục (`\section`, `\subsection`, `\subsubsection`), render phần back matter và thư mục `\begin{thebibliography}`. 22/22 tests mới và 322/322 tests monorepo pass 100%, kiểm thử biên dịch TeX với `bin/tectonic.exe` tạo file PDF chuẩn `%PDF-` 0 lỗi syntax, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 5.3: Xây dựng Exporters Cho JATS XML 1.3, Docx & Tích hợp `citeproc-js`**
   - **Files:**

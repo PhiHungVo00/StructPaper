@@ -188,6 +188,15 @@ importers:
         specifier: ^4.5.5
         version: 4.5.7(@types/react@18.3.31)(immer@10.2.0)(react@18.3.1)
 
+  packages/exporters:
+    dependencies:
+      '@structpaper/doc-model':
+        specifier: workspace:*
+        version: link:../doc-model
+      '@structpaper/journal-profiles':
+        specifier: workspace:*
+        version: link:../journal-profiles
+
   packages/ingest-docx:
     dependencies:
       '@structpaper/doc-model':
