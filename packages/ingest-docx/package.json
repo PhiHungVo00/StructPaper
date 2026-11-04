@@ -10,11 +10,15 @@
     "./package": "./src/package/index.ts",
     "./ooxml": "./src/ooxml/index.ts",
     "./recognizers": "./src/recognizers/index.ts",
-    "./assemblers": "./src/assemblers/index.ts"
+    "./assemblers": "./src/assemblers/index.ts",
+    "./normalizers": "./src/normalizers/index.ts",
+    "./pipeline": "./src/pipeline/index.ts",
+    "./worker": "./src/worker/ingest-worker.ts"
   },
   "dependencies": {
     "@structpaper/doc-model": "workspace:*",
     "@structpaper/journal-profiles": "workspace:*",
+    "comlink": "^4.4.2",
     "fast-xml-parser": "^5.11.2",
     "jszip": "^3.10.2"
   }
