@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-04T20:21:14.527Z",
+  "timestamp": "2026-11-04T23:07:21.503Z",
   "platform": "win32 x64",
   "nodeVersion": "v22.8.0",
   "latexSourceLines": 82,
@@ -10,9 +10,9 @@
       "version": "Tectonic 0.17.0",
       "available": true,
       "notes": "Zero-config offline binary bundled in repository. Auto-caches packages and OpenType fonts locally.",
-      "coldCompileMs": 7148,
-      "warmCompileMs": 4497,
-      "pdfSizeBytes": 70899,
+      "coldCompileMs": 2878,
+      "warmCompileMs": 2885,
+      "pdfSizeBytes": 70900,
       "pdfVerified": true,
       "securityFlags": [
         "--untrusted"
