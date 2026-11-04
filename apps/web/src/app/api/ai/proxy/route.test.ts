@@ -197,4 +197,73 @@ describe('Server AI Proxy Route (/api/ai/proxy)', () => {
     assert.strictEqual(json.success, true);
     assert.strictEqual(json.data.title, 'Tiêu đề trích xuất');
   });
+
+  test('Forwards request to Spring Boot backend when SPRING_API_URL is configured', async () => {
+    process.env.SPRING_API_URL = 'http://spring-backend:8080';
+    let interceptedUrl = '';
+    let interceptedBody: any = null;
+
+    global.fetch = async (url: any, init?: any) => {
+      interceptedUrl = String(url);
+      interceptedBody = JSON.parse(init?.body || '{}');
+      return new Response(
+        JSON.stringify({
+          action: 'extractFrontMatter',
+          success: true,
+          data: {
+            title: 'Tiêu đề từ Spring Boot Backend',
+            journalId: 'VNUHCM-ET',
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    };
+
+    const req = createRequest({
+      action: 'extractFrontMatter',
+      text: 'Nội dung bài báo gửi tới Spring Boot...',
+    });
+
+    const res = await POST(req);
+    assert.strictEqual(res.status, 200);
+    const json = await res.json();
+    assert.strictEqual(json.success, true);
+    assert.strictEqual(json.data.title, 'Tiêu đề từ Spring Boot Backend');
+    assert.strictEqual(interceptedUrl, 'http://spring-backend:8080/api/v1/ai/extract');
+    assert.strictEqual(interceptedBody.action, 'extractFrontMatter');
+    assert.strictEqual(interceptedBody.payload.text, 'Nội dung bài báo gửi tới Spring Boot...');
+
+    delete process.env.SPRING_API_URL;
+  });
+
+  test('Falls back to local handler when Spring Boot backend is unreachable', async () => {
+    process.env.SPRING_API_URL = 'http://unreachable-spring-backend:8080';
+    process.env.OPENAI_API_KEY = 'sk-local-fallback-key';
+
+    global.fetch = async (url: any) => {
+      if (String(url).includes('unreachable-spring-backend')) {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:8080');
+      }
+      // Local OpenAI fallback call
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: JSON.stringify({ title: 'Fallback Local Title' }) } }],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    };
+
+    const req = createRequest({
+      action: 'metadata',
+      text: 'Bài báo fallback',
+    });
+
+    const res = await POST(req);
+    assert.strictEqual(res.status, 200);
+    const json = await res.json();
+    assert.strictEqual(json.success, true);
+    assert.strictEqual(json.data.title, 'Fallback Local Title');
+
+    delete process.env.SPRING_API_URL;
+  });
 });

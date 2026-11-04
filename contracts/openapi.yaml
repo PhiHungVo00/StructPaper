@@ -390,8 +390,8 @@ paths:
       summary: Whitelisted AI proxy action
       description: >-
         Secure server-side proxy route executing whitelisted extraction actions
-        (metadata, table, extractFrontMatter, disambiguateSection, extractTable).
-        Enforces rate limits and 100KB payload restriction.
+        (extractFrontMatter, extractMetadata, suggestKeywords, refineAbstract, fixGrammar).
+        Enforces rate limits and 15KB payload restriction.
       operationId: aiExtractProxy
       requestBody:
         required: true
@@ -413,7 +413,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '413':
-          description: Payload exceeds 100KB limit
+          description: Payload exceeds 15KB limit
           content:
             application/json:
               schema:
@@ -1538,9 +1538,13 @@ components:
         action:
           type: string
           enum:
+            - extractFrontMatter
+            - extractMetadata
+            - suggestKeywords
+            - refineAbstract
+            - fixGrammar
             - metadata
             - table
-            - extractFrontMatter
             - disambiguateSection
             - extractTable
         payload:

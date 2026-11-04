@@ -8,6 +8,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import vn.edu.vnu.structpaper.ai.InvalidActionException;
+import vn.edu.vnu.structpaper.ai.PayloadTooLargeException;
 import vn.edu.vnu.structpaper.dto.response.ErrorResponse;
 
 import java.util.stream.Collectors;
@@ -101,6 +103,34 @@ public class GlobalExceptionHandler {
                 ""
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(InvalidActionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidAction(InvalidActionException ex) {
+        log.warn("Hành động AI không hợp lệ: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_ACTION",
+                ex.getMessage(),
+                "AiProxy",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(PayloadTooLargeException.class)
+    public ResponseEntity<ErrorResponse> handlePayloadTooLarge(PayloadTooLargeException ex) {
+        log.warn("Payload AI vượt quá kích thước cho phép: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                "PAYLOAD_TOO_LARGE",
+                ex.getMessage(),
+                "AiProxy",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
     }
 
     @ExceptionHandler(Exception.class)

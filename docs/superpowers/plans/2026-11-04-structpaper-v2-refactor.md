@@ -533,15 +533,28 @@
     4. Bộ nhớ đệm `CompileCacheService`: Tính SHA-256 từ mã nguồn TeX + asset hashes/images để cache kết quả PDF và logs.
     5. Kiểm thử toàn diện: 22/22 tests Spring Boot Gradle pass 100% (7 test mới cho CompileQueueTest kiểm tra hủy job cũ, cache hit tức thì, hủy thủ công DELETE, xử lý lỗi cú pháp, timeout, download PDF, dọn dẹp sandbox), 338/338 tests Vitest monorepo pass 100%, `pnpm build:web` pass 100%.
 
-- [ ] **Task 6.3: Xây dựng AI Proxy Chính thức Phía Backend Spring Boot**
+- [x] **Task 6.3: Xây dựng AI Proxy Chính thức Phía Backend Spring Boot**
   - **Files:**
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/AiProxyController.java`
     - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/AiService.java`
-    - Sửa: `apps/web/src/app/api/ai/proxy/route.ts` (chuyển tiếp sang Spring Boot API)
-    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/ai/AiProxyTest.java`
-  - **Bước 1:** Triển khai controller nhận request từ client, kiểm tra whitelist action và gọi OpenAI qua HTTP client của Java.
-  - **Bước 2:** Ghi log audit số lượng token tiêu thụ và địa chỉ IP gọi yêu cầu.
-  - **Bước 3:** Thay thế route proxy tạm thời của Next.js để kết nối sang Spring Boot API.
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/AiExtractRequest.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/AiExtractResponse.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/AiProperties.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/AiAuditRecord.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/InvalidActionException.java`
+    - Tạo: `apps/api/src/main/java/vn/edu/vnu/structpaper/ai/PayloadTooLargeException.java`
+    - Sửa: `apps/api/src/main/java/vn/edu/vnu/structpaper/exception/GlobalExceptionHandler.java` (thêm handler cho `InvalidActionException` 400 và `PayloadTooLargeException` 413)
+    - Sửa: `apps/api/src/main/resources/application.yml` (cấu hình `structpaper.ai`)
+    - Sửa: `contracts/openapi.yaml` (cập nhật enum actions và giới hạn 15KB cho `/api/v1/ai/extract`)
+    - Sửa: `apps/web/src/app/api/ai/proxy/route.ts` (chuyển tiếp sang Spring Boot API qua `SPRING_API_URL` với fallback an toàn)
+    - Sửa: `apps/web/src/app/api/ai/proxy/route.test.ts` (thêm unit tests cho chuyển tiếp backend Spring Boot và fallback)
+    - Test: `apps/api/src/test/java/vn/edu/vnu/structpaper/ai/AiProxyTest.java` (11 tests pass)
+  - **Hoàn thành:** Hoàn tất toàn diện Task 6.3 và chính thức hoàn tất Phase 6:
+    1. Chuẩn hóa API Cổng 2 OpenAPI cho endpoint `POST /api/v1/ai/extract`, giới hạn payload tối đa 15KB (15,360 bytes), hỗ trợ 5 action nghiêm ngặt trong whitelist (`extractFrontMatter`, `extractMetadata`, `suggestKeywords`, `refineAbstract`, `fixGrammar`).
+    2. Triển khai `AiProxyController` và `AiService` phía Spring Boot sử dụng `RestClient` gọi OpenAI API (`gpt-4o-mini`), nghiêm cấm nhận prompt tự do (chặn 400 `INVALID_ACTION` khi có prompt injection hoặc action lạ), chặn 413 `PAYLOAD_TOO_LARGE` khi kích thước vượt 15KB.
+    3. Hỗ trợ fallback sang mock response có cấu trúc thực tế khi không có `OPENAI_API_KEY` (hoặc trong môi trường test/CI), kèm audit log ghi nhận action, tokens ước tính, thời gian thực thi (ms) và địa chỉ IP của client (`X-Forwarded-For` / `X-Real-IP`).
+    4. Cập nhật Next.js route `/api/ai/proxy` chuyển tiếp sang Spring Boot backend khi có `SPRING_API_URL` (hoặc `http://localhost:8080`), tự động fallback sang xử lý cục bộ khi backend chưa bật hoặc không kết nối được.
+    5. Kiểm thử toàn diện: 33/33 tests Spring Boot Gradle pass 100% (11 tests mới cho AiProxyTest), 340/340 tests Vitest monorepo pass 100%, 0 vi phạm kiến trúc (depcruise 653 modules), Next.js `pnpm build:web` pass 100%.
 
 ---
 

@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_ACTIONS = ['metadata', 'table', 'extractFrontMatter'] as const;
+const ALLOWED_ACTIONS = [
+  'metadata',
+  'table',
+  'extractFrontMatter',
+  'extractMetadata',
+  'suggestKeywords',
+  'refineAbstract',
+  'fixGrammar',
+] as const;
 type AllowedAction = (typeof ALLOWED_ACTIONS)[number];
 
 const ALLOWED_MODELS = ['gpt-4o-mini', 'gpt-5.4-mini', 'gpt-4o'] as const;
@@ -13,6 +21,8 @@ interface AiProxyRequestBody {
   action?: string;
   text?: string;
   tableText?: string;
+  payload?: Record<string, any>;
+  options?: Record<string, any>;
   model?: string;
   // Note: Client apiKey is intentionally omitted from type definition and discarded if sent
 }
@@ -64,19 +74,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. Server OpenAI API Key validation
-  const serverApiKey = process.env.OPENAI_API_KEY;
-  if (!serverApiKey || !serverApiKey.trim()) {
-    return NextResponse.json(
-      {
-        error:
-          'OpenAI API Key chưa được cấu hình trên máy chủ. Vui lòng thiết lập biến môi trường OPENAI_API_KEY.',
-      },
-      { status: 500 }
-    );
-  }
-
-  // 4. Parse request body
+  // 3. Parse request body
   let body: AiProxyRequestBody;
   try {
     body = await req.json();
@@ -87,7 +85,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 5. Action Whitelist validation
+  // 4. Action Whitelist validation
   if (!body.action || !ALLOWED_ACTIONS.includes(body.action as AllowedAction)) {
     return NextResponse.json(
       { error: 'Hành động không hợp lệ. Chỉ chấp nhận "metadata" hoặc "table".' },
@@ -95,13 +93,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const normalizedAction = body.action === 'extractFrontMatter' ? 'metadata' : body.action;
+  // 5. Text length & presence validation
+  const text = (body.text || (body.payload && typeof body.payload.text === 'string' ? body.payload.text : '') || '').trim();
+  const tableText = (body.tableText || (body.payload && typeof body.payload.tableText === 'string' ? body.payload.tableText : '') || '').trim();
+  const hasPayload = body.payload && Object.keys(body.payload).length > 0;
 
-  // 6. Text length & presence validation
-  const text = (body.text || '').trim();
-  const tableText = (body.tableText || '').trim();
-
-  if (!text && !tableText) {
+  if (!text && !tableText && !hasPayload) {
     return NextResponse.json(
       { error: 'Thiếu dữ liệu văn bản cần trích xuất.' },
       { status: 400 }
@@ -122,13 +119,71 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 7. Model selection (whitelist only)
+  // 6. Forward to Spring Boot Backend if configured or available
+  const springBaseUrl = process.env.SPRING_API_URL || (process.env.NODE_ENV === 'test' ? undefined : 'http://localhost:8080');
+  if (springBaseUrl) {
+    try {
+      const springAction = body.action === 'metadata' ? 'extractFrontMatter' : body.action;
+      const payload = body.payload ?? (tableText ? { tableText, text } : { text });
+
+      const endpoint = `${springBaseUrl.replace(/\/+$/, '')}/api/v1/ai/extract`;
+      const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+
+      const springRes = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Forwarded-For': clientIp,
+        },
+        body: JSON.stringify({
+          action: springAction,
+          payload,
+          options: body.options,
+        }),
+      });
+
+      if (springRes.ok) {
+        const result = await springRes.json();
+        if (result && (result.data !== undefined || result.action !== undefined)) {
+          return NextResponse.json({
+            success: true,
+            data: result.data,
+            action: result.action,
+          });
+        }
+      } else if (springRes.status === 400 || springRes.status === 413) {
+        const errJson = await springRes.json().catch(() => ({}));
+        return NextResponse.json(
+          { error: errJson.message || 'Lỗi yêu cầu từ backend', code: errJson.code },
+          { status: springRes.status }
+        );
+      }
+    } catch {
+      // Backend not reachable, fall back smoothly to local OpenAI handling below
+    }
+  }
+
+  // 7. Server OpenAI API Key validation (for local handling fallback)
+  const serverApiKey = process.env.OPENAI_API_KEY;
+  if (!serverApiKey || !serverApiKey.trim()) {
+    return NextResponse.json(
+      {
+        error:
+          'OpenAI API Key chưa được cấu hình trên máy chủ. Vui lòng thiết lập biến môi trường OPENAI_API_KEY.',
+      },
+      { status: 500 }
+    );
+  }
+
+  const normalizedAction = body.action === 'extractFrontMatter' ? 'metadata' : body.action;
+
+  // 8. Model selection (whitelist only)
   const requestedModel = body.model as any;
   const selectedModel = ALLOWED_MODELS.includes(requestedModel)
     ? requestedModel
     : DEFAULT_MODEL;
 
-  // 8. Construct strictly server-defined prompts (no arbitrary user prompts allowed)
+  // 9. Construct strictly server-defined prompts (no arbitrary user prompts allowed)
   try {
     if (normalizedAction === 'table') {
       const tableContent = (tableText || text).slice(0, 10000);
@@ -149,7 +204,55 @@ ${tableContent}`;
       return NextResponse.json({ success: true, data: aiResponse });
     }
 
-    // Default: 'metadata' (or 'extractFrontMatter')
+    if (normalizedAction === 'suggestKeywords') {
+      const content = text.slice(0, 10000);
+      const keywordsPrompt = `Bạn là chuyên gia biên tập học thuật của Đại học Quốc gia TP.HCM. Hãy đề xuất 5-8 từ khóa tiếng Việt và tiếng Anh cho nội dung bài báo sau.
+Trả về định dạng JSON:
+{
+  "keywords": ["từ khóa 1", "từ khóa 2"],
+  "keywordsEn": ["keyword 1", "keyword 2"]
+}
+
+Nội dung:
+${content}`;
+      const aiResponse = await callOpenAi(serverApiKey.trim(), selectedModel, keywordsPrompt);
+      return NextResponse.json({ success: true, data: aiResponse });
+    }
+
+    if (normalizedAction === 'refineAbstract') {
+      const content = text.slice(0, 10000);
+      const refinePrompt = `Bạn là chuyên gia biên tập học thuật của Đại học Quốc gia TP.HCM. Hãy trau chuốt và chuẩn hóa đoạn tóm tắt khoa học sau:
+Trả về định dạng JSON:
+{
+  "original": "${content}",
+  "refined": "Đoạn tóm tắt đã được trau chuốt...",
+  "improvements": ["cải tiến 1", "cải tiến 2"]
+}
+
+Tóm tắt:
+${content}`;
+      const aiResponse = await callOpenAi(serverApiKey.trim(), selectedModel, refinePrompt);
+      return NextResponse.json({ success: true, data: aiResponse });
+    }
+
+    if (normalizedAction === 'fixGrammar') {
+      const content = text.slice(0, 10000);
+      const fixPrompt = `Bạn là chuyên gia hiệu đính học thuật của Đại học Quốc gia TP.HCM. Hãy kiểm tra và sửa lỗi ngữ pháp, chính tả cho văn bản sau:
+Trả về định dạng JSON:
+{
+  "original": "${content}",
+  "correctedText": "Văn bản đã sửa...",
+  "correctionsCount": 1,
+  "corrections": [{"type": "spelling/grammar", "original": "từ sai", "replacement": "từ đúng", "reason": "lý do"}]
+}
+
+Văn bản:
+${content}`;
+      const aiResponse = await callOpenAi(serverApiKey.trim(), selectedModel, fixPrompt);
+      return NextResponse.json({ success: true, data: aiResponse });
+    }
+
+    // Default: 'metadata' (or 'extractFrontMatter', 'extractMetadata')
     const metadataContent = text.slice(0, 10000);
     const metadataPrompt = `Bạn là chuyên gia biên tập xuất bản của Đại học Quốc gia Thành phố Hồ Chí Minh (VNUHCM).
 Hãy phân tích phần đầu bản thảo khoa học sau và trích xuất cấu trúc dữ liệu JSON chính xác 100%:
