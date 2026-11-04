@@ -138,15 +138,19 @@
 
 ### Phase 2: Engine Spike, Cổng 2 OpenAPI, Minimal Store/Bus & Lưu trữ Offline-first
 
-- [ ] **Task 2.1: LaTeX Engine Spike (XeLaTeX, Tectonic, WasmCompiler)**
+- [x] **Task 2.1: LaTeX Engine Spike (XeLaTeX, Tectonic, WasmCompiler)**
   - **Files:**
     - Tạo: `scripts/spikes/latex-engine-spike.ts`
     - Tạo: `docs/superpowers/specs/spike-latex-engine-report.md`
+    - Tạo: `tests/latex-spike.test.ts`
+    - Sửa: `package.json` (thêm script `spike:engine` và dependency `tsx`)
   - **Bước 1:** Viết script benchmark chạy biên dịch bài mẫu chứa tiếng Việt Unicode, font OpenType và công thức toán với:
-    - Engine 1: `xelatex` (local TeX Live).
-    - Engine 2: `tectonic.exe` (đã có sẵn trong thư mục `bin/tectonic.exe`).
-  - **Bước 2:** So sánh thời gian biên dịch, dung lượng PDF và độ trung thực font chữ tiếng Việt.
-  - **Bước 3:** Ghi nhận báo cáo, chốt sử dụng **XeLaTeX** làm engine chính thức và **Tectonic** làm engine dev offline siêu tốc.
+    - Engine 1: `xelatex` (local TeX Live / Docker container baseline).
+    - Engine 2: `bin/tectonic.exe` (đã có sẵn trong thư mục `bin/tectonic.exe`).
+    - Engine 3: `WasmCompiler` (phân tích tính khả thi trong trình duyệt).
+  - **Bước 2:** So sánh thời gian biên dịch (Cold vs Warm), dung lượng PDF, mức chiếm dụng bộ nhớ, độ trung thực font chữ tiếng Việt và khả năng cách ly bảo mật (`--untrusted`, `--no-shell-escape`).
+  - **Bước 3:** Ghi nhận báo cáo kỹ thuật chi tiết tại `docs/superpowers/specs/spike-latex-engine-report.md`, chốt sử dụng **XeLaTeX** làm engine chính thức trên server (Spring Boot Compile Queue qua Docker TeX Live) và **Tectonic** làm engine dev offline siêu tốc (zero-config, ~1.1s warm compile).
+  - **Hoàn thành:** Đã viết xong benchmark script đa nền tảng, xuất báo cáo benchmark tự động `benchmark-results.json` và file PDF kiểm chứng `spike-sample.pdf` (hợp lệ với magic bytes `%PDF-`). 105/105 tests monorepo xanh, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 2.2: Thiết lập Hợp đồng API `contracts/openapi.yaml` (CỔNG 2)**
   - **Files:**

@@ -1,0 +1,81 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+
+\title{\textbf{Nghiên cứu về vi khuẩn \textit{Helicobacter pylori} và chỉ số $\text{FEV}_1$ trong chẩn đoán suy giảm chức năng hô hấp}}
+\author{
+  \textbf{Nguyễn Văn An}$^{1}$, \textbf{Trần Thị Bình}$^{2}$, \textbf{Lê Hoàng Cường}$^{1,2}$ \\
+  $^{1}$Khoa Y - Đại học Quốc gia TP. Hồ Chí Minh \\
+  $^{2}$Bệnh viện Đại học Y Dược TP. Hồ Chí Minh
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\textbf{Tóm tắt.} Nghiên cứu này khảo sát mối liên quan giữa tình trạng nhiễm khuẩn \textit{Helicobacter pylori} đường tiêu hóa và sự suy giảm chỉ số chức năng thông khí phổi $\text{FEV}_1$ (Forced Expiratory Volume in 1 second) ở nhóm bệnh nhân người lớn tại miền Nam Việt Nam. Mẫu nghiên cứu gồm 200 đối tượng được đo chức năng hô hấp bằng phế thân ký và xét nghiệm mô bệnh học dạ dày. Kết quả cho thấy tỷ lệ giảm $\text{FEV}_1 < 70\%$ ở nhóm dương tính với \textit{H. pylori} cao hơn có ý nghĩa thống kê so với nhóm âm tính ($\text{OR} = 2.45$; $95\%\text{CI}: 1.32 - 4.56$; $p < 0.01$). \\
+\textbf{Từ khóa:} \textit{Helicobacter pylori}; chỉ số $\text{FEV}_1$; chức năng hô hấp; dịch tễ học lâm sàng; Việt Nam.
+\end{abstract}
+
+\section{Đặt vấn đề}
+Nhiễm khuẩn vi khuẩn gram âm \textit{Helicobacter pylori} là nguyên nhân hàng đầu gây viêm loét dạ dày - tá tràng và ung thư dạ dày trên toàn cầu. Tại Việt Nam, tỷ lệ nhiễm trong cộng đồng ước tính lên tới $65\% - 75\%$. Gần đây, nhiều bằng chứng sinh học phân tử chỉ ra phản ứng viêm toàn thân qua trung gian interleukin ($IL-6$, $TNF-\alpha$) có thể ảnh hưởng tiêu cực tới đường dẫn khí ngoại biên.
+
+Bộ ký tự tiếng Việt với đầy đủ nguyên âm có dấu thanh âm: \textbf{ngang, huyền, sắc, hỏi, ngã, nặng} và các ký tự ghép như: \textit{ă, â, đ, ê, ô, ơ, ư} cần được kết xuất với độ trung thực typographic cao nhất trong hệ thống ấn bản chuẩn khoa học.
+
+\section{Phương pháp và Mô hình Toán học}
+Nghiên cứu mô tả cắt ngang có phân tích. Mô hình ước tính tỷ số chênh Odds Ratio (OR) kèm khoảng tin cậy $95\%$ được định nghĩa:
+\begin{equation}
+\text{OR} = \frac{a \times d}{b \times c}, \quad 95\% \text{CI} = \exp\left(\ln(\text{OR}) \pm 1.96 \times \sqrt{\frac{1}{a} + \frac{1}{b} + \frac{1}{c} + \frac{1}{d}}\right)
+\end{equation}
+
+Phương trình bậc hai tính nghiệm cân bằng hóa sinh:
+\begin{equation}
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\end{equation}
+
+Hàm mật độ xác suất của phân phối chuẩn $\mathcal{N}(\mu, \sigma^2)$ cho chỉ số thể tích thở:
+\begin{equation}
+f(x) = \frac{1}{\sigma \sqrt{2\pi}} \exp\left( -\frac{1}{2}\left(\frac{x - \mu}{\sigma}\right)^2 \right)
+\end{equation}
+
+\section{Kết quả và Bảng số liệu}
+Đặc điểm nhân khẩu học và phân bố chỉ số $\text{FEV}_1$ được trình bày chi tiết trong Bảng~\ref{tab:clinical}.
+
+\begin{table}[htbp]
+\centering
+\caption{Đặc điểm lâm sàng và thông số hô hấp của nhóm nghiên cứu}
+\label{tab:clinical}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Nhóm tuổi} & \textbf{Số lượng ($n$)} & \textbf{Tỷ lệ (\%)} & \textbf{$\text{FEV}_1$ trung bình (L)} & \textbf{Giá trị $p$} \\
+\midrule
+Dưới 30 tuổi  & 45  & 22.5 & $3.42 \pm 0.45$ & $< 0.05$ \\
+Từ 30 - 50 tuổi & 95  & 47.5 & $2.85 \pm 0.52$ & $< 0.01$ \\
+Trên 50 tuổi  & 60  & 30.0 & $2.10 \pm 0.38$ & $< 0.001$ \\
+\midrule
+\textbf{Tổng cộng} & \textbf{200} & \textbf{100.0} & \textbf{$2.75 \pm 0.61$} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.85\textwidth}{
+  \centering \vspace{0.8cm}
+  \textbf{[Hình 1: Đồ thị tương quan tuyến tính giữa nồng độ kháng thể IgG và chỉ số $\text{FEV}_1$]} \\
+  \textit{Hệ số tương quan Pearson $r = -0.48$ ($p < 0.001$)}
+  \vspace{0.8cm}
+}}
+\caption{Mối tương quan nghịch giữa nồng độ kháng thể và dung tích thở ra gắng sức trong 1 giây}
+\label{fig:scatter}
+\end{figure}
+
+\section{Kết luận}
+Nghiên cứu khẳng định sự hiện diện của \textit{H. pylori} có liên quan đáng kể tới sự sụt giảm chức năng hô hấp. Các công cụ xử lý văn bản khoa học như StructPaper cần duy trì khả năng xuất bản đa ngôn ngữ chuẩn xác, an toàn và tối ưu tài nguyên tính toán.
+
+\end{document}

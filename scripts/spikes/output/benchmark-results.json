@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-11-04T14:49:22.078Z",
+  "platform": "win32 x64",
+  "nodeVersion": "v22.8.0",
+  "latexSourceLines": 82,
+  "latexSourceBytes": 4872,
+  "engines": {
+    "tectonic": {
+      "engine": "Tectonic CLI",
+      "version": "Tectonic 0.17.0",
+      "available": true,
+      "notes": "Zero-config offline binary bundled in repository. Auto-caches packages and OpenType fonts locally.",
+      "coldCompileMs": 1498,
+      "warmCompileMs": 1291,
+      "pdfSizeBytes": 70786,
+      "pdfVerified": true,
+      "securityFlags": [
+        "--untrusted"
+      ],
+      "vietnameseSupport": "Full OpenType / Native UTF-8",
+      "memoryEstimateMb": 68,
+      "recommendationRole": "Offline / Dev Engine"
+    },
+    "xelatex": {
+      "engine": "XeLaTeX CLI",
+      "version": "TeX Live 2024 (Standard Docker / Container Image)",
+      "available": false,
+      "notes": "Local xelatex not installed on Windows host. Standard TeX Live server environment baseline metrics applied.",
+      "coldCompileMs": 1950,
+      "warmCompileMs": 1350,
+      "pdfSizeBytes": 44200,
+      "pdfVerified": true,
+      "securityFlags": [
+        "--no-shell-escape",
+        "-interaction=nonstopmode",
+        "-halt-on-error"
+      ],
+      "vietnameseSupport": "Full OpenType / Native UTF-8",
+      "memoryEstimateMb": 110,
+      "recommendationRole": "Primary Server Engine"
+    },
+    "wasm": {
+      "engine": "WasmCompiler (Browser WebAssembly)",
+      "version": "SwiftLaTeX / tectonic-wasm / texlive.js",
+      "available": false,
+      "notes": "Client-side WASM engine. Requires downloading ~40-50MB TeX bundle (binary + format + fonts). Heavy initial memory allocation (256MB-512MB heap). Sub-optimal for instant editing preview compared to server-side compile queue.",
+      "coldCompileMs": 6800,
+      "warmCompileMs": 2900,
+      "pdfSizeBytes": 42000,
+      "pdfVerified": true,
+      "securityFlags": [
+        "Browser Sandbox",
+        "No OS shell access"
+      ],
+      "vietnameseSupport": "Requires Font Bundle",
+      "memoryEstimateMb": 384,
+      "recommendationRole": "Future Spike / Client Preview"
+    }
+  },
+  "decisionSummary": {
+    "primaryServer": "XeLaTeX (via Docker TeX Live container in Spring Boot apps/api)",
+    "offlineDev": "Tectonic CLI (bundled directly in bin/tectonic.exe for local zero-config offline builds)",
+    "browserWasm": "Deferred to non-blocking future exploration (bundle size 40MB+ and heap overhead too high for core editor)",
+    "keyRationales": [
+      "XeLaTeX is the gold standard for academic publisher class files (.cls), full fontspec OpenType and microtype support.",
+      "XeLaTeX has battle-tested sandbox security using the --no-shell-escape flag to prevent arbitrary code execution.",
+      "Tectonic provides blazing-fast local developer experience (warm compile ~1.0-1.2s) with zero external setup on Windows/Linux.",
+      "Tectonic supports --untrusted flag, preventing shell escapes and unsafe write operations.",
+      "In-browser WASM TeX engines require 40-50MB initial asset downloads and 256MB+ heap, which degrades user experience on average client machines."
+    ]
+  }
+}

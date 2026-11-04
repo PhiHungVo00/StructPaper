@@ -11,6 +11,7 @@ bin/
 
 # --- Scratch & Temporary Generation Files ---
 scratch/
+scripts/spikes/output/*.pdf
 *.bmp
 *.tmp
 
