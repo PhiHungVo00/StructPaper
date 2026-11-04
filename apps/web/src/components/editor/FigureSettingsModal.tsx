@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PaperFigure } from '@/types/paper';
+import { IndexedDbAssetRepo, defaultDatabase } from '@structpaper/storage';
 import {
   X,
   Sliders,
@@ -15,6 +16,7 @@ import {
   AlignCenter,
   AlignRight,
   Image as ImageIcon,
+  Database,
 } from 'lucide-react';
 
 interface FigureSettingsModalProps {
@@ -44,6 +46,33 @@ export const FigureSettingsModal: React.FC<FigureSettingsModalProps> = ({
   const [alignment, setAlignment] = useState<'center' | 'left' | 'right'>(figure.alignment || 'center');
   const [hasBorder, setHasBorder] = useState<boolean>(figure.hasBorder !== false);
   const [placement, setPlacement] = useState<'auto' | 'top' | 'here' | 'bottom'>(figure.placement || 'auto');
+  const [assetId, setAssetId] = useState<string>(figure.assetId || '');
+  const [assetStatus, setAssetStatus] = useState<'idle' | 'checking' | 'found' | 'not_found'>('idle');
+  const [assetMeta, setAssetMeta] = useState<{ size?: number; mime?: string } | null>(null);
+
+  const checkAssetHash = async (hashToCheck: string) => {
+    const trimmed = hashToCheck.trim();
+    if (!trimmed) {
+      setAssetStatus('idle');
+      setAssetMeta(null);
+      return;
+    }
+    setAssetStatus('checking');
+    try {
+      const repo = new IndexedDbAssetRepo(defaultDatabase);
+      const blob = await repo.getByHash(trimmed);
+      if (blob) {
+        setAssetStatus('found');
+        setAssetMeta({ size: blob.size, mime: blob.type });
+      } else {
+        setAssetStatus('not_found');
+        setAssetMeta(null);
+      }
+    } catch {
+      setAssetStatus('not_found');
+      setAssetMeta(null);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -65,6 +94,14 @@ export const FigureSettingsModal: React.FC<FigureSettingsModalProps> = ({
       setAlignment(figure.alignment || 'center');
       setHasBorder(figure.hasBorder !== false);
       setPlacement(figure.placement || 'auto');
+      const initialAsset = figure.assetId || '';
+      setAssetId(initialAsset);
+      if (initialAsset) {
+        checkAssetHash(initialAsset);
+      } else {
+        setAssetStatus('idle');
+        setAssetMeta(null);
+      }
     }
   }, [isOpen, figure]);
 
@@ -76,6 +113,13 @@ export const FigureSettingsModal: React.FC<FigureSettingsModalProps> = ({
     setAlignment('center');
     setHasBorder(true);
     setPlacement('auto');
+    setAssetId(figure.assetId || '');
+    if (figure.assetId) {
+      checkAssetHash(figure.assetId);
+    } else {
+      setAssetStatus('idle');
+      setAssetMeta(null);
+    }
   };
 
   const handleSave = () => {
@@ -87,6 +131,7 @@ export const FigureSettingsModal: React.FC<FigureSettingsModalProps> = ({
       alignment,
       hasBorder,
       placement,
+      assetId: assetId.trim() || undefined,
     };
     onSave(updated);
     onClose();
@@ -360,6 +405,56 @@ export const FigureSettingsModal: React.FC<FigureSettingsModalProps> = ({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* 5. LIÊN KẾT ASSET STORAGE (SHA-256) */}
+            <div className="space-y-1.5 pt-1 border-t border-zinc-200/60">
+              <div className="flex items-center justify-between">
+                <label
+                  className="text-[12px] font-bold text-zinc-600 flex items-center gap-1.5"
+                  title="Liên kết Asset SHA-256 từ kho lưu trữ IndexedDB"
+                >
+                  <Database className="w-3.5 h-3.5 text-zinc-400" />
+                  Asset SHA-256 (Storage)
+                </label>
+                {assetStatus === 'found' && (
+                  <span className="text-[10px] font-bold text-[#14532D] bg-[#D9F99D] px-2 py-0.5 rounded-full">
+                    Đã liên kết
+                  </span>
+                )}
+                {assetStatus === 'checking' && (
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                    Kiểm tra...
+                  </span>
+                )}
+                {assetStatus === 'not_found' && (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                    Chưa lưu
+                  </span>
+                )}
+              </div>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  value={assetId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAssetId(val);
+                    checkAssetHash(val);
+                  }}
+                  placeholder="SHA-256 asset hash (vd: e3b0c442...)"
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-white text-xs font-mono text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#78C841]/50 shadow-2xs"
+                />
+              </div>
+
+              {assetMeta && (
+                <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-2 px-1">
+                  <span>MIME: {assetMeta.mime || 'application/octet-stream'}</span>
+                  <span>•</span>
+                  <span>Dung lượng: {Math.round((assetMeta.size || 0) / 1024)} KB</span>
+                </div>
+              )}
             </div>
           </div>
 

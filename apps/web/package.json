@@ -25,6 +25,7 @@
     "react": "^18",
     "react-dom": "^18",
     "sileo": "^0.1.6",
+    "@structpaper/compiler-client": "workspace:*",
     "@structpaper/doc-model": "workspace:*",
     "@structpaper/editor-core": "workspace:*",
     "@structpaper/storage": "workspace:*"

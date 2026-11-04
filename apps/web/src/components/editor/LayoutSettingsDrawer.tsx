@@ -283,22 +283,22 @@ export const LayoutSettingsDrawer: React.FC<LayoutSettingsDrawerProps> = ({
                         Vị trí đánh số trang (Position):
                       </label>
                       <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { id: 'bottom-alternating', label: 'Chân trang: Đối xứng', sub: 'Chẵn Trái – Lẻ Phải (Chuẩn sách)' },
-                          { id: 'bottom-center', label: 'Chân trang: Giữa', sub: 'Chính giữa cuối trang' },
-                          { id: 'bottom-right', label: 'Chân trang: Phải', sub: 'Góc dưới bên phải' },
-                          { id: 'bottom-left', label: 'Chân trang: Trái', sub: 'Góc dưới bên trái' },
-                          { id: 'top-alternating', label: 'Đầu trang: Đối xứng', sub: 'Chẵn Trái – Lẻ Phải (Header)' },
-                          { id: 'top-center', label: 'Đầu trang: Giữa', sub: 'Chính giữa đầu trang' },
-                          { id: 'top-right', label: 'Đầu trang: Phải', sub: 'Góc trên bên phải' },
-                          { id: 'top-left', label: 'Đầu trang: Trái', sub: 'Góc trên bên trái' },
-                        ].map((pos) => {
+                        {([
+                          { id: 'bottom-alternating' as const, label: 'Chân trang: Đối xứng', sub: 'Chẵn Trái – Lẻ Phải (Chuẩn sách)' },
+                          { id: 'bottom-center' as const, label: 'Chân trang: Giữa', sub: 'Chính giữa cuối trang' },
+                          { id: 'bottom-right' as const, label: 'Chân trang: Phải', sub: 'Góc dưới bên phải' },
+                          { id: 'bottom-left' as const, label: 'Chân trang: Trái', sub: 'Góc dưới bên trái' },
+                          { id: 'top-alternating' as const, label: 'Đầu trang: Đối xứng', sub: 'Chẵn Trái – Lẻ Phải (Header)' },
+                          { id: 'top-center' as const, label: 'Đầu trang: Giữa', sub: 'Chính giữa đầu trang' },
+                          { id: 'top-right' as const, label: 'Đầu trang: Phải', sub: 'Góc trên bên phải' },
+                          { id: 'top-left' as const, label: 'Đầu trang: Trái', sub: 'Góc trên bên trái' },
+                        ] as const).map((pos) => {
                           const isSel = pageNum.position === pos.id;
                           return (
                             <button
                               key={pos.id}
                               type="button"
-                              onClick={() => updatePageNum({ position: pos.id as any })}
+                              onClick={() => updatePageNum({ position: pos.id })}
                               className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
                                 isSel
                                   ? 'bg-blue-50/50 border-blue-500 ring-2 ring-blue-500/20'
@@ -324,21 +324,21 @@ export const LayoutSettingsDrawer: React.FC<LayoutSettingsDrawerProps> = ({
                         Định dạng số trang (Number Format):
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {[
-                          { id: 'arabic', label: '1, 2, 3...', sample: '1' },
-                          { id: 'roman-lower', label: 'i, ii, iii...', sample: 'i' },
-                          { id: 'roman-upper', label: 'I, II, III...', sample: 'I' },
-                          { id: 'alpha-lower', label: 'a, b, c...', sample: 'a' },
-                          { id: 'alpha-upper', label: 'A, B, C...', sample: 'A' },
-                          { id: 'hyphen', label: '- 1 -, - 2 -', sample: '- 1 -' },
-                          { id: 'page-x-of-y', label: 'Trang X / Y', sample: '1 / 10' },
-                        ].map((fmt) => {
+                        {([
+                          { id: 'arabic' as const, label: '1, 2, 3...', sample: '1' },
+                          { id: 'roman-lower' as const, label: 'i, ii, iii...', sample: 'i' },
+                          { id: 'roman-upper' as const, label: 'I, II, III...', sample: 'I' },
+                          { id: 'alpha-lower' as const, label: 'a, b, c...', sample: 'a' },
+                          { id: 'alpha-upper' as const, label: 'A, B, C...', sample: 'A' },
+                          { id: 'hyphen' as const, label: '- 1 -, - 2 -', sample: '- 1 -' },
+                          { id: 'page-x-of-y' as const, label: 'Trang X / Y', sample: '1 / 10' },
+                        ] as const).map((fmt) => {
                           const isSel = pageNum.format === fmt.id;
                           return (
                             <button
                               key={fmt.id}
                               type="button"
-                              onClick={() => updatePageNum({ format: fmt.id as any })}
+                              onClick={() => updatePageNum({ format: fmt.id })}
                               className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                                 isSel
                                   ? 'bg-zinc-900 text-white border-zinc-900 shadow-2xs font-bold'

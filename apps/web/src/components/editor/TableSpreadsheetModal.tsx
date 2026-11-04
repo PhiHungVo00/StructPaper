@@ -2,7 +2,17 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { PaperTable, TableCell, synthesizeHeaderRows, normalizePaperTable } from '@/types/paper';
+import { PaperTable, normalizePaperTable } from '@/types/paper';
+import type { Cell } from '@structpaper/doc-model';
+import {
+  SheetCell,
+  getExcelColLetter,
+  cloneMatrix,
+  initMatrixFromDocModelGrid,
+  initMatrixFromTable,
+  matrixToDocModelGrid,
+  matrixToPaperTableData,
+} from './table-spreadsheet-adapter';
 import {
   X,
   Check,
@@ -23,43 +33,15 @@ import {
 interface TableSpreadsheetModalProps {
   isOpen: boolean;
   table: PaperTable;
-  onSave: (updated: PaperTable) => void;
+  grid?: Cell[][];
+  onSave: (updated: PaperTable, grid?: Cell[][]) => void;
   onClose: () => void;
-}
-
-interface SheetCell {
-  text: string;
-  colSpan?: number;
-  rowSpan?: number;
-  mergedInto?: { r: number; c: number };
-  align?: 'left' | 'center' | 'right';
-  bold?: boolean;
-  italic?: boolean;
-}
-
-// Convert column index 0 -> 'A', 1 -> 'B', 25 -> 'Z', 26 -> 'AA'
-function getExcelColLetter(index: number): string {
-  let letter = '';
-  let temp = index;
-  while (temp >= 0) {
-    letter = String.fromCharCode((temp % 26) + 65) + letter;
-    temp = Math.floor(temp / 26) - 1;
-  }
-  return letter;
-}
-
-function cloneMatrix(mat: SheetCell[][]): SheetCell[][] {
-  return mat.map((row) =>
-    row.map((cell) => ({
-      ...cell,
-      mergedInto: cell.mergedInto ? { ...cell.mergedInto } : undefined,
-    }))
-  );
 }
 
 export const TableSpreadsheetModal: React.FC<TableSpreadsheetModalProps> = ({
   isOpen,
   table,
+  grid,
   onSave,
   onClose,
 }) => {
@@ -68,7 +50,11 @@ export const TableSpreadsheetModal: React.FC<TableSpreadsheetModalProps> = ({
   const [captionText, setCaptionText] = useState<string>(table.caption || '');
 
   // Unified 2D Sheet Grid: All cells are treated equally from Row 0 to Row N-1
-  const [matrix, setMatrix] = useState<SheetCell[][]>(() => initMatrixFromTable(table));
+  const [matrix, setMatrix] = useState<SheetCell[][]>(() => {
+    if (grid && grid.length > 0) return initMatrixFromDocModelGrid(grid);
+    if (table.grid && table.grid.length > 0) return initMatrixFromDocModelGrid(table.grid);
+    return initMatrixFromTable(table);
+  });
   const [history, setHistory] = useState<SheetCell[][][]>([]);
 
   // Range Selection: selectionStart to selectionEnd defines the highlighted box
@@ -83,74 +69,19 @@ export const TableSpreadsheetModal: React.FC<TableSpreadsheetModalProps> = ({
   // Refs for cell DOM elements
   const cellInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
-  // Function to initialize unified matrix
-  function initMatrixFromTable(t: PaperTable): SheetCell[][] {
-    const norm = normalizePaperTable(t);
-    const headers = norm.headers && norm.headers.length > 0 ? norm.headers : ['Cột 1'];
-    const maxCols = Math.max(
-      headers.length,
-      ...(norm.rows || []).map((r) => r.length),
-      1
-    );
-
-    // Row 0 is the table header row
-    const row0: SheetCell[] = Array(maxCols)
-      .fill(null)
-      .map((_, cIdx) => ({
-        text: headers[cIdx] || `Cột ${cIdx + 1}`,
-        bold: true,
-        align: 'left',
-      }));
-
-    // Data rows
-    const dataRows: SheetCell[][] = (norm.rows && norm.rows.length > 0 ? norm.rows : [Array(maxCols).fill('')]).map(
-      (r, rIdx) => {
-        return Array(maxCols)
-          .fill(null)
-          .map((_, cIdx): SheetCell => {
-            const bodyCell = norm.bodyRows?.[rIdx]?.[cIdx];
-            return {
-              text: r[cIdx] || '',
-              colSpan: bodyCell?.colSpan,
-              rowSpan: bodyCell?.rowSpan,
-              align: bodyCell?.align || 'left',
-              bold: bodyCell?.isHeader,
-            };
-          });
-      }
-    );
-
-    const fullMatrix: SheetCell[][] = [row0, ...dataRows];
-
-    // Compute mergedInto flags for all merged blocks
-    for (let r = 0; r < fullMatrix.length; r++) {
-      for (let c = 0; c < fullMatrix[r].length; c++) {
-        const cell = fullMatrix[r][c];
-        const rs = cell.rowSpan || 1;
-        const cs = cell.colSpan || 1;
-        if (rs > 1 || cs > 1) {
-          for (let dr = 0; dr < rs; dr++) {
-            for (let dc = 0; dc < cs; dc++) {
-              if (dr === 0 && dc === 0) continue;
-              if (fullMatrix[r + dr]?.[c + dc]) {
-                fullMatrix[r + dr][c + dc].mergedInto = { r, c };
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return fullMatrix;
-  }
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      setMatrix(initMatrixFromTable(table));
+      if (grid && grid.length > 0) {
+        setMatrix(initMatrixFromDocModelGrid(grid));
+      } else if (table.grid && table.grid.length > 0) {
+        setMatrix(initMatrixFromDocModelGrid(table.grid));
+      } else {
+        setMatrix(initMatrixFromTable(table));
+      }
       setCaptionText(table.caption || '');
       setHistory([]);
       setIsClosing(false);
@@ -158,7 +89,7 @@ export const TableSpreadsheetModal: React.FC<TableSpreadsheetModalProps> = ({
       setSelectionEnd({ r: 0, c: 0 });
       setContextMenu(null);
     }
-  }, [isOpen, table]);
+  }, [isOpen, table, grid]);
 
   // Global mouse up to finish drag selection
   useEffect(() => {
@@ -576,40 +507,8 @@ export const TableSpreadsheetModal: React.FC<TableSpreadsheetModalProps> = ({
   const handleApplyAndSave = () => {
     if (matrix.length === 0 || matrix[0].length === 0) return;
 
-    const row0 = matrix[0];
-    const headers = row0.map((cell, idx) => cell.text.trim() || `Cột ${idx + 1}`);
-
-    const dataRows = matrix.slice(1);
-    const rows = dataRows.map((r) => r.map((c) => c.text));
-
-    // Structural bodyRows with colSpan & rowSpan
-    const bodyRows: TableCell[][] = dataRows.map((row) =>
-      row
-        .filter((cell) => !cell.mergedInto)
-        .map((cell) => ({
-          text: cell.text,
-          colSpan: cell.colSpan && cell.colSpan > 1 ? cell.colSpan : undefined,
-          rowSpan: cell.rowSpan && cell.rowSpan > 1 ? cell.rowSpan : undefined,
-          align: cell.align,
-          isHeader: cell.bold,
-        }))
-    );
-
-    // Header rows
-    const hasMergedHeader = row0.some((c) => (c.colSpan && c.colSpan > 1) || (c.rowSpan && c.rowSpan > 1));
-    const headerRows: TableCell[][] = hasMergedHeader
-      ? [
-        row0
-          .filter((cell) => !cell.mergedInto)
-          .map((cell) => ({
-            text: cell.text,
-            colSpan: cell.colSpan && cell.colSpan > 1 ? cell.colSpan : undefined,
-            rowSpan: cell.rowSpan && cell.rowSpan > 1 ? cell.rowSpan : undefined,
-            align: cell.align || 'center',
-            isHeader: true,
-          })),
-      ]
-      : synthesizeHeaderRows(headers);
+    const { headers, rows, headerRows, bodyRows } = matrixToPaperTableData(matrix);
+    const docModelGrid = matrixToDocModelGrid(matrix);
 
     const updated: PaperTable = {
       ...table,
@@ -618,9 +517,10 @@ export const TableSpreadsheetModal: React.FC<TableSpreadsheetModalProps> = ({
       rows,
       bodyRows: bodyRows.length > 0 ? bodyRows : undefined,
       headerRows: headerRows.length > 0 ? headerRows : undefined,
+      grid: docModelGrid,
     };
 
-    onSave(normalizePaperTable(updated));
+    onSave(normalizePaperTable(updated), docModelGrid);
     handleTriggerClose();
   };
 

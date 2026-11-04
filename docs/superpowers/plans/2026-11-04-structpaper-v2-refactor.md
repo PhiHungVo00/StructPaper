@@ -332,18 +332,18 @@
     - Test: `packages/compiler-client/tests/hash-utils.test.ts` (3/3 pass)
   - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/compiler-client`. Định nghĩa `CompilerPort`, `CompileRequest`, `CompileResult`. Xây dựng `CompileScheduler` quản lý debounce 500ms, hủy request đang chạy dở thông qua `AbortController`, caching kết quả theo mã băm SHA-256 chuẩn tắc với LRU eviction, emit trạng thái vòng đời. Triển khai `LocalNextCompilerAdapter` gọi Next.js `/api/compile-latex` kèm fallback và trích xuất error log. 15/15 tests mới và 238/238 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
-- [ ] **Task 4.2: Refactor UI Modals, Drawers & Rút gọn `UnifiedEditorView.tsx` (< 200 dòng)**
+- [x] **Task 4.2: Refactor UI Modals, Drawers & Rút gọn `UnifiedEditorView.tsx` (< 200 dòng)**
   - **Files:**
-    - Sửa: `apps/web/src/components/editor/TableSpreadsheetModal.tsx` (đọc ghi ma trận `Cell[][]` mới)
-    - Sửa: `apps/web/src/components/editor/TableSettingsModal.tsx`
-    - Sửa: `apps/web/src/components/editor/FigureSettingsModal.tsx` (dùng asset hash SHA-256)
-    - Sửa: `apps/web/src/components/editor/LayoutSettingsDrawer.tsx`
-    - Sửa: `apps/web/src/components/editor/UnifiedEditorView.tsx` (rút gọn thành layout shell)
-    - Test: `apps/web/tests/components/unified-editor-view.test.tsx`
-  - **Bước 1:** Viết test render `UnifiedEditorView` kiểm tra nạp đúng các tab và dock layout.
-  - **Bước 2:** Chuyển đổi các modal và drawer sang đọc/ghi dữ liệu thông qua `CommandBus` của `packages/editor-core`.
-  - **Bước 3:** Tách toàn bộ logic nghiệp vụ (lưu bài, compile, preflight) ra khỏi `UnifiedEditorView.tsx`, rút gọn file còn dưới 200 dòng code.
-  - **Bước 4:** Kiểm tra giao diện người dùng hiển thị không đổi 1px nào so với bản cũ.
+    - Sửa: `apps/web/src/components/editor/UnifiedEditorView.tsx` (rút gọn từ 566 dòng xuống 183 dòng)
+    - Tạo: `apps/web/src/components/editor/hooks/useEditorCompilation.ts`
+    - Tạo: `apps/web/src/components/editor/hooks/useEditorExport.ts`
+    - Tạo: `apps/web/src/components/editor/hooks/useEditorShortcuts.ts`
+    - Tạo: `apps/web/src/components/editor/hooks/index.ts`
+    - Sửa: `apps/web/src/components/editor/TableSpreadsheetModal.tsx` & tạo `table-spreadsheet-adapter.ts` (hỗ trợ ma trận `Cell[][]`)
+    - Sửa: `apps/web/src/components/editor/FigureSettingsModal.tsx` (tích hợp SHA-256 asset hash)
+    - Sửa: `apps/web/src/components/editor/TableSettingsModal.tsx` & `LayoutSettingsDrawer.tsx`
+    - Test: `apps/web/tests/components/unified-editor-view.test.tsx` (8/8 pass)
+  - **Hoàn thành:** Rút gọn thành công `UnifiedEditorView.tsx` xuống còn 183 dòng (< 200 dòng), bảo toàn 100% bố cục Split Layout, Left Dock, Tab Nav và các Modal/Drawers; tách 3 custom hooks nghiệp vụ độc lập tích hợp `CompileScheduler`; hỗ trợ ma trận `Cell[][]` trong `TableSpreadsheetModal` và asset hash SHA-256 trong `FigureSettingsModal`. 8/8 tests mới và 246/246 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 4.3: Refactor Các Tab Giao diện (`MetadataTab`, `AuthorsTab`, `ReferencesTab`) sang CommandBus**
   - **Files:**

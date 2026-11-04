@@ -1,3 +1,5 @@
+import type { Cell } from '@structpaper/doc-model';
+
 export interface Author {
   id: string;
   name: string;
@@ -63,6 +65,7 @@ export interface PaperFigure {
   alignment?: 'center' | 'left' | 'right';
   placement?: 'auto' | 'top' | 'here' | 'bottom';
   hasBorder?: boolean;
+  assetId?: string; // SHA-256 asset reference from storage
 }
 
 export interface TableCell {
@@ -81,6 +84,7 @@ export interface PaperTable {
   rows: string[][];
   headerRows?: TableCell[][];
   bodyRows?: TableCell[][];
+  grid?: Cell[][]; // Support new doc-model grid matrix
   isFullWidth?: boolean;
   columnSpan?: '1-column' | '2-column';
   isRotated?: boolean; // Xoay bảng 90 độ ngang (sidewaystable)
@@ -498,23 +502,8 @@ export interface JournalTemplate {
 
 export interface PageNumberingSettings {
   enabled: boolean;
-  position:
-    | 'bottom-center'
-    | 'bottom-right'
-    | 'bottom-left'
-    | 'bottom-alternating'
-    | 'top-center'
-    | 'top-right'
-    | 'top-left'
-    | 'top-alternating';
-  format:
-    | 'arabic'       // 1, 2, 3...
-    | 'roman-lower'  // i, ii, iii...
-    | 'roman-upper'  // I, II, III...
-    | 'alpha-lower'  // a, b, c...
-    | 'alpha-upper'  // A, B, C...
-    | 'page-x-of-y'  // Trang X / Y
-    | 'hyphen';      // - 1 -
+  position: 'bottom-center' | 'bottom-right' | 'bottom-left' | 'bottom-alternating' | 'top-center' | 'top-right' | 'top-left' | 'top-alternating';
+  format: 'arabic' | 'roman-lower' | 'roman-upper' | 'alpha-lower' | 'alpha-upper' | 'page-x-of-y' | 'hyphen';
   startNumber: number; // Mặc định 1 (hoặc số trang trong kỷ yếu/tập san)
   suppressOnFirstPage: boolean; // Khác biệt trang đầu / Ẩn trang 1 (Different first page)
   prefixText?: string; // Tiền tố (ví dụ: "Trang ", "Page " hoặc để trống)

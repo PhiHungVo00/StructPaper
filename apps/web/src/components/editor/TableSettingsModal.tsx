@@ -370,15 +370,15 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
                   Vị trí neo
                 </label>
                 <div className="grid grid-cols-3 gap-1">
-                  {[
-                    { key: 'auto', label: 'Tự động', desc: 'Tự động [!htbp]: LaTeX tự tính toán vị trí đẹp nhất' },
-                    { key: 'top', label: 'Đầu', desc: 'Đầu trang [t]: Ưu tiên đặt bảng ở trên cùng trang giấy' },
-                    { key: 'here', label: 'Tại vị trí', desc: 'Tại vị trí [!h]: Cố gắng đặt bảng ngay cạnh văn bản' },
-                  ].map((item) => (
+                  {([
+                    { key: 'auto' as const, label: 'Tự động', desc: 'Tự động [!htbp]: LaTeX tự tính toán vị trí đẹp nhất' },
+                    { key: 'top' as const, label: 'Đầu', desc: 'Đầu trang [t]: Ưu tiên đặt bảng ở trên cùng trang giấy' },
+                    { key: 'here' as const, label: 'Tại vị trí', desc: 'Tại vị trí [!h]: Cố gắng đặt bảng ngay cạnh văn bản' },
+                  ] as const).map((item) => (
                     <button
                       key={item.key}
                       type="button"
-                      onClick={() => setPlacement(item.key as any)}
+                      onClick={() => setPlacement(item.key)}
                       className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer text-[11px] font-bold ${placement === item.key
                         ? 'bg-gray-400 text-white shadow-2xs'
                         : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
