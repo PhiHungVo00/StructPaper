@@ -9,7 +9,9 @@
     "./types": "./src/types/index.ts",
     "./schemas": "./src/schemas/index.ts",
     "./utils": "./src/utils/index.ts",
-    "./numbering": "./src/numbering/index.ts"
+    "./numbering": "./src/numbering/index.ts",
+    "./interfaces": "./src/interfaces/index.ts",
+    "./adapters": "./src/adapters/index.ts"
   },
   "dependencies": {
     "ulid": "^2.3.0",

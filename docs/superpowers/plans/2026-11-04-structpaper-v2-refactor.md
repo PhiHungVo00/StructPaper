@@ -120,18 +120,19 @@
     - Test: `packages/journal-profiles/tests/profile.test.ts` (18/18 pass)
   - **Hoàn thành:** Khởi tạo thành công package độc lập `@structpaper/journal-profiles`; định nghĩa đầy đủ TypeScript types và Zod schemas cho `JournalProfile` (names, articleTypes, frontMatter, citation, styleMap, layout, typography, latex, qc); tạo cấu hình profile chuẩn `VNUHCM-HS` chứa quy định tóm tắt 275-500 từ, từ khóa 3-5 phân cách dấu chấm phẩy, trích dẫn Vancouver dạng ngoặc vuông, định dạng LaTeX `structpaper-hs.cls` / `xelatex`, và `styleMap` ánh xạ chính xác 35 styles Word (trong đó `Guide*` và `Instruction` ánh xạ vào `ignore`); cung cấp helper functions `getJournalProfile` và `getAllJournalProfiles`. 100% test (18/18 test mới, 83/83 tests monorepo) xanh, Next.js build pass, 0 vi phạm depcruise, 0 lỗi eslint.
 
-- [ ] **Task 1.4: Định nghĩa Hợp đồng Chung (Common Interfaces) & Bộ Chuyển đổi V1 $\leftrightarrow$ V2**
+- [x] **Task 1.4: Định nghĩa Hợp đồng Chung (Common Interfaces) & Bộ Chuyển đổi V1 $\leftrightarrow$ V2**
   - **Files:**
     - Tạo: `packages/doc-model/src/interfaces/command.ts` (Command, Patch, InversePatch)
-    - Tạo: `packages/doc-model/src/interfaces/repository.ts` (ManuscriptRepository, AssetRepository)
+    - Tạo: `packages/doc-model/src/interfaces/repository.ts` (ManuscriptRepository, AssetRepository, ManuscriptSummary)
+    - Tạo: `packages/doc-model/src/interfaces/index.ts`
+    - Tạo: `packages/doc-model/src/adapters/types.ts`
+    - Tạo: `packages/doc-model/src/adapters/text-citation-utils.ts`
     - Tạo: `packages/doc-model/src/adapters/migrate-v1-to-v2.ts`
     - Tạo: `packages/doc-model/src/adapters/adapt-v2-to-v1.ts`
-    - Test: `packages/doc-model/tests/adapters.test.ts`
-  - **Bước 1:** Định nghĩa các interface `Command`, `Patch`, `InversePatch`, `ManuscriptRepository`, `AssetRepository`.
-  - **Bước 2:** Viết test kiểm tra chuyển đổi từ dữ liệu phẳng `CompletePaper` (v1) sang cây `Manuscript` (v2) và ngược lại: tách trích dẫn `[1, 2]` thành node cite, chuyển đổi ảnh base64 sang asset metadata.
-  - **Bước 3:** Triển khai `migrateV1toV2` và `adaptV2toV1`.
-  - **Bước 4:** Chạy test xác nhận chuyển đổi hai chiều bảo toàn dữ liệu.
-  - **Bước 5: KHÓA CỔNG 1 (Gate 1 Closed).**
+    - Tạo: `packages/doc-model/src/adapters/index.ts`
+    - Test: `packages/doc-model/tests/adapters.test.ts` (17/17 pass)
+  - **Hoàn thành:** Định nghĩa đầy đủ các interface dùng chung `Command`, `Patch`, `InversePatch`, `ManuscriptRepository`, `AssetRepository`, `ManuscriptSummary`; triển khai bộ chuyển đổi 2 chiều `migrateV1toV2` (chuyển đổi phẳng sang phân cấp, phân tích trích dẫn `[1]`, `[2, 3]`, `[2-4]` thành node cite, chuyển đổi bảng sang grid Cell, chuyển đổi hình ảnh base64 sang asset metadata SHA-256) và `adaptV2toV1` (dùng `computeNumbering` tái tạo `[n]`, khôi phục headers/rows bảng và asset figure); kiểm thử roundtrip `v1 -> v2 -> v1` bảo toàn cấu trúc; 100/100 tests monorepo xanh, Next.js build pass, 0 vi phạm depcruise, 0 lỗi eslint.
+  - **KHÓA CỔNG 1 (Gate 1 Closed):** Cổng 1 chính thức khóa. Toàn bộ types, Zod schemas của `packages/doc-model`, profile của `packages/journal-profiles`, common interfaces và adapters đã sẵn sàng để các sub-agents bắt đầu Phase 2, 3, 5, 6.
 
 ---
 
