@@ -170,23 +170,24 @@
   - **Bước 2:** Viết test validate cú pháp OpenAPI 3.0.3, regex ULID/SHA-256, 8 block types, 6 inline types, If-Match parameter, và cross-validation với Zod fixture. 9/9 unit tests pass.
   - **Bước 3: KHÓA CỔNG 2 (Gate 2 Closed).** Tất cả 114/114 tests monorepo xanh, 0 vi phạm depcruise, 0 lỗi eslint. Đã sinh thành công client types `apps/web/src/lib/api/schema.d.ts`.
 
-- [ ] **Task 2.3: Xây dựng Bản Tối thiểu của `packages/editor-core` (Store, CommandBus, History)**
+- [x] **Task 2.3: Xây dựng Bản Tối thiểu của `packages/editor-core` (Store, CommandBus, History)**
   - **Files:**
     - Tạo: `packages/editor-core/package.json`
-    - Tạo: `packages/editor-core/src/store/manuscript-store.ts` (Zustand + Immer)
-    - Tạo: `packages/editor-core/src/bus/command-bus.ts`
-    - Tạo: `packages/editor-core/src/history/history-manager.ts`
-    - Tạo: `packages/editor-core/src/commands/base-commands.ts`
-    - Test: `packages/editor-core/tests/command-bus.test.ts`
-    - Test: `packages/editor-core/tests/history-manager.test.ts`
-  - **Bước 1:** Viết test kiểm tra:
-    - Dispatch lệnh `metadata/updateTitle` cập nhật store và sinh ra cặp `patches` / `inversePatches`.
-    - Gọi `historyManager.undo()` đưa store trở lại giá trị ban đầu.
-    - Gọi `historyManager.redo()` khôi phục lại thay đổi.
-  - **Bước 2:** Triển khai Zustand store bọc bởi `produceWithPatches` của Immer.
-  - **Bước 3:** Xây dựng `CommandBus` điều phối các commands và thông báo luồng patch cho các listener.
-  - **Bước 4:** Triển khai `HistoryManager` quản lý undo/redo stack tối đa 100 bước.
-  - **Bước 5:** Chạy test kiểm tra toàn bộ suite xanh.
+    - Tạo: `packages/editor-core/tsconfig.json`
+    - Tạo: `packages/editor-core/src/store/manuscript-store.ts` (Zustand vanilla store)
+    - Tạo: `packages/editor-core/src/store/index.ts`
+    - Tạo: `packages/editor-core/src/commands/types.ts`
+    - Tạo: `packages/editor-core/src/commands/base-commands.ts` (9 base commands)
+    - Tạo: `packages/editor-core/src/commands/index.ts`
+    - Tạo: `packages/editor-core/src/bus/command-bus.ts` (produceWithPatches, onPatch listener)
+    - Tạo: `packages/editor-core/src/bus/index.ts`
+    - Tạo: `packages/editor-core/src/history/history-manager.ts` (undoStack, redoStack, sliding window max 100)
+    - Tạo: `packages/editor-core/src/history/index.ts`
+    - Tạo: `packages/editor-core/src/index.ts`
+    - Test: `packages/editor-core/tests/fixtures/sample-manuscript.ts`
+    - Test: `packages/editor-core/tests/command-bus.test.ts` (12/12 pass)
+    - Test: `packages/editor-core/tests/history-manager.test.ts` (7/7 pass)
+  - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/editor-core`. Triển khai Zustand vanilla store quản lý vòng đời Manuscript (`rev`, `savedRev`, `isDirty`). Xây dựng `CommandBus` điều phối và sinh cặp forward/inverse patches nguyên tử qua Immer `produceWithPatches`. Triển khai đầy đủ 9 base command handlers (`metadata/updateTitle`, `metadata/updateAbstract`, `metadata/updateAuthors`, `block/insert`, `block/update`, `block/remove`, `reference/add`, `reference/remove`, `table/updateCell`). Xây dựng `HistoryManager` quản lý undo/redo stack tối đa 100 bước, tự động dọn redo stack khi có mutation mới, đồng bộ trạng thái Store và khôi phục chính xác 100% snapshot dữ liệu. 133/133 tests monorepo xanh (19/19 test mới), 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 2.4: Xây dựng Package `packages/storage` (Dexie IndexedDB & Autosave)**
   - **Files:**

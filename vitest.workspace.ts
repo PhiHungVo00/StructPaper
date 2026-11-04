@@ -9,6 +9,7 @@ export default defineWorkspace([
       alias: {
         '@structpaper/doc-model': path.resolve(__dirname, 'packages/doc-model/src'),
         '@structpaper/journal-profiles': path.resolve(__dirname, 'packages/journal-profiles/src'),
+        '@structpaper/editor-core': path.resolve(__dirname, 'packages/editor-core/src'),
         '@': path.resolve(__dirname, 'apps/web/src'),
       },
     },
