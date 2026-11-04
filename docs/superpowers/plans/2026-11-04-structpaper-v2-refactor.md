@@ -94,19 +94,17 @@
     - Test: `packages/doc-model/tests/id-generator.test.ts`
   - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/doc-model` độc lập với zero contamination; định nghĩa đầy đủ TypeScript types (`Manuscript`, `Section`, `Block`, `Inline`, `Cell`, `Reference`, `Author`, `Affiliation`, `AssetMeta`, và các common contracts `Command`, `Patch`, `InversePatch`, `ManuscriptRepository`, `AssetRepository`); xây dựng Zod schemas với lazy evaluation hỗ trợ đệ quy; triển khai `IdGenerator` (`UlidIdGenerator` và `DeterministicIdGenerator`). 26/26 tests của doc-model và 52/52 tests toàn monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
-- [ ] **Task 1.2: Xây dựng Hàm Thuần túy `computeNumbering` (Derived Numbering)**
+- [x] **Task 1.2: Xây dựng Hàm Thuần túy `computeNumbering` (Derived Numbering)**
   - **Files:**
     - Tạo: `packages/doc-model/src/numbering/compute-numbering.ts`
+    - Tạo: `packages/doc-model/src/numbering/styles.ts`
+    - Tạo: `packages/doc-model/src/numbering/index.ts`
+    - Sửa: `packages/doc-model/src/types/citation.ts`
+    - Sửa: `packages/doc-model/src/index.ts`
+    - Sửa: `packages/doc-model/package.json`
     - Test: `packages/doc-model/tests/compute-numbering.test.ts`
     - Test: `packages/doc-model/tests/compute-numbering.property.test.ts` (dùng `fast-check`)
-  - **Bước 1:** Viết test kiểm tra:
-    - Bài có 3 Hình, 2 Bảng, 4 Công thức: hàm gán đúng số thứ tự `1, 2, 3...` theo thứ tự xuất hiện lần đầu.
-    - Chèn thêm một hình mới vào giữa bài: số thứ tự các hình sau tự động tăng thêm 1.
-    - Xóa một tài liệu tham khảo: phát hiện `danglingCites` và cập nhật lại `citationOrder`.
-    - Phát hiện `uncitedRefs` khi tài liệu không được nhắc tới.
-  - **Bước 2:** Triển khai hàm pure function `computeNumbering(doc: Manuscript, citationStyle: CitationStyle)`.
-  - **Bước 3:** Viết Property-based test dùng `fast-check` chèn/xóa ngẫu nhiên các block và kiểm tra tính liên tục, không trùng lặp của số thứ tự.
-  - **Bước 4:** Chạy test kiểm tra toàn bộ suite xanh.
+  - **Hoàn thành:** Đã triển khai hàm thuần túy `computeNumbering` duyệt đệ quy toàn diện `Section`, `Block`, `Inline`. Đánh số tuần tự 1-based cho Figures, Tables, Equations (chỉ đánh số khi `numbered: true`). Ghi nhận thứ tự xuất hiện đầu tiên của citations trong `citationOrder`, sinh `citationLabels` dạng range Vancouver (`2-4`, `1, 3-5, 8`), hỗ trợ `bibliographyOrder` cho cả Vancouver và APA. Phát hiện chính xác `uncitedRefs`, `danglingCites`, `xrefBroken`, và tiền kiểm định preflight `firstMentionBeforeFloat`. 100% tests (13/13 tests mới gồm 9 unit tests và 4 property-based tests với 300 runs qua `fast-check`, tổng cộng 65/65 tests monorepo) xanh tuyệt đối; 0 vi phạm depcruise, 0 lỗi eslint, Next.js build xanh 100%.
 
 - [ ] **Task 1.3: Khởi tạo Package `packages/journal-profiles` & Schema Profile `VNUHCM-HS`**
   - **Files:**

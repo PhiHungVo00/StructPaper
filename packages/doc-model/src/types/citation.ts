@@ -15,11 +15,15 @@ export interface CitationStyle {
 }
 
 export interface ComputedNumbering {
-  figures: Record<Id, number>;
-  tables: Record<Id, number>;
-  equations: Record<Id, number>;
-  citations: Record<Id, number>;
+  figures: Map<Id, number>;
+  tables: Map<Id, number>;
+  equations: Map<Id, number>;
+  citations: Map<Id, number>;
   citationOrder: Id[];
+  citationLabels: Map<Id, string>;
+  bibliographyOrder: Id[];
   uncitedRefs: Id[];
   danglingCites: Id[];
+  xrefBroken: Id[];
+  firstMentionBeforeFloat: Map<Id, boolean>;
 }
