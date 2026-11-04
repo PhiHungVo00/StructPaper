@@ -30,7 +30,7 @@ class FontManagerServiceTest {
     }
 
     @Test
-    @DisplayName("Nên thay thế MyriadPro bằng Arial khi không có file font")
+    @DisplayName("Nên thay thế MyriadPro bằng Calibri khi không có file font")
     void shouldSubstituteMyriadProWhenMissing() {
         String input = """
                 \\setsansfont{MyriadPro-Regular.otf}[
@@ -41,6 +41,6 @@ class FontManagerServiceTest {
         String result = fontManager.sanitizeForAvailableFonts(input, tempDir);
 
         assertFalse(result.contains("MyriadPro-Regular.otf"));
-        assertTrue(result.contains("Arial"));
+        assertTrue(result.contains("Calibri"));
     }
 }

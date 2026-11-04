@@ -1,0 +1,9 @@
+{
+  "name": "structpaper-monorepo",
+  "private": true,
+  "scripts": {
+    "build:web": "pnpm --filter @structpaper/web build",
+    "dev:web": "pnpm --filter @structpaper/web dev",
+    "test": "vitest run"
+  }
+}
