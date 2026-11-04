@@ -9,7 +9,8 @@
     "./types": "./src/types/index.ts",
     "./package": "./src/package/index.ts",
     "./ooxml": "./src/ooxml/index.ts",
-    "./recognizers": "./src/recognizers/index.ts"
+    "./recognizers": "./src/recognizers/index.ts",
+    "./assemblers": "./src/assemblers/index.ts"
   },
   "dependencies": {
     "@structpaper/doc-model": "workspace:*",

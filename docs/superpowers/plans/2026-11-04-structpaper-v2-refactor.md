@@ -270,19 +270,34 @@
   - **Bước 4:** Chạy test xác nhận nhận diện chính xác 100% các đoạn mẫu.
   - **Hoàn thành:** Đã xây dựng hoàn chỉnh hệ thống nhận diện ngữ nghĩa đa tầng DOCX (`StyleMapRecognizer`, `StructureRecognizer`, `RecognizerChain`). `StyleMapRecognizer` (Priority 1) ánh xạ trọn vẹn 35 standard Word styles trong profile `VNUHCM-HS` với độ tin cậy 1.0, hỗ trợ chuẩn hóa tên style không phân biệt hoa thường/khoảng trắng, duyệt chuỗi kế thừa `w:basedOn` qua `StyleResolver`, và loại bỏ toàn bộ các đoạn hướng dẫn template `Guide*`/`Instruction` vào vai trò `ignore`. `StructureRecognizer` (Priority 2) nhận diện bằng heuristic cho đoạn unstyled: bảng biểu (`table.cell`, 0.9), table captions (`table.caption`, 0.85), figure captions (`figure.caption`, 0.85), keywords (`keywords`, 0.85), trích dẫn tài liệu tham khảo `[n]` (`reference`, 0.8), đánh số đề mục La Mã / số Ả Rập (`h1`/`h2`/`h3`, 0.8), và tiêu đề đậm/giữa ở đầu văn bản (`title`, 0.6). `RecognizerChain` điều phối thực thi theo thứ tự ưu tiên, short-circuit khi đạt confidence 1.0, chọn claim có độ tin cậy cao nhất và fallback về body paragraph mặc định (confidence 0.5). 18/18 tests mới và 181/181 unit tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
-- [ ] **Task 3.3: Xây dựng Bộ Assemblers (Table, Figure, Equation, Reference, Section)**
+- [x] **Task 3.3: Xây dựng Bộ Assemblers (Table, Figure, Equation, Reference, Section)**
   - **Files:**
-    - Tạo: `packages/ingest-docx/src/assemblers/front-matter-assembler.ts`
-    - Tạo: `packages/ingest-docx/src/assemblers/section-tree-assembler.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/types.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/inline-utils.ts`
     - Tạo: `packages/ingest-docx/src/assemblers/table-assembler.ts` (lưới `rowSpan`/`colSpan`)
     - Tạo: `packages/ingest-docx/src/assemblers/figure-assembler.ts` (SHA-256 asset hash)
     - Tạo: `packages/ingest-docx/src/assemblers/equation-assembler.ts` (OMML $\rightarrow$ MathML $\rightarrow$ LaTeX)
     - Tạo: `packages/ingest-docx/src/assemblers/reference-assembler.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/front-matter-assembler.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/section-tree-assembler.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/backmatter-assembler.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/doc-assembler.ts`
+    - Tạo: `packages/ingest-docx/src/assemblers/index.ts`
     - Test: `packages/ingest-docx/tests/assemblers.test.ts`
   - **Bước 1:** Viết test dựng ma trận bảng có `w:gridSpan` và `w:vMerge` thành ma trận `Cell[][]` có `colSpan`/`rowSpan` chuẩn.
   - **Bước 2:** Viết test chuyển đổi công thức OMML phức tạp (phân số, căn bậc hai, tích phân) sang mã LaTeX.
   - **Bước 3:** Triển khai toàn bộ các class Assembler gom nhóm các `RawBlock` đã được nhận diện vào cấu trúc `Manuscript`.
   - **Bước 4:** Chạy test xác nhận cây bài báo được dựng hoàn chỉnh.
+  - **Hoàn thành:** Đã xây dựng hoàn chỉnh bộ Assemblers chuyển đổi toàn diện các khối raw OOXML đã nhận diện ngữ nghĩa thành cây mô hình `Manuscript` chuẩn (`AssembledDoc`):
+    - `TableAssembler`: Phân giải ma trận bảng hai chiều `Cell[][]` hỗ trợ đa tầng `gridSpan` (colSpan) và `vMerge` ('restart' / 'continue' rowSpan), liên kết caption (`table.caption`), ghi chú (`table.note`), nguồn (`source`), căn lề ô (`l`/`c`/`r`) và `headerRows` (mặc định 1).
+    - `FigureAssembler`: Bóc tách media nhị phân từ package, sinh mã băm SHA-256 bằng crypto hoặc pure JS RFC 6234, tự động nhận diện MIME type (`image/png`, `image/jpeg`, `image/svg+xml`, `image/webp`), khởi tạo `AssetMeta` (dpi 300) và `FigureBlock`.
+    - `EquationAssembler`: Chuyển đổi cú pháp toán học OMML sang LaTeX hoàn chỉnh: phân số `m:f` (`\frac{num}{den}`), căn bậc hai/bậc n `m:rad` (`\sqrt[deg]{e}`), chỉ số trên/dưới `m:sSup`, `m:sSub`, `m:sSubSup`, dấu đóng mở `m:d` (`\left( ... \right)`), toán tử n-ary `m:nary` (`\sum`, `\int`), ánh xạ ký hiệu Unicode, nhận diện số thứ tự công thức `(1)` và fallback an toàn khi gặp OMML lỗi.
+    - `ReferenceAssembler`: Chuẩn hóa danh mục tài liệu tham khảo, gọt bỏ tiền tố đánh số `[n]` / `n.`, trích xuất tự động DOI (`10.xxxx/...`) và URLs, đánh giá trạng thái parse (`ok`/`partial`/`failed`).
+    - `FrontMatterAssembler`: Tổng hợp siêu dữ liệu bài báo: `title: Inline[]`, `titleEn: Inline[]` (`translations.en`), `authors: Author[]` và `affiliations: Affiliation[]` (phân giải dấu superscript số và `*` liên kết tác giả với đơn vị công tác và tác giả liên hệ), `abstract: Inline[][]`, `keywords: string[]`, `dates: Dates` (ngày nhận/chấp nhận/xuất bản), `doi`, `volume`, `issue`.
+    - `SectionTreeAssembler`: Gom nhóm phân cấp headings `h1`, `h2`, `h3` và các khối thân bài thành cây `Section[]` đệ quy chuẩn `SectionSchema`.
+    - `BackmatterAssembler`: Gom nhóm các tuyên bố đạo đức, tài trợ, lời cảm ơn, xung đột lợi ích, đóng góp tác giả và tính khả dụng của dữ liệu vào `BackMatterItem[]`.
+    - `DocAssembler`: Điều phối toàn bộ quy trình, liên kết tự động các khối phụ cận và xuất ra `AssembledDoc`.
+    - 21/21 tests mới và 202/202 unit tests toàn bộ monorepo pass 100%, 0 vi phạm depcruise (442 modules), 0 lỗi eslint, toàn bộ file mới < 300 dòng (tuân thủ quy định < 500 dòng logic).
 
 - [ ] **Task 3.4: Xây dựng Normalizers, Fallback Parser & Đóng gói Web Worker**
   - **Files:**

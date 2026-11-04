@@ -30,10 +30,11 @@ export function getAttr(node: FxpNode, attrName: string): string | undefined {
   if (attrs[attrName] !== undefined) return attrs[attrName];
   if (attrs[`@_${attrName}`] !== undefined) return attrs[`@_${attrName}`];
   if (attrs[`@_w:${attrName}`] !== undefined) return attrs[`@_w:${attrName}`];
+  if (attrs[`@_m:${attrName}`] !== undefined) return attrs[`@_m:${attrName}`];
 
   const targetLower = attrName.toLowerCase();
   for (const [k, v] of Object.entries(attrs)) {
-    const cleanK = k.replace(/^@_/, '').replace(/^w:/, '').toLowerCase();
+    const cleanK = k.replace(/^@_/, '').replace(/^[a-zA-Z0-9_-]+:/, '').toLowerCase();
     if (cleanK === targetLower) return v;
   }
   return undefined;
