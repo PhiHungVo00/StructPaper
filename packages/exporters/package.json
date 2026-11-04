@@ -6,10 +6,16 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./latex": "./src/latex/index.ts"
+    "./latex": "./src/latex/index.ts",
+    "./jats": "./src/jats/index.ts",
+    "./docx": "./src/docx/index.ts",
+    "./csl": "./src/csl/index.ts",
+    "./zip": "./src/zip/index.ts"
   },
   "dependencies": {
     "@structpaper/doc-model": "workspace:*",
-    "@structpaper/journal-profiles": "workspace:*"
+    "@structpaper/journal-profiles": "workspace:*",
+    "docx": "^9.15.2",
+    "jszip": "^3.10.2"
   }
 }

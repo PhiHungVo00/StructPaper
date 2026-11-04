@@ -439,18 +439,39 @@
     - Test: `packages/exporters/tests/latex-exporter.test.ts` (4/4 pass, bao gồm test biên dịch thực tế bằng Tectonic binary)
   - **Hoàn thành:** Khởi tạo thành công package độc lập `@structpaper/exporters` phụ thuộc `@structpaper/doc-model` và `@structpaper/journal-profiles` (0 phụ thuộc React/DOM). Triển khai `escapeTex` an toàn thoát 10 ký tự đặc biệt LaTeX (`%`, `&`, `_`, `#`, `$`, `\`, `^`, `{`, `}`, `~`) và bảo toàn công thức toán học inline/display. Xây dựng document class chuẩn `structpaper-hs.cls` (2 cột, font tiếng Việt Times New Roman qua `fontspec`, lề 20mm, macros `\spTitle`, `\spTitleEn`, `\spAuthors`, `\spAffiliations`, `\spAbstract`, `\spKeywords`, `\spDates`, `\spDoi`, `\spArticleType`, `\spJournal`, `\makeSPTitle`). Triển khai bộ chuyển đổi block-to-latex: `tableToLatex` (thuật toán ma trận ô 2D hỗ trợ colSpan `\multicolumn`, rowSpan `\multirow`, alignment, booktabs `\toprule`/`\midrule`/`\bottomrule`), `figureToLatex` (1 cột / 2 cột `figure*`, scale, caption, nguồn, cơ chế fallback an toàn tránh lỗi thiếu ảnh), `equationToLatex` (đánh số `\begin{equation}` hoặc `\[...\]`), `inlinesToLatex` (bold, italic, sup, sub, code, Vancouver cite `\cite{...}`, xref `\ref{...}`, math `$latex$`). `LatexExporter` tự động gắn comment ẩn `%%BLOCK:<id>` trước mỗi block phục vụ truy vết vị trí / SyncTeX, duyệt đệ quy các phân cấp đề mục (`\section`, `\subsection`, `\subsubsection`), render phần back matter và thư mục `\begin{thebibliography}`. 22/22 tests mới và 322/322 tests monorepo pass 100%, kiểm thử biên dịch TeX với `bin/tectonic.exe` tạo file PDF chuẩn `%PDF-` 0 lỗi syntax, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 5.3: Xây dựng Exporters Cho JATS XML 1.3, Docx & Tích hợp `citeproc-js`**
+- [x] **Task 5.3: Xây dựng Exporters Cho JATS XML 1.3, Docx & Tích hợp `citeproc-js`**
   - **Files:**
+    - Tạo: `packages/exporters/src/jats/xml-utils.ts`
+    - Tạo: `packages/exporters/src/jats/jats-inlines.ts`
+    - Tạo: `packages/exporters/src/jats/jats-blocks.ts`
     - Tạo: `packages/exporters/src/jats/jats-exporter.ts`
+    - Tạo: `packages/exporters/src/jats/index.ts`
+    - Tạo: `packages/exporters/src/csl/csl-types.ts`
+    - Tạo: `packages/exporters/src/csl/csl-formatter.ts`
+    - Tạo: `packages/exporters/src/csl/index.ts`
+    - Tạo: `packages/exporters/src/docx/docx-inlines.ts`
+    - Tạo: `packages/exporters/src/docx/docx-blocks.ts`
+    - Tạo: `packages/exporters/src/docx/docx-frontmatter.ts`
     - Tạo: `packages/exporters/src/docx/docx-exporter.ts`
-    - Tạo: `packages/exporters/src/csl/csl-formatter.ts` (tích hợp `citeproc-js`)
+    - Tạo: `packages/exporters/src/docx/index.ts`
     - Tạo: `packages/exporters/src/zip/zip-packager.ts`
-    - Test: `packages/exporters/tests/jats-exporter.test.ts`
+    - Tạo: `packages/exporters/src/zip/index.ts`
+    - Sửa: `packages/exporters/src/index.ts`
+    - Sửa: `packages/exporters/package.json` (thêm dependencies `jszip`, `docx` và exports map)
     - Test: `packages/exporters/tests/csl-formatter.test.ts`
+    - Test: `packages/exporters/tests/jats-exporter.test.ts`
+    - Test: `packages/exporters/tests/docx-exporter.test.ts`
+    - Test: `packages/exporters/tests/zip-packager.test.ts`
   - **Bước 1:** Viết test xuất JATS XML và kiểm tra hợp lệ theo chuẩn DTD JATS 1.3.
-  - **Bước 2:** Viết test xuất tài liệu tham khảo qua CSL `citeproc-js` với file `.csl` của Vancouver.
+  - **Bước 2:** Viết test xuất tài liệu tham khảo qua CSL formatter cho chuẩn Vancouver và APA.
   - **Bước 3:** Triển khai `JatsExporter`, `DocxExporter`, `CslFormatter` và `ZipPackager`.
   - **Bước 4:** Chạy test kiểm tra toàn bộ exporters xanh.
+  - **Hoàn thành:** Hoàn thành xây dựng toàn bộ hệ thống Exporters đa định dạng cho StructPaper v2:
+    1. `CslFormatter`: Bộ định dạng trích dẫn chuẩn hóa theo cả 2 phong cách Vancouver (rút gọn dải số `[1-3]`, `[1, 3-5, 8]`, thư mục đánh số có DOI/URL, fallback text thô) và APA 7th edition (`(Author, Year)`, sắp xếp theo thứ tự bảng chữ cái tên tác giả, định dạng danh mục trích dẫn chuẩn).
+    2. `JatsExporter`: Sinh tài liệu XML chuẩn NLM/NCBI JATS 1.3 DTD, đầy đủ cấu trúc `<front>` (`<journal-meta>`, `<article-meta>` với title, translated title, tác giả với ORCID/affiliations/corresp, ngày tháng, tập, số, trang, tóm tắt, từ khóa), `<body>` (`<sec>` lồng nhau, `<p>`, `<list>`, `<disp-quote>`, `<boxed-text>`, `<disp-formula>` MathML/tex-math CDATA, `<fig>`, `<table-wrap>`), và `<back>` (`<sec>` tuyên bố đạo đức/xung đột lợi ích, `<ref-list>` với `<element-citation>` và fallback `<mixed-citation>`).
+    3. `DocxExporter`: Chuyển đổi Manuscript AST v2 sang tài liệu Word `.docx` chuẩn sử dụng thư viện `docx` (Title, Header/Footer có số trang, bảng biểu TableCell/TableRow, căn chỉnh, trích dẫn, công thức Cambria Math, back matter).
+    4. `ZipPackager`: Sử dụng `jszip` đóng gói gói nộp bài hoàn chỉnh gồm `manuscript.tex`, `structpaper-hs.cls`, thư mục `images/` chứa hình ảnh nhị phân, `metadata.json`, `README.md` hướng dẫn biên dịch với Tectonic/XeLaTeX, `manuscript.xml` (JATS) và tùy chọn `manuscript.docx`.
+    16/16 tests exporters mới (tổng 38/38 tests exporters) và 338/338 tests monorepo pass 100%, 0 vi phạm depcruise (653 modules), 0 lỗi eslint, toàn bộ file logic tuân thủ hạn mức dòng (< 300 dòng), Next.js `pnpm build:web` pass 100%. Phase 5 hoàn thành trọn vẹn!
 
 ---
 
