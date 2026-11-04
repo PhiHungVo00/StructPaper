@@ -41,6 +41,15 @@ importers:
       '@fortune-sheet/react':
         specifier: ^1.0.4
         version: 1.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@structpaper/doc-model':
+        specifier: workspace:*
+        version: link:../../packages/doc-model
+      '@structpaper/editor-core':
+        specifier: workspace:*
+        version: link:../../packages/editor-core
+      '@structpaper/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       docx:
         specifier: ^9.8.1
         version: 9.15.2

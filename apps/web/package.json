@@ -24,7 +24,10 @@
     "pdfjs-dist": "^3.11.174",
     "react": "^18",
     "react-dom": "^18",
-    "sileo": "^0.1.6"
+    "sileo": "^0.1.6",
+    "@structpaper/doc-model": "workspace:*",
+    "@structpaper/editor-core": "workspace:*",
+    "@structpaper/storage": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",

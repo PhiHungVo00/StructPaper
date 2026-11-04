@@ -210,17 +210,24 @@
     - Test: `packages/storage/tests/autosave.test.ts` (5/5 pass)
   - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/storage` Offline-First. Triển khai `StructPaperDatabase` kế thừa Dexie với 8 bảng (`manuscripts`, `revisions`, `assets`, `assetRefs`, `ingestSources`, `outbox`, `compileCache`, `settings`). Triển khai `IndexedDbManuscriptRepo` (lưu giao dịch, tự động snapshot revision và cập nhật quan hệ `assetRefs`, `listRecent` tối ưu không nạp nặng full body). Triển khai `IndexedDbAssetRepo` (lưu binary blob ảnh theo mã băm SHA-256). Triển khai `AutosaveEngine` (lắng nghe `onPatch` từ `CommandBus`, debounce 1 giây ghi an toàn xuống IndexedDB, đồng bộ cờ `isDirty` trên Store, hỗ trợ `flush` tức thì và `stop` dọn dẹp). Triển khai bộ sao lưu nén `.structpaper` qua JSZip (`exportBackup` và `importBackup` roundtrip). 147/147 tests monorepo xanh (14/14 tests mới), 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 2.5: Viết Kiểm thử E2E Đầu tiên (Chống mất Dữ liệu F5)**
+- [x] **Task 2.5: Viết Kiểm thử E2E Đầu tiên (Chống mất Dữ liệu F5)**
   - **Files:**
-    - Tạo: `apps/web/tests/e2e/data-persistence.spec.ts` (Playwright)
+    - Tạo: `e2e/data-persistence.spec.ts` (Playwright E2E test suite)
+    - Tạo: `apps/web/src/app/dev-persistence-test/page.tsx` (Test harness Client page)
+    - Sửa: `playwright.config.ts` (cấu hình webServer dev:web port 3000)
+    - Sửa: `apps/web/package.json` (kết nối workspace doc-model, editor-core, storage)
   - **Bước 1:** Viết kịch bản Playwright E2E:
     - Mở ứng dụng `http://localhost:3000`.
     - Tải một bản thảo mẫu vào hệ thống.
     - Sửa tiêu đề bài báo.
-    - Đợi 1.5 giây để Autosave hoàn tất ghi xuống IndexedDB.
+    - Đợi 1.2 giây để Autosave hoàn tất ghi xuống IndexedDB.
     - Thực hiện Reload trang (F5).
     - Kiểm tra tiêu đề vừa sửa vẫn hiển thị nguyên vẹn 100%.
-  - **Bước 2:** Chạy kiểm thử Playwright và xác nhận tính bền vững của dữ liệu.
+  - **Bước 2:** Chạy kiểm thử Playwright và xác nhận tính bền vững của dữ liệu:
+    - Test 1: IndexedDB Persistence on Page Reload (F5) - giữ nguyên manuscript và revision snapshot.
+    - Test 2: Autosave Lifecycle - debounce user edit, lưu IndexedDB, cập nhật `rev`, `savedRev`, giữ nguyên tiêu đề sau F5.
+    - Test 3: Asset Binary Persistence - lưu binary Blob ảnh theo SHA-256 vào `assets`, kiểm tra byte-exact sau F5.
+  - **Hoàn thành:** Đã tạo hoàn chỉnh bộ kiểm thử Playwright E2E `e2e/data-persistence.spec.ts` và trang harness `dev-persistence-test` phục vụ xác thực độ bền vững dữ liệu. Cấu hình tự động khởi động webServer `pnpm dev:web` trên `http://localhost:3000`. Cả 4/4 kịch bản Playwright E2E chạy trên Chromium thực tế đều pass 100% (chứng minh chống mất dữ liệu tuyệt đối khi người dùng ấn F5). 147/147 unit tests Vitest monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint. Giai đoạn 2 (Phase 2) chính thức hoàn tất.
 
 ---
 

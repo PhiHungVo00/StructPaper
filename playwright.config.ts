@@ -20,14 +20,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  ...(process.env.PLAYWRIGHT_START_SERVER
-    ? {
-        webServer: {
-          command: 'pnpm --filter @structpaper/web dev',
-          url: 'http://localhost:3000',
-          reuseExistingServer: true,
-          timeout: 120 * 1000,
-        },
-      }
-    : {}),
+  webServer: {
+    command: 'pnpm dev:web',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
 });
