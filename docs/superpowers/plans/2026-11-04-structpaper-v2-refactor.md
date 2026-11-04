@@ -75,7 +75,7 @@
 
 ### Phase 1: Lõi Miền `packages/doc-model` & `packages/journal-profiles` (CỔNG 1)
 
-- [ ] **Task 1.1: Khởi tạo Package `packages/doc-model` với Zod Schemas & TypeScript Types**
+- [x] **Task 1.1: Khởi tạo Package `packages/doc-model` với Zod Schemas & TypeScript Types**
   - **Files:**
     - Tạo: `packages/doc-model/package.json`
     - Tạo: `packages/doc-model/tsconfig.json`
@@ -83,14 +83,16 @@
     - Tạo: `packages/doc-model/src/types/block.ts`
     - Tạo: `packages/doc-model/src/types/inline.ts`
     - Tạo: `packages/doc-model/src/types/citation.ts`
+    - Tạo: `packages/doc-model/src/types/contracts.ts`
+    - Tạo: `packages/doc-model/src/types/index.ts`
     - Tạo: `packages/doc-model/src/schemas/manuscript.schema.ts`
+    - Tạo: `packages/doc-model/src/schemas/index.ts`
     - Tạo: `packages/doc-model/src/utils/id-generator.ts`
+    - Tạo: `packages/doc-model/src/utils/index.ts`
+    - Tạo: `packages/doc-model/src/index.ts`
     - Test: `packages/doc-model/tests/manuscript.schema.test.ts`
-  - **Bước 1:** Viết test kiểm tra Zod validation: tạo đối tượng `Manuscript` hợp lệ, kiểm tra validate lỗi khi thiếu ID, sai cấu trúc `Block` hoặc `Inline`.
-  - **Bước 2:** Định nghĩa các interface TypeScript theo đặc tả mục 3.2 của Design Doc: `Manuscript`, `FrontMatter`, `Section`, `Block`, `Inline`, `Cell`, `Reference`.
-  - **Bước 3:** Triển khai Zod schemas tương ứng với các kiểu trên.
-  - **Bước 4:** Xây dựng interface `IdGenerator` với cài đặt mặc định `UlidIdGenerator` và mock `DeterministicIdGenerator` cho testing.
-  - **Bước 5:** Chạy `vitest run` kiểm tra toàn bộ schemas pass 100%.
+    - Test: `packages/doc-model/tests/id-generator.test.ts`
+  - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/doc-model` độc lập với zero contamination; định nghĩa đầy đủ TypeScript types (`Manuscript`, `Section`, `Block`, `Inline`, `Cell`, `Reference`, `Author`, `Affiliation`, `AssetMeta`, và các common contracts `Command`, `Patch`, `InversePatch`, `ManuscriptRepository`, `AssetRepository`); xây dựng Zod schemas với lazy evaluation hỗ trợ đệ quy; triển khai `IdGenerator` (`UlidIdGenerator` và `DeterministicIdGenerator`). 26/26 tests của doc-model và 52/52 tests toàn monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
 - [ ] **Task 1.2: Xây dựng Hàm Thuần túy `computeNumbering` (Derived Numbering)**
   - **Files:**
