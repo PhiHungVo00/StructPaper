@@ -11,6 +11,7 @@ export default defineWorkspace([
         '@structpaper/journal-profiles': path.resolve(__dirname, 'packages/journal-profiles/src'),
         '@structpaper/editor-core': path.resolve(__dirname, 'packages/editor-core/src'),
         '@structpaper/storage': path.resolve(__dirname, 'packages/storage/src'),
+        '@structpaper/ingest-docx': path.resolve(__dirname, 'packages/ingest-docx/src'),
         '@': path.resolve(__dirname, 'apps/web/src'),
       },
     },

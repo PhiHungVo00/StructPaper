@@ -233,17 +233,21 @@
 
 ### Phase 3: Pipeline Bóc tách DOCX Đa tầng `packages/ingest-docx`
 
-- [ ] **Task 3.1: Xây dựng Package Layer & OOXML Reader với `fast-xml-parser`**
+- [x] **Task 3.1: Xây dựng Package Layer & OOXML Reader với `fast-xml-parser`**
   - **Files:**
     - Tạo: `packages/ingest-docx/package.json`
+    - Tạo: `packages/ingest-docx/tsconfig.json`
+    - Tạo: `packages/ingest-docx/src/types/raw-doc.ts`
     - Tạo: `packages/ingest-docx/src/package/docx-package.ts`
-    - Tạo: `packages/ingest-docx/src/ooxml/raw-doc-visitor.ts`
+    - Tạo: `packages/ingest-docx/src/ooxml/xml-node.ts`
     - Tạo: `packages/ingest-docx/src/ooxml/style-resolver.ts`
+    - Tạo: `packages/ingest-docx/src/ooxml/raw-doc-visitor.ts`
     - Test: `packages/ingest-docx/tests/ooxml-reader.test.ts`
   - **Bước 1:** Viết test mở file `.docx` mẫu, kiểm tra đọc được các part: `document.xml`, `styles.xml`, `numbering.xml`, và trích xuất các asset ảnh trong `word/media/`.
   - **Bước 2:** Triển khai `DocxPackage` bọc JSZip để đọc nhanh các part nhị phân.
   - **Bước 3:** Triển khai `RawDocVisitor` duyệt XML bằng `fast-xml-parser`, phân giải cây kế thừa `w:basedOn`, gỡ bỏ `w:sdt`, và bóc tách `w:instrText` (REF, SEQ, EndNote).
   - **Bước 4:** Chạy test kiểm tra trả về danh sách `RawBlock[]` thô chuẩn xác.
+  - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/ingest-docx` với JSZip và fast-xml-parser isomorphic (chạy trên Node, Browser, Web Worker không phụ thuộc DOMParser). `DocxPackage` bóc tách nhanh XML parts và thư mục `word/media/` cùng bản đồ quan hệ `rels`. `StyleResolver` phân giải đầy đủ tên style, chuỗi kế thừa `w:basedOn` chống loop và hỗ trợ tra cứu không phân biệt hoa thường. `RawDocVisitor` duyệt cây OOXML trích xuất formatting (bold, italic, sup, sub, code, font, size), OMML Math (inline & block), drawings, fields đơn và phức tạp, bảng với `gridSpan` và `vMerge`, hỗ trợ Track Changes và content controls `w:sdt`. 16/16 tests trong `ooxml-reader.test.ts` và toàn bộ 163/163 unit tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
 - [ ] **Task 3.2: Xây dựng `StyleMapRecognizer` cho ~35 Word Styles Chuẩn & StructureRecognizer**
   - **Files:**
