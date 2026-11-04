@@ -152,19 +152,23 @@
   - **Bước 3:** Ghi nhận báo cáo kỹ thuật chi tiết tại `docs/superpowers/specs/spike-latex-engine-report.md`, chốt sử dụng **XeLaTeX** làm engine chính thức trên server (Spring Boot Compile Queue qua Docker TeX Live) và **Tectonic** làm engine dev offline siêu tốc (zero-config, ~1.1s warm compile).
   - **Hoàn thành:** Đã viết xong benchmark script đa nền tảng, xuất báo cáo benchmark tự động `benchmark-results.json` và file PDF kiểm chứng `spike-sample.pdf` (hợp lệ với magic bytes `%PDF-`). 105/105 tests monorepo xanh, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 2.2: Thiết lập Hợp đồng API `contracts/openapi.yaml` (CỔNG 2)**
+- [x] **Task 2.2: Thiết lập Hợp đồng API `contracts/openapi.yaml` (KHÓA CỔNG 2)**
   - **Files:**
     - Tạo: `contracts/openapi.yaml`
     - Sửa: `apps/web/package.json` (thêm script sinh client `openapi-typescript`)
+    - Tạo: `apps/web/src/lib/api/schema.d.ts` (sinh tự động từ openapi.yaml)
     - Test: `contracts/tests/openapi-validation.test.ts`
   - **Bước 1:** Viết `contracts/openapi.yaml` đặc tả đầy đủ endpoints:
-    - `/api/v1/manuscripts/{id}` (GET, PUT với `If-Match: rev`)
-    - `/api/v1/assets/{sha256}` (HEAD, PUT upload theo hash)
-    - `/api/v1/compile` (POST nạp job, GET lấy PDF / SSE trạng thái)
-    - `/api/v1/ai/extract` (POST proxy trích xuất)
-    - Schema `Manuscript` tham chiếu trực tiếp từ Zod schema của `doc-model`.
-  - **Bước 2:** Viết test validate cú pháp OpenAPI 3.0.
-  - **Bước 3: KHÓA CỔNG 2 (Gate 2 Closed).**
+    - `/api/v1/manuscripts/{id}` (GET, PUT với `If-Match: rev` header)
+    - `/api/v1/manuscripts/{id}/revisions` (GET lấy lịch sử revision)
+    - `/api/v1/assets/{sha256}` (HEAD kiểm tra, PUT upload binary theo hash SHA-256, GET tải binary)
+    - `/api/v1/compile` (POST nạp manifest job, GET polling status, GET SSE sự kiện thời gian thực, DELETE hủy job)
+    - `/api/v1/journals/{id}/profile` (GET lấy JournalProfile)
+    - `/api/v1/ai/extract` (POST proxy trích xuất bảo mật với action whitelist)
+    - `/api/v1/batches` (POST nạp ZIP đa bài báo)
+    - Toàn bộ Schema (`Manuscript`, `Section`, `Block`, `Inline`, `Cell`, `Reference`, `AssetMeta`, `JournalProfile`, `CompileRequest`, etc.) khớp 100% với Zod schema và TypeScript types của `packages/doc-model` và `packages/journal-profiles`.
+  - **Bước 2:** Viết test validate cú pháp OpenAPI 3.0.3, regex ULID/SHA-256, 8 block types, 6 inline types, If-Match parameter, và cross-validation với Zod fixture. 9/9 unit tests pass.
+  - **Bước 3: KHÓA CỔNG 2 (Gate 2 Closed).** Tất cả 114/114 tests monorepo xanh, 0 vi phạm depcruise, 0 lỗi eslint. Đã sinh thành công client types `apps/web/src/lib/api/schema.d.ts`.
 
 - [ ] **Task 2.3: Xây dựng Bản Tối thiểu của `packages/editor-core` (Store, CommandBus, History)**
   - **Files:**

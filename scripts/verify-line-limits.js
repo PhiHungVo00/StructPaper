@@ -36,6 +36,7 @@ function isIgnored(relPath) {
     normalized.includes('.spec.') ||
     normalized.includes('/fixtures/') ||
     normalized.includes('.generated.') ||
+    normalized.endsWith('.d.ts') ||
     normalized.includes('/node_modules/') ||
     normalized.includes('/.next/') ||
     normalized.includes('/dist/')

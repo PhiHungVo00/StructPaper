@@ -19,6 +19,7 @@
     "packages/*/src/**/*",
     "packages/*/tests/**/*",
     "apps/web/src/**/*",
+    "contracts/**/*",
     "vitest.config.ts",
     "vitest.workspace.ts",
     "playwright.config.ts"

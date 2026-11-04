@@ -1,0 +1,1609 @@
+openapi: 3.0.3
+info:
+  title: StructPaper API
+  description: >-
+    Canonical OpenAPI 3.0.3 specification for StructPaper v2 backend & client contracts.
+    Defines endpoints for manuscripts (v2 doc-model), content-addressed SHA-256 binary assets,
+    asynchronous isolated LaTeX compilation (XeLaTeX / Tectonic), whitelisted AI proxy actions,
+    journal profiles, and batch processing.
+  version: 2.0.0
+  contact:
+    name: StructPaper Engineering Team
+
+servers:
+  - url: http://localhost:8080
+    description: Primary Spring Boot modular monolith backend
+  - url: http://localhost:3000
+    description: Next.js dev server & local route handlers
+
+paths:
+  /api/v1/manuscripts/{id}:
+    get:
+      summary: Retrieve a manuscript by ULID
+      description: Returns the complete Manuscript v2 document model.
+      operationId: getManuscriptById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 26-character ULID of the manuscript
+          schema:
+            $ref: '#/components/schemas/ULID'
+      responses:
+        '200':
+          description: Manuscript retrieved successfully
+          headers:
+            ETag:
+              description: Current revision version string
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manuscript'
+        '404':
+          description: Manuscript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Save or update a manuscript
+      description: >-
+        Saves the Manuscript document model. Requires optimistic locking via the
+        If-Match header to prevent concurrent edit overwrites.
+      operationId: updateManuscriptById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 26-character ULID of the manuscript
+          schema:
+            $ref: '#/components/schemas/ULID'
+        - name: If-Match
+          in: header
+          required: true
+          description: Current revision number or revision string expected by the client
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Updated Manuscript v2 document payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Manuscript'
+      responses:
+        '200':
+          description: Manuscript saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveManuscriptResponse'
+        '400':
+          description: Invalid manuscript schema or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Manuscript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '412':
+          description: Precondition Failed (revision conflict - concurrent modification)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/manuscripts/{id}/revisions:
+    get:
+      summary: List revision history of a manuscript
+      description: Retrieves historical revisions and change metadata for audit and restore.
+      operationId: getManuscriptRevisions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 26-character ULID of the manuscript
+          schema:
+            $ref: '#/components/schemas/ULID'
+      responses:
+        '200':
+          description: Revisions history array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RevisionHistoryItem'
+        '404':
+          description: Manuscript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/assets/{sha256}:
+    head:
+      summary: Check existence of a binary asset
+      description: Returns 200 OK if the asset with the specified SHA-256 exists in storage, 404 otherwise.
+      operationId: checkAssetExists
+      parameters:
+        - name: sha256
+          in: path
+          required: true
+          description: Hexadecimal 64-character SHA-256 hash of the binary asset
+          schema:
+            $ref: '#/components/schemas/Sha256Hash'
+      responses:
+        '200':
+          description: Asset exists in storage
+          headers:
+            Content-Length:
+              description: Size in bytes of the asset
+              schema:
+                type: integer
+            Content-Type:
+              description: MIME type of the stored asset
+              schema:
+                type: string
+            ETag:
+              description: Asset SHA-256 hash
+              schema:
+                type: string
+        '404':
+          description: Asset not found
+
+    put:
+      summary: Upload binary asset by SHA-256
+      description: Uploads raw binary data for an asset. Server verifies content SHA-256 matches URL.
+      operationId: uploadAsset
+      parameters:
+        - name: sha256
+          in: path
+          required: true
+          description: Hexadecimal 64-character SHA-256 hash
+          schema:
+            $ref: '#/components/schemas/Sha256Hash'
+      requestBody:
+        required: true
+        description: Binary asset stream (image, octet-stream, pdf)
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Asset already existed (deduplicated)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetUploadResponse'
+        '201':
+          description: Asset uploaded and persisted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetUploadResponse'
+        '400':
+          description: SHA-256 digest mismatch or invalid binary content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Download binary asset by SHA-256
+      description: Streams raw binary asset contents.
+      operationId: downloadAsset
+      parameters:
+        - name: sha256
+          in: path
+          required: true
+          description: Hexadecimal 64-character SHA-256 hash
+          schema:
+            $ref: '#/components/schemas/Sha256Hash'
+      responses:
+        '200':
+          description: Binary asset payload
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compile:
+    post:
+      summary: Submit LaTeX compilation job
+      description: >-
+        Submits a compilation manifest referencing tex source, asset hashes, and journal profile.
+        If an identical compilation is cached, returns 200 with cached=true; otherwise enqueues
+        and returns 202 with jobId.
+      operationId: submitCompileJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompileRequest'
+      responses:
+        '200':
+          description: Cached compilation result immediately available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompileResponse'
+        '202':
+          description: Compile job enqueued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompileResponse'
+        '400':
+          description: Invalid request manifest or missing required assets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compile/{jobId}:
+    get:
+      summary: Get compile job status and artifacts
+      description: Polling endpoint for compile job status, generated PDF URL, log URL, and diagnostics.
+      operationId: getCompileJobStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: Compile job ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status and report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompileJobStatus'
+        '404':
+          description: Compile job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Cancel a queued or running compile job
+      description: Aborts the LaTeX engine worker process and cleans up workspace scratch files.
+      operationId: cancelCompileJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: Compile job ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelJobResponse'
+        '404':
+          description: Compile job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compile/{jobId}/events:
+    get:
+      summary: Subscribe to compile progress events (SSE)
+      description: Server-Sent Events stream delivering real-time compilation steps and logs.
+      operationId: streamCompileEvents
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: Compile job ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '404':
+          description: Compile job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/journals/{id}/profile:
+    get:
+      summary: Retrieve Journal Profile
+      description: Returns configuration profile for formatting, styles, typography, and LaTeX templates.
+      operationId: getJournalProfile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifier of the target journal (e.g. VNUHCM-HS)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Journal Profile configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalProfile'
+        '404':
+          description: Journal profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ai/extract:
+    post:
+      summary: Whitelisted AI proxy action
+      description: >-
+        Secure server-side proxy route executing whitelisted extraction actions
+        (metadata, table, extractFrontMatter, disambiguateSection, extractTable).
+        Enforces rate limits and 100KB payload restriction.
+      operationId: aiExtractProxy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIExtractRequest'
+      responses:
+        '200':
+          description: Successful AI extraction response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIExtractResponse'
+        '400':
+          description: Non-whitelisted action or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Payload exceeds 100KB limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/batches:
+    post:
+      summary: Submit batch of DOCX files for processing
+      description: Uploads a ZIP file containing multiple DOCX manuscripts to ingest, QC, and compile in batch.
+      operationId: submitBatch
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BatchUploadRequest'
+      responses:
+        '202':
+          description: Batch accepted for asynchronous background processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchProcessResponse'
+        '400':
+          description: Invalid zip file or unsupported archive format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    # ---------------------------------------------------------
+    # Primitive & Identifier Schemas
+    # ---------------------------------------------------------
+    ULID:
+      type: string
+      description: Crockford Base32 26-character ULID (Universally Unique Lexicographically Sortable Identifier)
+      pattern: '^[0123456789ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz]{26}$'
+      example: '01ARZ3NDEKTSV4RRFFQ69G5FAV'
+
+    Sha256Hash:
+      type: string
+      description: Hexadecimal 64-character SHA-256 hash digest
+      pattern: '^[a-fA-F0-9]{64}$'
+      example: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+
+    # ---------------------------------------------------------
+    # Inline Level Schemas (doc-model)
+    # ---------------------------------------------------------
+    InlineMark:
+      type: string
+      enum:
+        - b
+        - i
+        - sup
+        - sub
+        - code
+
+    TextInline:
+      type: object
+      required:
+        - t
+        - v
+      properties:
+        t:
+          type: string
+          enum: [text]
+        v:
+          type: string
+        marks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InlineMark'
+
+    CiteInline:
+      type: object
+      required:
+        - t
+        - refIds
+      properties:
+        t:
+          type: string
+          enum: [cite]
+        refIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+
+    XrefInline:
+      type: object
+      required:
+        - t
+        - target
+        - kind
+      properties:
+        t:
+          type: string
+          enum: [xref]
+        target:
+          type: string
+          minLength: 1
+        kind:
+          type: string
+          enum:
+            - figure
+            - table
+            - equation
+            - section
+
+    MathInline:
+      type: object
+      required:
+        - t
+        - latex
+      properties:
+        t:
+          type: string
+          enum: [math]
+        latex:
+          type: string
+
+    FootnoteInline:
+      type: object
+      required:
+        - t
+        - blocks
+      properties:
+        t:
+          type: string
+          enum: [footnote]
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+
+    LinkInline:
+      type: object
+      required:
+        - t
+        - href
+        - content
+      properties:
+        t:
+          type: string
+          enum: [link]
+        href:
+          type: string
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+
+    Inline:
+      oneOf:
+        - $ref: '#/components/schemas/TextInline'
+        - $ref: '#/components/schemas/CiteInline'
+        - $ref: '#/components/schemas/XrefInline'
+        - $ref: '#/components/schemas/MathInline'
+        - $ref: '#/components/schemas/FootnoteInline'
+        - $ref: '#/components/schemas/LinkInline'
+
+    Cell:
+      type: object
+      required:
+        - content
+        - rowSpan
+        - colSpan
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        rowSpan:
+          type: integer
+          minimum: 1
+        colSpan:
+          type: integer
+          minimum: 1
+        align:
+          type: string
+          enum: [l, c, r]
+        header:
+          type: boolean
+
+    # ---------------------------------------------------------
+    # Block Level Schemas (doc-model)
+    # ---------------------------------------------------------
+    ParagraphBlock:
+      type: object
+      required:
+        - type
+        - id
+        - content
+      properties:
+        type:
+          type: string
+          enum: [paragraph]
+        id:
+          type: string
+          minLength: 1
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+
+    ListBlock:
+      type: object
+      required:
+        - type
+        - id
+        - ordered
+        - items
+      properties:
+        type:
+          type: string
+          enum: [list]
+        id:
+          type: string
+          minLength: 1
+        ordered:
+          type: boolean
+        items:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Block'
+
+    QuoteBlock:
+      type: object
+      required:
+        - type
+        - id
+        - content
+      properties:
+        type:
+          type: string
+          enum: [quote]
+        id:
+          type: string
+          minLength: 1
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+
+    BoxBlock:
+      type: object
+      required:
+        - type
+        - id
+        - content
+      properties:
+        type:
+          type: string
+          enum: [box]
+        id:
+          type: string
+          minLength: 1
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+
+    EquationBlock:
+      type: object
+      required:
+        - type
+        - id
+        - latex
+        - numbered
+        - status
+      properties:
+        type:
+          type: string
+          enum: [equation]
+        id:
+          type: string
+          minLength: 1
+        latex:
+          type: string
+        omml:
+          type: string
+        numbered:
+          type: boolean
+        label:
+          type: string
+        status:
+          type: string
+          enum: [ok, fallback-image]
+
+    FigurePanel:
+      type: object
+      required:
+        - id
+        - assetId
+      properties:
+        id:
+          type: string
+          minLength: 1
+        assetId:
+          type: string
+          minLength: 1
+        label:
+          type: string
+        caption:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+
+    FigureLayout:
+      type: object
+      properties:
+        columnSpan:
+          type: string
+          enum: [1-column, 2-column]
+        alignment:
+          type: string
+          enum: [left, center, right]
+        scalePercent:
+          type: number
+      additionalProperties: true
+
+    FigureBlock:
+      type: object
+      required:
+        - type
+        - id
+        - assetId
+        - caption
+        - layout
+      properties:
+        type:
+          type: string
+          enum: [figure]
+        id:
+          type: string
+          minLength: 1
+        assetId:
+          type: string
+        caption:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        source:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        panels:
+          type: array
+          items:
+            $ref: '#/components/schemas/FigurePanel'
+        layout:
+          $ref: '#/components/schemas/FigureLayout'
+
+    TableLayout:
+      type: object
+      properties:
+        columnSpan:
+          type: string
+          enum: [1-column, 2-column]
+        alignment:
+          type: string
+          enum: [left, center, right]
+      additionalProperties: true
+
+    TableBlock:
+      type: object
+      required:
+        - type
+        - id
+        - caption
+        - grid
+        - headerRows
+        - layout
+      properties:
+        type:
+          type: string
+          enum: [table]
+        id:
+          type: string
+          minLength: 1
+        caption:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        grid:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Cell'
+        headerRows:
+          type: integer
+          minimum: 0
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        source:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        layout:
+          $ref: '#/components/schemas/TableLayout'
+
+    PageBreakBlock:
+      type: object
+      required:
+        - type
+        - id
+      properties:
+        type:
+          type: string
+          enum: [pageBreak]
+        id:
+          type: string
+          minLength: 1
+
+    Block:
+      oneOf:
+        - $ref: '#/components/schemas/ParagraphBlock'
+        - $ref: '#/components/schemas/ListBlock'
+        - $ref: '#/components/schemas/QuoteBlock'
+        - $ref: '#/components/schemas/BoxBlock'
+        - $ref: '#/components/schemas/EquationBlock'
+        - $ref: '#/components/schemas/FigureBlock'
+        - $ref: '#/components/schemas/TableBlock'
+        - $ref: '#/components/schemas/PageBreakBlock'
+
+    # ---------------------------------------------------------
+    # Document Structure & Metadata Schemas (doc-model)
+    # ---------------------------------------------------------
+    Section:
+      type: object
+      required:
+        - id
+        - level
+        - title
+        - blocks
+        - children
+      properties:
+        id:
+          type: string
+          minLength: 1
+        level:
+          type: integer
+          enum: [1, 2, 3]
+        title:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+
+    Author:
+      type: object
+      required:
+        - id
+        - name
+        - affiliationIds
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        affiliationIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        email:
+          type: string
+        isCorresponding:
+          type: boolean
+        orcid:
+          type: string
+
+    Affiliation:
+      type: object
+      required:
+        - id
+        - institution
+      properties:
+        id:
+          type: string
+          minLength: 1
+        institution:
+          type: string
+          minLength: 1
+        department:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+
+    Dates:
+      type: object
+      properties:
+        received:
+          type: string
+        revised:
+          type: string
+        accepted:
+          type: string
+        published:
+          type: string
+
+    FrontMatter:
+      type: object
+      required:
+        - title
+        - authors
+        - affiliations
+        - abstract
+        - keywords
+        - dates
+      properties:
+        title:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        translations:
+          type: object
+          properties:
+            en:
+              type: array
+              items:
+                $ref: '#/components/schemas/Inline'
+          additionalProperties: true
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+        affiliations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Affiliation'
+        abstract:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Inline'
+        keywords:
+          type: array
+          items:
+            type: string
+        dates:
+          $ref: '#/components/schemas/Dates'
+        doi:
+          type: string
+        volume:
+          type: string
+        issue:
+          type: string
+        pages:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: integer
+
+    AssetMeta:
+      type: object
+      required:
+        - id
+        - sha256
+        - mimeType
+      properties:
+        id:
+          type: string
+          minLength: 1
+        sha256:
+          $ref: '#/components/schemas/Sha256Hash'
+        mimeType:
+          type: string
+          minLength: 1
+        fileName:
+          type: string
+        sizeBytes:
+          type: integer
+          minimum: 0
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+        dpi:
+          type: number
+          minimum: 1
+
+    BackMatterItem:
+      type: object
+      required:
+        - id
+        - type
+        - content
+      properties:
+        id:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          minLength: 1
+        title:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inline'
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+
+    Reference:
+      type: object
+      required:
+        - id
+        - raw
+        - parse
+      properties:
+        id:
+          type: string
+          minLength: 1
+        raw:
+          type: string
+        csl:
+          type: object
+          additionalProperties: true
+        doi:
+          type: string
+        url:
+          type: string
+        parse:
+          type: string
+          enum: [ok, partial, failed]
+
+    Manuscript:
+      type: object
+      required:
+        - schemaVersion
+        - id
+        - lang
+        - journalId
+        - articleType
+        - meta
+        - body
+        - back
+        - references
+        - assets
+      properties:
+        schemaVersion:
+          type: integer
+          enum: [2]
+          description: Canonical schema version (must be 2 for StructPaper v2)
+        id:
+          $ref: '#/components/schemas/ULID'
+        lang:
+          type: string
+          enum: [vi, en]
+        journalId:
+          type: string
+          minLength: 1
+        articleType:
+          type: string
+          minLength: 1
+        meta:
+          $ref: '#/components/schemas/FrontMatter'
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+        back:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/BackMatterItem'
+              - type: object
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reference'
+        assets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AssetMeta'
+        layoutOverrides:
+          type: object
+          additionalProperties: true
+        provenance:
+          type: object
+          additionalProperties: true
+
+    # ---------------------------------------------------------
+    # Journal Profile Schemas (journal-profiles)
+    # ---------------------------------------------------------
+    JournalProfileNames:
+      type: object
+      required:
+        - vi
+        - en
+        - short
+      properties:
+        vi:
+          type: string
+          minLength: 1
+        en:
+          type: string
+          minLength: 1
+        short:
+          type: string
+          minLength: 1
+
+    JournalArticleType:
+      type: object
+      required:
+        - id
+        - label
+        - requiredSections
+      properties:
+        id:
+          type: string
+          minLength: 1
+        label:
+          type: object
+          additionalProperties:
+            type: string
+        requiredSections:
+          type: array
+          items:
+            type: string
+
+    JournalAbstractConfig:
+      type: object
+      required:
+        - minWords
+        - maxWords
+        - structured
+      properties:
+        minWords:
+          type: integer
+          minimum: 0
+        maxWords:
+          type: integer
+          minimum: 1
+        structured:
+          type: boolean
+
+    JournalKeywordsConfig:
+      type: object
+      required:
+        - min
+        - max
+        - separator
+      properties:
+        min:
+          type: integer
+          minimum: 0
+        max:
+          type: integer
+          minimum: 1
+        separator:
+          type: string
+          enum: [';', ',']
+
+    JournalFrontMatterConfig:
+      type: object
+      required:
+        - abstract
+        - keywords
+        - dateFormat
+        - doiPattern
+      properties:
+        abstract:
+          $ref: '#/components/schemas/JournalAbstractConfig'
+        keywords:
+          $ref: '#/components/schemas/JournalKeywordsConfig'
+        dateFormat:
+          type: string
+          minLength: 1
+        doiPattern:
+          type: string
+          minLength: 1
+
+    JournalCitationConfig:
+      type: object
+      required:
+        - style
+        - inText
+        - rangeDash
+      properties:
+        style:
+          type: string
+          minLength: 1
+        inText:
+          type: string
+          enum: [bracket, superscript]
+        rangeDash:
+          type: string
+          minLength: 1
+
+    JournalLayoutMargins:
+      type: object
+      required:
+        - top
+        - bottom
+        - left
+        - right
+      properties:
+        top:
+          type: number
+        bottom:
+          type: number
+        left:
+          type: number
+        right:
+          type: number
+        unit:
+          type: string
+          enum: [mm, pt, in]
+
+    JournalLayoutConfig:
+      type: object
+      required:
+        - paperSize
+        - columns
+        - margins
+      properties:
+        paperSize:
+          type: string
+          minLength: 1
+        columns:
+          type: integer
+          minimum: 1
+        margins:
+          $ref: '#/components/schemas/JournalLayoutMargins'
+        columnGap:
+          type: number
+        headerHeight:
+          type: number
+        footerHeight:
+          type: number
+      additionalProperties: true
+
+    JournalTypographyConfig:
+      type: object
+      required:
+        - fontFamilies
+        - fontSizes
+      properties:
+        fontFamilies:
+          type: object
+          additionalProperties:
+            type: string
+        fontSizes:
+          type: object
+          additionalProperties:
+            type: number
+        leading:
+          type: object
+          additionalProperties:
+            type: number
+        widowOrphan:
+          type: object
+          properties:
+            widows:
+              type: number
+            orphans:
+              type: number
+      additionalProperties: true
+
+    JournalLatexConfig:
+      type: object
+      required:
+        - cls
+        - engine
+        - fonts
+      properties:
+        cls:
+          type: string
+          minLength: 1
+        engine:
+          type: string
+          enum: [xelatex, lualatex]
+        fonts:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+
+    JournalQcConfig:
+      type: object
+      required:
+        - ruleset
+        - weights
+      properties:
+        ruleset:
+          type: array
+          items:
+            type: string
+        weights:
+          type: object
+          additionalProperties:
+            type: number
+
+    JournalProfile:
+      type: object
+      required:
+        - id
+        - version
+        - names
+        - color
+        - languages
+        - articleTypes
+        - frontMatter
+        - citation
+        - styleMap
+        - layout
+        - typography
+        - latex
+        - qc
+      properties:
+        id:
+          type: string
+          minLength: 1
+        version:
+          type: string
+          minLength: 1
+        names:
+          $ref: '#/components/schemas/JournalProfileNames'
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        languages:
+          type: array
+          items:
+            type: string
+            enum: [vi, en]
+          minItems: 1
+        articleTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalArticleType'
+          minItems: 1
+        frontMatter:
+          $ref: '#/components/schemas/JournalFrontMatterConfig'
+        citation:
+          $ref: '#/components/schemas/JournalCitationConfig'
+        styleMap:
+          type: object
+          additionalProperties:
+            type: string
+        layout:
+          $ref: '#/components/schemas/JournalLayoutConfig'
+        typography:
+          $ref: '#/components/schemas/JournalTypographyConfig'
+        latex:
+          $ref: '#/components/schemas/JournalLatexConfig'
+        qc:
+          $ref: '#/components/schemas/JournalQcConfig'
+
+    # ---------------------------------------------------------
+    # API Request & Response Schemas
+    # ---------------------------------------------------------
+    SaveManuscriptResponse:
+      type: object
+      required:
+        - id
+        - rev
+        - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/ULID'
+        rev:
+          type: integer
+          minimum: 1
+          description: Incremented optimistic lock revision number
+        updatedAt:
+          type: string
+          format: date-time
+
+    RevisionHistoryItem:
+      type: object
+      required:
+        - rev
+        - timestamp
+      properties:
+        rev:
+          type: integer
+          minimum: 1
+        timestamp:
+          type: string
+          format: date-time
+        author:
+          type: string
+        message:
+          type: string
+
+    AssetUploadResponse:
+      type: object
+      required:
+        - sha256
+        - sizeBytes
+        - mimeType
+      properties:
+        sha256:
+          $ref: '#/components/schemas/Sha256Hash'
+        sizeBytes:
+          type: integer
+          minimum: 0
+        mimeType:
+          type: string
+
+    CompileRequest:
+      type: object
+      required:
+        - tex
+        - assetHashes
+        - profileId
+      properties:
+        tex:
+          type: string
+          description: Raw LaTeX source document
+        assetHashes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sha256Hash'
+          description: List of SHA-256 hashes of required assets
+        profileId:
+          type: string
+          description: Journal profile identifier (e.g. VNUHCM-HS)
+        engine:
+          type: string
+          enum: [xelatex, tectonic]
+          default: xelatex
+
+    CompileResponse:
+      type: object
+      required:
+        - jobId
+        - status
+        - cached
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [queued, compiling, completed, failed, cancelled]
+        cached:
+          type: boolean
+        pdfUrl:
+          type: string
+
+    CompileJobReport:
+      type: object
+      properties:
+        pages:
+          type: integer
+          minimum: 0
+        warnings:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+
+    CompileJobStatus:
+      type: object
+      required:
+        - jobId
+        - status
+        - cached
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [queued, compiling, completed, failed, cancelled]
+        cached:
+          type: boolean
+        pdfUrl:
+          type: string
+        logUrl:
+          type: string
+        durationMs:
+          type: integer
+          minimum: 0
+        report:
+          $ref: '#/components/schemas/CompileJobReport'
+
+    CancelJobResponse:
+      type: object
+      required:
+        - jobId
+        - status
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [cancelled]
+
+    AIExtractRequest:
+      type: object
+      required:
+        - action
+        - payload
+      properties:
+        action:
+          type: string
+          enum:
+            - metadata
+            - table
+            - extractFrontMatter
+            - disambiguateSection
+            - extractTable
+        payload:
+          type: object
+          additionalProperties: true
+        options:
+          type: object
+          additionalProperties: true
+
+    AIExtractResponse:
+      type: object
+      required:
+        - action
+        - data
+      properties:
+        action:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+
+    BatchUploadRequest:
+      type: object
+      required:
+        - file
+        - journalId
+      properties:
+        file:
+          type: string
+          format: binary
+          description: ZIP file containing DOCX manuscript files
+        journalId:
+          type: string
+        options:
+          type: string
+          description: JSON encoded string of processing options
+
+    BatchProcessResponse:
+      type: object
+      required:
+        - batchId
+        - fileCount
+        - status
+      properties:
+        batchId:
+          type: string
+        fileCount:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

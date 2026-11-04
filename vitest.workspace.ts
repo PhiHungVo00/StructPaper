@@ -1,15 +1,24 @@
 import { defineWorkspace } from 'vitest/config';
+import path from 'path';
 
 export default defineWorkspace([
   'packages/*/vitest.config.ts',
   'apps/*/vitest.config.ts',
   {
+    resolve: {
+      alias: {
+        '@structpaper/doc-model': path.resolve(__dirname, 'packages/doc-model/src'),
+        '@structpaper/journal-profiles': path.resolve(__dirname, 'packages/journal-profiles/src'),
+        '@': path.resolve(__dirname, 'apps/web/src'),
+      },
+    },
     test: {
       name: 'monorepo',
       include: [
         'packages/**/*.{test,spec}.{ts,tsx}',
         'apps/**/*.{test,spec}.{ts,tsx}',
         'tests/**/*.{test,spec}.{ts,tsx}',
+        'contracts/**/*.{test,spec}.{ts,tsx}',
       ],
       exclude: [
         '**/node_modules/**',
