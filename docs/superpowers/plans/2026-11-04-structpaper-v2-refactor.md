@@ -46,26 +46,22 @@
     - Test: `struct-paper-app/src/app/api/ai/proxy/route.test.ts` (9/9 pass)
   - **Hoàn thành:** Đã viết test TDD, loại bỏ hoàn toàn `NEXT_PUBLIC_OPENAI_API_KEY`, bảo vệ route bằng whitelist actions, payload limit 15KB và origin check. Next.js build pass.
 
-- [ ] **Task 0.2: Chuyển dịch Thư mục Monorepo bằng `git mv` & Cấu hình `pnpm-workspace.yaml`**
+- [x] **Task 0.2: Chuyển dịch Thư mục Monorepo bằng `git mv` & Cấu hình `pnpm-workspace.yaml`**
   - **Files:**
     - Tạo: `pnpm-workspace.yaml`
     - Di chuyển: `struct-paper-app` $\rightarrow$ `apps/web` (bằng `git mv`)
     - Di chuyển: `struct-paper-backend` $\rightarrow$ `apps/api` (bằng `git mv`)
     - Sửa: `package.json` (root), `apps/web/package.json`, `apps/web/next.config.mjs`, `apps/web/tsconfig.json`
-    - Tạo: `packages/` (thư mục gốc rỗng)
-  - **Bước 1:** Chạy `git mv struct-paper-app apps/web` và `git mv struct-paper-backend apps/api`.
-  - **Bước 2:** Tạo file `pnpm-workspace.yaml` khai báo `packages: ['apps/*', 'packages/*']`.
-  - **Bước 3:** Cấu hình `next.config.mjs` thêm `transpilePackages: ['@structpaper/doc-model', '@structpaper/editor-core', '@structpaper/storage', '@structpaper/ingest-docx', '@structpaper/journal-profiles']`.
-  - **Bước 4:** Chạy `pnpm install` tại thư mục gốc và kiểm tra `pnpm --filter @structpaper/web build` thành công.
+    - Tạo: `packages/` (thư mục gốc)
+  - **Hoàn thành:** Đã di chuyển thư mục bảo toàn lịch sử Git (commit `5b87294`), cấu hình `pnpm-workspace.yaml`, cập nhật `transpilePackages` và path mappings. Cả Next.js build và Gradle tests backend đều xanh 100%.
 
-- [ ] **Task 0.3: Thiết lập Vitest, Playwright, Dependency-Cruiser & ESLint Tiered Limits**
+- [x] **Task 0.3: Thiết lập Vitest, Playwright, Dependency-Cruiser & ESLint Tiered Limits**
   - **Files:**
     - Tạo: `vitest.workspace.ts`, `vitest.config.ts`, `playwright.config.ts`
-    - Tạo: `.dependency-cruiser.js`, `eslint.config.mjs`
-    - Tạo: `scripts/baseline-line-limits.json` (danh sách allowlist các file cũ vượt ngưỡng)
-  - **Bước 1:** Cấu hình ESLint với tiered rules: logic max 500 lines (warn 300), UI max 700 lines (warn 400), `skipBlankLines: true`, `skipComments: true`, miễn trừ test/fixtures/allowlist.
-  - **Bước 2:** Cấu hình `.dependency-cruiser.js` cấm `packages/doc-model` import bất kỳ thư viện React, DOM, hoặc các package khác.
-  - **Bước 3:** Chạy `pnpm lint` và `pnpm depcruise` xác nhận không có lỗi vi phạm.
+    - Tạo: `.dependency-cruiser.js`, `.eslintrc.cjs`, `.eslintignore`, `tsconfig.json`
+    - Tạo: `scripts/baseline-line-limits.json`, `scripts/verify-line-limits.js`
+    - Test: `tests/architecture.test.ts`, `e2e/smoke.spec.ts`
+  - **Hoàn thành:** Cấu hình thành công Vitest workspace, Playwright test harness, Dependency-Cruiser architecture guardrails (cấm `doc-model` contamination và enforce strict downward dependencies) cùng ESLint tiered line limits (logic <=500 lines, UI <=700 lines) kèm baseline allowlist bảo vệ 41 file legacy. `pnpm lint`, `pnpm depcruise`, `pnpm test`, và Next.js build đều xanh 100%.
 
 - [ ] **Task 0.4: Thiết lập Bộ Golden Fixtures (11 file bài báo thật) & Baseline Characterization Test**
   - **Files:**

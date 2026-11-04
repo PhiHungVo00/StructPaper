@@ -51,6 +51,14 @@ replay_pid*.log
 .classpath
 .project
 
+# --- Test Results & Coverage ---
+test-results/
+**/test-results/
+playwright-report/
+**/playwright-report/
+coverage/
+**/coverage/
+
 # --- OS temporary files ---
 .DS_Store
 Thumbs.db

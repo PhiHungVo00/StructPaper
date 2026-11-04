@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+out/
+coverage/
+*.d.ts
+apps/api/
+fixtures/
+scripts/
+scratch*
+**/scratch/**
+public/
+playwright-report/
+test-results/

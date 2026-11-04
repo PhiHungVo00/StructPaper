@@ -4,6 +4,18 @@
   "scripts": {
     "build:web": "pnpm --filter @structpaper/web build",
     "dev:web": "pnpm --filter @structpaper/web dev",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "depcruise": "depcruise --config .dependency-cruiser.js packages apps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "@vitest/coverage-v8": "^2.1.9",
+    "dependency-cruiser": "^18.7.2",
+    "eslint": "^8.57.1",
+    "vitest": "^2.1.9"
   }
 }
