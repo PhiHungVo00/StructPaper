@@ -189,22 +189,26 @@
     - Test: `packages/editor-core/tests/history-manager.test.ts` (7/7 pass)
   - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/editor-core`. Triển khai Zustand vanilla store quản lý vòng đời Manuscript (`rev`, `savedRev`, `isDirty`). Xây dựng `CommandBus` điều phối và sinh cặp forward/inverse patches nguyên tử qua Immer `produceWithPatches`. Triển khai đầy đủ 9 base command handlers (`metadata/updateTitle`, `metadata/updateAbstract`, `metadata/updateAuthors`, `block/insert`, `block/update`, `block/remove`, `reference/add`, `reference/remove`, `table/updateCell`). Xây dựng `HistoryManager` quản lý undo/redo stack tối đa 100 bước, tự động dọn redo stack khi có mutation mới, đồng bộ trạng thái Store và khôi phục chính xác 100% snapshot dữ liệu. 133/133 tests monorepo xanh (19/19 test mới), 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 2.4: Xây dựng Package `packages/storage` (Dexie IndexedDB & Autosave)**
+- [x] **Task 2.4: Xây dựng Package `packages/storage` (Dexie IndexedDB & Autosave)**
   - **Files:**
     - Tạo: `packages/storage/package.json`
+    - Tạo: `packages/storage/tsconfig.json`
+    - Tạo: `packages/storage/src/db/types.ts`
     - Tạo: `packages/storage/src/db/structpaper-db.ts` (Dexie 8 bảng)
+    - Tạo: `packages/storage/src/db/index.ts`
     - Tạo: `packages/storage/src/repositories/indexeddb-manuscript-repo.ts`
     - Tạo: `packages/storage/src/repositories/indexeddb-asset-repo.ts`
+    - Tạo: `packages/storage/src/repositories/index.ts`
     - Tạo: `packages/storage/src/autosave/autosave-engine.ts`
-    - Tạo: `packages/storage/src/backup/zip-backup.ts` (xuất `.structpaper`)
-    - Test: `packages/storage/tests/storage.test.ts`
-    - Test: `packages/storage/tests/autosave.test.ts`
-  - **Bước 1:** Viết test kiểm tra ghi/đọc bản thảo từ Dexie (dùng `fake-indexeddb`).
-  - **Bước 2:** Viết test kiểm tra Autosave: lắng nghe luồng patch từ `CommandBus`, debounce 1 giây và lưu tự động vào bảng `manuscripts` và `revisions`.
-  - **Bước 3:** Triển khai `StructPaperDatabase` kế thừa `Dexie` với 8 bảng theo đặc tả mục 9.2 của Design Doc.
-  - **Bước 4:** Triển khai `IndexedDbManuscriptRepo` và `IndexedDbAssetRepo` (lưu Blob ảnh theo SHA-256).
-  - **Bước 5:** Triển khai hàm xuất file sao lưu nén `.structpaper` (ZIP chứa `manuscript.json` và thư mục `assets/`).
-  - **Bước 6:** Chạy test xác nhận test xanh 100%.
+    - Tạo: `packages/storage/src/autosave/index.ts`
+    - Tạo: `packages/storage/src/backup/zip-backup.ts` (xuất/nhập `.structpaper`)
+    - Tạo: `packages/storage/src/backup/index.ts`
+    - Tạo: `packages/storage/src/index.ts`
+    - Sửa: `.dependency-cruiser.js` (cho phép `@structpaper/storage` phụ thuộc `doc-model` và `editor-core`)
+    - Sửa: `vitest.workspace.ts` (alias `@structpaper/storage`)
+    - Test: `packages/storage/tests/storage.test.ts` (9/9 pass)
+    - Test: `packages/storage/tests/autosave.test.ts` (5/5 pass)
+  - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/storage` Offline-First. Triển khai `StructPaperDatabase` kế thừa Dexie với 8 bảng (`manuscripts`, `revisions`, `assets`, `assetRefs`, `ingestSources`, `outbox`, `compileCache`, `settings`). Triển khai `IndexedDbManuscriptRepo` (lưu giao dịch, tự động snapshot revision và cập nhật quan hệ `assetRefs`, `listRecent` tối ưu không nạp nặng full body). Triển khai `IndexedDbAssetRepo` (lưu binary blob ảnh theo mã băm SHA-256). Triển khai `AutosaveEngine` (lắng nghe `onPatch` từ `CommandBus`, debounce 1 giây ghi an toàn xuống IndexedDB, đồng bộ cờ `isDirty` trên Store, hỗ trợ `flush` tức thì và `stop` dọn dẹp). Triển khai bộ sao lưu nén `.structpaper` qua JSZip (`exportBackup` và `importBackup` roundtrip). 147/147 tests monorepo xanh (14/14 tests mới), 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 2.5: Viết Kiểm thử E2E Đầu tiên (Chống mất Dữ liệu F5)**
   - **Files:**

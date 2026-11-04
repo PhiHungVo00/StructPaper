@@ -16,13 +16,25 @@ module.exports = {
     {
       name: 'strict-downward-dependencies',
       comment:
-        'packages/ingest-docx, packages/exporters, packages/qc-engine, packages/storage, packages/editor-core must only depend on packages/doc-model.',
+        'packages/ingest-docx, packages/exporters, packages/qc-engine, packages/editor-core must only depend on packages/doc-model.',
       severity: 'error',
       from: {
-        path: '^packages/(ingest-docx|exporters|qc-engine|storage|editor-core)',
+        path: '^packages/(ingest-docx|exporters|qc-engine|editor-core)',
       },
       to: {
         path: '^(apps/|packages/(?!doc-model|\\1))',
+      },
+    },
+    {
+      name: 'storage-downward-dependencies',
+      comment:
+        'packages/storage must only depend on packages/doc-model and packages/editor-core.',
+      severity: 'error',
+      from: {
+        path: '^packages/storage',
+      },
+      to: {
+        path: '^(apps/|packages/(?!doc-model|editor-core|storage))',
       },
     },
   ],

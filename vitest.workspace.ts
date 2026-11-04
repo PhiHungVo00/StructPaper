@@ -10,6 +10,7 @@ export default defineWorkspace([
         '@structpaper/doc-model': path.resolve(__dirname, 'packages/doc-model/src'),
         '@structpaper/journal-profiles': path.resolve(__dirname, 'packages/journal-profiles/src'),
         '@structpaper/editor-core': path.resolve(__dirname, 'packages/editor-core/src'),
+        '@structpaper/storage': path.resolve(__dirname, 'packages/storage/src'),
         '@': path.resolve(__dirname, 'apps/web/src'),
       },
     },
