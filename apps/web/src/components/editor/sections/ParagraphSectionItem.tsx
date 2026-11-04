@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { PaperSection } from '@/types/paper';
-import { AutoResizeTextarea } from './AutoResizeTextarea';
-import { renderColoredParagraphCitations } from './utils';
-import { ImageIcon, Bookmark, Link2 } from 'lucide-react';
+import { TemporaryParagraphInput } from './TemporaryParagraphInput';
+import { ImageIcon, Link2 } from 'lucide-react';
 
-interface ParagraphSectionItemProps {
+export interface ParagraphSectionItemProps {
   sec: PaperSection;
   idx: number;
   sections: PaperSection[];
@@ -62,27 +61,14 @@ export const ParagraphSectionItem: React.FC<ParagraphSectionItemProps> = ({
           </div>
         )}
 
-      {isEditing ? (
-        <AutoResizeTextarea
-          autoFocus
-          value={sec.content || ''}
-          onChange={(val) => onUpdateSection(idx, { ...sec, content: val })}
-          onBlur={() => setActiveEditingParaId(null)}
-          placeholder="Nội dung đoạn văn bản..."
-          className="w-full p-3 rounded-2xl text-xs sm:text-sm text-zinc-900 bg-white leading-relaxed focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 shadow-2xs"
-        />
-      ) : (
-        <div
-          onClick={() => setActiveEditingParaId(secId)}
-          className="w-full p-3 rounded-2xl text-xs sm:text-sm text-zinc-900 bg-white leading-relaxed border border-transparent hover:border-zinc-200/80 shadow-2xs cursor-text select-text transition-all min-h-[3rem] whitespace-pre-wrap break-words"
-        >
-          {sec.content && sec.content.trim() ? (
-            renderColoredParagraphCitations(sec.content, () => setActiveEditingParaId(secId))
-          ) : (
-            <span className="text-zinc-400 italic">Nhập nội dung đoạn văn bản...</span>
-          )}
-        </div>
-      )}
+      <TemporaryParagraphInput
+        value={sec.content || ''}
+        isEditing={isEditing}
+        onStartEdit={() => setActiveEditingParaId(secId)}
+        onBlur={() => setActiveEditingParaId(null)}
+        onChange={(_inlines, plainText) => onUpdateSection(idx, { ...sec, content: plainText })}
+        placeholder="Nội dung đoạn văn bản..."
+      />
     </div>
   );
 };

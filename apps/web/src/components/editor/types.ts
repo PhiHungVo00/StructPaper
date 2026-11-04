@@ -49,6 +49,8 @@ export interface SectionsTabProps {
   onChange: (updated: PaperSection[]) => void;
   metadata?: PaperMetadata;
   references?: PaperReference[];
+  commandBus?: CommandBus;
+  onDispatch?: (command: unknown) => void;
 }
 
 export interface ReferencesTabProps {

@@ -19,7 +19,7 @@ import {
   Settings,
 } from 'lucide-react';
 
-interface SectionCardHeaderProps {
+export interface SectionCardHeaderProps {
   sec: PaperSection;
   idx: number;
   totalSections: number;

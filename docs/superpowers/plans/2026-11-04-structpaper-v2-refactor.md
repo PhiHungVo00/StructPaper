@@ -359,15 +359,29 @@
   - **Bước 3:** Chạy test xác nhận các tab hoạt động trơn tru và hỗ trợ Undo/Redo tức thì.
   - **Hoàn thành:** Hoàn thành refactor toàn bộ các tab giao diện (`MetadataTab`, `AuthorsTab`, `ReferencesTab`, `PreflightQCTab`) sang CommandBus của `@structpaper/editor-core`. Bảo toàn 100% giao diện người dùng (inputs, textareas, selects, badges, buttons, labels tiếng Việt); mở rộng hỗ trợ ORCID trong `AuthorItemCard`; bọc bộ kiểm định preflight qua `preflight-wrapper.ts` sẵn sàng cho Phase 5 `qc-engine`. Tách subcomponents giúp `AuthorsTab.tsx` giảm mạnh từ 522 dòng xuống còn 195 dòng (< 523 dòng allowlist). 5/5 tests mới và 254/254 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 4.4: Refactor `SectionsTab` với Khung Danh sách Block & Ô Đoạn văn Tạm thời**
+- [x] **Task 4.4: Refactor `SectionsTab` với Khung Danh sách Block & Ô Đoạn văn Tạm thời**
   - **Files:**
     - Sửa: `apps/web/src/components/editor/SectionsTab.tsx`
+    - Sửa: `apps/web/src/components/editor/sections/ParagraphSectionItem.tsx`
+    - Sửa: `apps/web/src/components/editor/sections/SectionCardHeader.tsx`
+    - Sửa: `apps/web/src/components/editor/sections/index.ts`
+    - Sửa: `apps/web/src/components/editor/command-bus-adapter.ts`
+    - Sửa: `apps/web/src/components/editor/types.ts`
     - Tạo: `apps/web/src/components/editor/sections/TemporaryParagraphInput.tsx`
+    - Tạo: `apps/web/src/components/editor/sections/SectionHeaderCard.tsx`
+    - Tạo: `apps/web/src/components/editor/sections/SectionBlockList.tsx`
+    - Tạo: `apps/web/src/components/editor/sections/SectionActionToolbar.tsx`
+    - Tạo: `apps/web/src/components/editor/sections/FigureLightboxModal.tsx`
+    - Tạo: `apps/web/src/components/editor/sections/useSectionInspectors.ts`
+    - Tạo: `apps/web/src/components/editor/sections/useSectionMediaHandlers.ts`
+    - Tạo: `apps/web/src/components/editor/dispatchers/sections-dispatchers.ts`
     - Test: `apps/web/tests/components/sections-tab.test.tsx`
-  - **Bước 1:** Viết test cho `SectionsTab`: thêm đoạn văn mới, xóa đoạn văn, di chuyển thứ tự section.
-  - **Bước 2:** Xây dựng `TemporaryParagraphInput` đọc ghi trực tiếp kiểu `Inline[]` (chuyển đổi `Inline[]` $\leftrightarrow$ string tạm thời, bảo tồn in nghiêng bằng markdown đơn giản).
-  - **Bước 3:** Tích hợp vào `SectionsTab`.
-  - **Bước 4: GỠ BỎ HOÀN TOÀN `adaptV2toV1`** (Toàn bộ ứng dụng giờ đây chạy 100% trên Manuscript v2).
+  - **Hoàn thành:**
+    - Bảo tồn 100% giao diện người dùng thị giác của `SectionsTab`: giữ nguyên các nút thêm section, thêm block (+ Tiêu đề H1, + Đoạn văn, + Bảng, + Hình), nút xóa, nút di chuyển lên/xuống, badges phân loại, typography và màu sắc.
+    - Xây dựng `TemporaryParagraphInput.tsx` đọc và ghi trực tiếp kiểu `Inline[]` của `@structpaper/doc-model`: chuyển đổi 2 chiều `Inline[]` $\leftrightarrow$ text hiển thị (bảo tồn in nghiêng `*text*`, math `$latex$`, citations `[n]`), styling khớp 100% giao diện `<AutoResizeTextarea>` cũ.
+    - Phân rã modular toàn diện cho `SectionsTab.tsx`: giảm từ 916 dòng xuống còn 348 dòng (< 350 dòng theo yêu cầu), tách thành các subcomponent chuyên biệt (`SectionHeaderCard.tsx`, `SectionBlockList.tsx`, `SectionActionToolbar.tsx`, `FigureLightboxModal.tsx`, `useSectionInspectors.ts`, `useSectionMediaHandlers.ts`).
+    - Nối chuyển đổi sang CommandBus qua `sections-dispatchers.ts` (`block/insert`, `block/update`, `block/remove`) tương thích hoàn toàn mô hình V2 và V1, không phụ thuộc `adaptV2toV1`.
+    - Viết 13/13 tests mới trong `sections-tab.test.tsx` kiểm thử toàn diện rendering, input text inline, xóa block, di chuyển section và CommandBus integration. Toàn bộ 267/267 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 4.5: Tích hợp TipTap Rich-Text Editor cho Đoạn văn & Kiểm thử IME Tiếng Việt**
   - **Files:**

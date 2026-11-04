@@ -9,6 +9,7 @@
 import React, { createContext, useContext } from 'react';
 import { CommandBus, createManuscriptStore } from '@structpaper/editor-core';
 import type { Manuscript } from '@structpaper/doc-model';
+import { migrateV1toV2 } from '@structpaper/doc-model';
 import { CompletePaper } from '@/types/paper';
 
 export interface EditorCommandContextType {
@@ -26,6 +27,16 @@ export function useEditorCommandBus(): EditorCommandContextType {
  * Creates a CommandBus instance preloaded with a manuscript converted from CompletePaper.
  */
 export function createPaperCommandBus(paper?: CompletePaper): CommandBus {
+  if (paper) {
+    try {
+      const doc = migrateV1toV2(paper);
+      const store = createManuscriptStore(doc);
+      return new CommandBus(store);
+    } catch (e) {
+      console.warn('migrateV1toV2 fallback in createPaperCommandBus:', e);
+    }
+  }
+
   const initialDoc: Manuscript = {
     schemaVersion: 2,
     id: paper?.id || 'paper_default',
