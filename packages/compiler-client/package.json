@@ -1,0 +1,17 @@
+{
+  "name": "@structpaper/compiler-client",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./interfaces": "./src/interfaces/index.ts",
+    "./scheduler": "./src/scheduler/index.ts",
+    "./adapters": "./src/adapters/index.ts",
+    "./utils": "./src/utils/index.ts"
+  },
+  "dependencies": {
+    "@structpaper/doc-model": "workspace:*"
+  }
+}

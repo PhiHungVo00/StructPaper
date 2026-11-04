@@ -37,6 +37,18 @@ module.exports = {
         path: '^(apps/|packages/(?!doc-model|editor-core|storage))',
       },
     },
+    {
+      name: 'compiler-client-boundaries',
+      comment:
+        'packages/compiler-client must NOT import react, react-dom, apps/*, or sibling packages (except doc-model).',
+      severity: 'error',
+      from: {
+        path: '^packages/compiler-client',
+      },
+      to: {
+        path: '(react|react-dom|apps/|packages/(?!doc-model|compiler-client))',
+      },
+    },
   ],
   options: {
     doNotFollow: {

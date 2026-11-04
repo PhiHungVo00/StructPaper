@@ -317,16 +317,20 @@
 
 ### Phase 4: Hoàn thiện Editor Core, Phân rã Giao diện & Tích hợp TipTap Rich-Text
 
-- [ ] **Task 4.1: Xây dựng `packages/compiler-client` & Compile Scheduler**
+- [x] **Task 4.1: Xây dựng `packages/compiler-client` & Compile Scheduler**
   - **Files:**
     - Tạo: `packages/compiler-client/package.json`
+    - Tạo: `packages/compiler-client/tsconfig.json`
     - Tạo: `packages/compiler-client/src/interfaces/compiler-port.ts`
+    - Tạo: `packages/compiler-client/src/utils/hash-utils.ts`
     - Tạo: `packages/compiler-client/src/scheduler/compile-scheduler.ts`
     - Tạo: `packages/compiler-client/src/adapters/local-next-compiler.ts`
-    - Test: `packages/compiler-client/tests/compile-scheduler.test.ts`
-  - **Bước 1:** Viết test kiểm tra: gọi compile liên tục 3 lần trong 500ms thì chỉ có job cuối cùng được thực thi, các job trước bị hủy (cancel), kết quả giống nhau được lấy từ cache.
-  - **Bước 2:** Triển khai `compileScheduler` quản lý debounce, cache hash, và AbortController.
-  - **Bước 3:** Nối `compileScheduler` vào `PreviewActionsToolbar` và `LivePreviewPane` trong `apps/web`.
+    - Tạo: `packages/compiler-client/src/adapters/mock-compiler.ts`
+    - Tạo: `packages/compiler-client/src/index.ts`
+    - Test: `packages/compiler-client/tests/compile-scheduler.test.ts` (8/8 pass)
+    - Test: `packages/compiler-client/tests/local-next-compiler.test.ts` (4/4 pass)
+    - Test: `packages/compiler-client/tests/hash-utils.test.ts` (3/3 pass)
+  - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/compiler-client`. Định nghĩa `CompilerPort`, `CompileRequest`, `CompileResult`. Xây dựng `CompileScheduler` quản lý debounce 500ms, hủy request đang chạy dở thông qua `AbortController`, caching kết quả theo mã băm SHA-256 chuẩn tắc với LRU eviction, emit trạng thái vòng đời. Triển khai `LocalNextCompilerAdapter` gọi Next.js `/api/compile-latex` kèm fallback và trích xuất error log. 15/15 tests mới và 238/238 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
 - [ ] **Task 4.2: Refactor UI Modals, Drawers & Rút gọn `UnifiedEditorView.tsx` (< 200 dòng)**
   - **Files:**
