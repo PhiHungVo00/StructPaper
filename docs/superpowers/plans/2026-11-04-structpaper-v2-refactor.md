@@ -106,20 +106,19 @@
     - Test: `packages/doc-model/tests/compute-numbering.property.test.ts` (dùng `fast-check`)
   - **Hoàn thành:** Đã triển khai hàm thuần túy `computeNumbering` duyệt đệ quy toàn diện `Section`, `Block`, `Inline`. Đánh số tuần tự 1-based cho Figures, Tables, Equations (chỉ đánh số khi `numbered: true`). Ghi nhận thứ tự xuất hiện đầu tiên của citations trong `citationOrder`, sinh `citationLabels` dạng range Vancouver (`2-4`, `1, 3-5, 8`), hỗ trợ `bibliographyOrder` cho cả Vancouver và APA. Phát hiện chính xác `uncitedRefs`, `danglingCites`, `xrefBroken`, và tiền kiểm định preflight `firstMentionBeforeFloat`. 100% tests (13/13 tests mới gồm 9 unit tests và 4 property-based tests với 300 runs qua `fast-check`, tổng cộng 65/65 tests monorepo) xanh tuyệt đối; 0 vi phạm depcruise, 0 lỗi eslint, Next.js build xanh 100%.
 
-- [ ] **Task 1.3: Khởi tạo Package `packages/journal-profiles` & Schema Profile `VNUHCM-HS`**
+- [x] **Task 1.3: Khởi tạo Package `packages/journal-profiles` & Schema Profile `VNUHCM-HS`**
   - **Files:**
     - Tạo: `packages/journal-profiles/package.json`
+    - Tạo: `packages/journal-profiles/tsconfig.json`
     - Tạo: `packages/journal-profiles/src/types/profile.ts`
+    - Tạo: `packages/journal-profiles/src/types/index.ts`
     - Tạo: `packages/journal-profiles/src/schemas/profile.schema.ts`
+    - Tạo: `packages/journal-profiles/src/schemas/index.ts`
     - Tạo: `packages/journal-profiles/src/profiles/vnuhcm-hs.json`
+    - Tạo: `packages/journal-profiles/src/profiles/index.ts`
     - Tạo: `packages/journal-profiles/src/index.ts`
-    - Test: `packages/journal-profiles/tests/profile.test.ts`
-  - **Bước 1:** Viết test validate file JSON profile với Zod schema của `JournalProfile`.
-  - **Bước 2:** Khai báo cấu hình `vnuhcm-hs.json` chứa:
-    - Quy định tóm tắt: min 275, max 500 từ.
-    - `styleMap`: ánh xạ toàn bộ ~35 style chuẩn Word (`ArticleTitle`, `Authors`, `Affiliation`, `SectionAbstract`, `TableCaption`, `TableNote`, `SourceLine`, `FigureCaption`, `Equation`, `Reference`,...).
-    - Quy chuẩn LaTeX: class `structpaper-hs.cls`, font Times New Roman, engine XeLaTeX.
-  - **Bước 3:** Chạy test kiểm tra profile hợp lệ 100%.
+    - Test: `packages/journal-profiles/tests/profile.test.ts` (18/18 pass)
+  - **Hoàn thành:** Khởi tạo thành công package độc lập `@structpaper/journal-profiles`; định nghĩa đầy đủ TypeScript types và Zod schemas cho `JournalProfile` (names, articleTypes, frontMatter, citation, styleMap, layout, typography, latex, qc); tạo cấu hình profile chuẩn `VNUHCM-HS` chứa quy định tóm tắt 275-500 từ, từ khóa 3-5 phân cách dấu chấm phẩy, trích dẫn Vancouver dạng ngoặc vuông, định dạng LaTeX `structpaper-hs.cls` / `xelatex`, và `styleMap` ánh xạ chính xác 35 styles Word (trong đó `Guide*` và `Instruction` ánh xạ vào `ignore`); cung cấp helper functions `getJournalProfile` và `getAllJournalProfiles`. 100% test (18/18 test mới, 83/83 tests monorepo) xanh, Next.js build pass, 0 vi phạm depcruise, 0 lỗi eslint.
 
 - [ ] **Task 1.4: Định nghĩa Hợp đồng Chung (Common Interfaces) & Bộ Chuyển đổi V1 $\leftrightarrow$ V2**
   - **Files:**
