@@ -419,6 +419,83 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v1/prepress:
+    post:
+      summary: Convert PDF to publication-ready PDF/X or PDF/A standard via Ghostscript
+      description: Prepress pipeline converting standard PDF to PDF/X-1a or PDF/A with 100% embedded fonts and CMYK color space.
+      operationId: prepressPdf
+      parameters:
+        - name: format
+          in: query
+          required: false
+          description: Output format (pdf binary or json report)
+          schema:
+            type: string
+            enum: [pdf, json]
+            default: pdf
+        - name: standard
+          in: query
+          required: false
+          description: Prepress publication standard (e.g. PDF/X-1a:2001, PDF/A-1b)
+          schema:
+            type: string
+            default: PDF/X-1a:2001
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepressRequest'
+      responses:
+        '200':
+          description: Converted PDF/X binary file or PrepressReport JSON
+          headers:
+            X-Prepress-Compliant:
+              schema:
+                type: boolean
+            X-Prepress-Mock:
+              schema:
+                type: boolean
+            X-Prepress-ColorSpace:
+              schema:
+                type: string
+            X-Prepress-Fonts-Embedded:
+              schema:
+                type: boolean
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepressReport'
+        '400':
+          description: Invalid PDF format or empty payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Ghostscript binary not found and mock fallback is disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/batches:
     post:
       summary: Submit batch of DOCX files for processing
@@ -1597,6 +1674,61 @@ components:
         status:
           type: string
           enum: [queued, processing, completed, failed]
+
+    PrepressRequest:
+      type: object
+      required:
+        - pdfBase64
+      properties:
+        pdfBase64:
+          type: string
+          description: Base64-encoded PDF binary stream
+        standard:
+          type: string
+          default: "PDF/X-1a:2001"
+        format:
+          type: string
+          enum: [json, pdf]
+          default: json
+        targetDpi:
+          type: integer
+          default: 300
+
+    PrepressReport:
+      type: object
+      required:
+        - pdfXCompliant
+        - allFontsEmbedded
+        - colorSpace
+        - durationMs
+        - mock
+      properties:
+        pdfBase64:
+          type: string
+          description: Base64-encoded converted PDF/X binary
+        pdfXCompliant:
+          type: boolean
+        allFontsEmbedded:
+          type: boolean
+        colorSpace:
+          type: string
+          enum: [CMYK, RGB]
+        durationMs:
+          type: integer
+        warnings:
+          type: array
+          items:
+            type: string
+        mock:
+          type: boolean
+        standard:
+          type: string
+        dpi:
+          type: integer
+        dpiCompliant:
+          type: boolean
+        outputSizeBytes:
+          type: integer
 
     ErrorResponse:
       type: object

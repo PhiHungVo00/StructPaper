@@ -36,6 +36,13 @@ structpaper:
     model: ${OPENAI_MODEL:gpt-4o-mini}
     base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
     timeout-seconds: 30
+  prepress:
+    enabled: true
+    ghostscript-path: ${GHOSTSCRIPT_PATH:}
+    mock-fallback-enabled: true
+    default-standard: PDF/X-1a:2001
+    timeout-seconds: 60
+    target-dpi: 300
 
 # OpenAPI / Swagger UI
 springdoc:

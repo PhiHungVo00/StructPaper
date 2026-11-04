@@ -133,6 +133,34 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
     }
 
+    @ExceptionHandler(InvalidPdfException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPdf(InvalidPdfException ex) {
+        log.warn("Tệp PDF không hợp lệ: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_PDF",
+                ex.getMessage(),
+                "PrepressService",
+                ex.getMessage(),
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(GhostscriptNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleGhostscriptNotFound(GhostscriptNotFoundException ex) {
+        log.error("Không tìm thấy Ghostscript: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "GHOSTSCRIPT_NOT_FOUND",
+                ex.getMessage(),
+                "PrepressService",
+                "Ghostscript binary chưa được cài đặt trong môi trường hệ thống.",
+                ""
+        );
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Lỗi hệ thống không mong muốn: ", ex);
