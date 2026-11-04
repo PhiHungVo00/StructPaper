@@ -1940,6 +1940,7 @@ export function computePreflightCheck(paper: CompletePaper): PreflightCheck {
 }
 
 export interface AiParseOptions {
+  /** @deprecated API key is managed securely on the server */
   apiKey?: string;
   model?: string;
   onProgress?: (status: string) => void;
@@ -1978,13 +1979,12 @@ export async function parseDocxFileWithAi(
 
   try {
     onProgress('AI đang bóc tách Tiêu đề song ngữ, Tác giả, Đơn vị & Tóm tắt...');
-    const metaRes = await fetch('/api/ai-extract', {
+    const metaRes = await fetch('/api/ai/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'metadata',
         text: fullRawText.slice(0, 7000),
-        apiKey: options?.apiKey,
         model: options?.model || 'gpt-5.4-mini',
       }),
     });
@@ -2068,13 +2068,12 @@ export async function parseDocxFileWithAi(
         }
 
         if (tableSlice) {
-          const tRes = await fetch('/api/ai-extract', {
+          const tRes = await fetch('/api/ai/proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'table',
               text: tableSlice,
-              apiKey: options?.apiKey,
               model: options?.model || 'gpt-5.4-mini',
             }),
           });
