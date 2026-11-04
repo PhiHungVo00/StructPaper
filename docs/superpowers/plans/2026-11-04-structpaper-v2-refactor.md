@@ -63,14 +63,13 @@
     - Test: `tests/architecture.test.ts`, `e2e/smoke.spec.ts`
   - **Hoàn thành:** Cấu hình thành công Vitest workspace, Playwright test harness, Dependency-Cruiser architecture guardrails (cấm `doc-model` contamination và enforce strict downward dependencies) cùng ESLint tiered line limits (logic <=500 lines, UI <=700 lines) kèm baseline allowlist bảo vệ 41 file legacy. `pnpm lint`, `pnpm depcruise`, `pnpm test`, và Next.js build đều xanh 100%.
 
-- [ ] **Task 0.4: Thiết lập Bộ Golden Fixtures (11 file bài báo thật) & Baseline Characterization Test**
+- [x] **Task 0.4: Thiết lập Bộ Golden Fixtures (11 file bài báo thật) & Baseline Characterization Test**
   - **Files:**
     - Tạo: `fixtures/golden/templates/` (sao chép 4 file template)
     - Tạo: `fixtures/golden/papers/` (sao chép 7 file bài báo Word thật, loại trừ `Yêu cầu phần mềm.docx`)
-    - Tạo: `apps/web/src/tests/baseline-parser.test.ts`
-  - **Bước 1:** Sao chép và tổ chức 11 file Word vào thư mục `fixtures/golden/`.
-  - **Bước 2:** Viết test chạy bộ bóc tách cũ `docx-parser.ts` trên các file mẫu, ghi nhận kết quả baseline JSON làm mốc đối chứng.
-  - **Bước 3:** Chạy test baseline và lưu lại snapshot kết quả.
+    - Tạo: `fixtures/golden/baseline-snapshots.json`
+    - Tạo: `tests/baseline-parser.test.ts`
+  - **Hoàn thành:** Đã thiết lập trọn bộ 11 file Word golden fixtures (4 templates + 7 bài báo Word thật từ File demo và các phân ban tạp chí ARNS, EBL, EES, HS, SSH, ET; loại trừ nghiêm ngặt `Yêu cầu phần mềm.docx`). Đã sinh snapshot baseline đối chứng và hoàn thành bộ test characterization `tests/baseline-parser.test.ts` kiểm thử 14/14 tests xanh tuyệt đối (5.32s). `pnpm test`, `pnpm lint`, `pnpm depcruise`, và Next.js build đều đạt 100%.
 
 ---
 

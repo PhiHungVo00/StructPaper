@@ -1,0 +1,197 @@
+{
+  "version": "2.0.0",
+  "generator": "legacy-docx-parser",
+  "generatedAt": "2026-11-04T13:47:47.849Z",
+  "totalFiles": 11,
+  "templatesCount": 4,
+  "papersCount": 7,
+  "files": {
+    "templates/Template_EN.docx": {
+      "category": "template",
+      "fileName": "Template_EN.docx",
+      "relativePath": "templates/Template_EN.docx",
+      "fileSizeBytes": 18431,
+      "metrics": {
+        "title": "Choose one: Original Research Article / Review Article/ Case Report / Other. Keep only the selected value.",
+        "authorsLength": 3,
+        "affiliationsLength": 3,
+        "hasAbstract": true,
+        "abstractLength": 43,
+        "sectionsLength": 30,
+        "tablesLength": 1,
+        "figuresLength": 1,
+        "referencesLength": 8
+      }
+    },
+    "templates/Template_VI.docx": {
+      "category": "template",
+      "fileName": "Template_VI.docx",
+      "relativePath": "templates/Template_VI.docx",
+      "fileSizeBytes": 19031,
+      "metrics": {
+        "title": "Chọn một: Bài nghiên cứu gốc / Bài tổng quan / Báo cáo ca lâm sàng / Khác. Chỉ giữ lại giá trị đã chọn.",
+        "authorsLength": 3,
+        "affiliationsLength": 3,
+        "hasAbstract": true,
+        "abstractLength": 490,
+        "sectionsLength": 37,
+        "tablesLength": 1,
+        "figuresLength": 1,
+        "referencesLength": 8
+      }
+    },
+    "templates/Bài mẫu template tiếng Anh.docx": {
+      "category": "template",
+      "fileName": "Bài mẫu template tiếng Anh.docx",
+      "relativePath": "templates/Bài mẫu template tiếng Anh.docx",
+      "fileSizeBytes": 493384,
+      "metrics": {
+        "title": "The impact of digital social responsibility on brand equity in the beverage industry: A survey of consumers in Ho Chi Minh City",
+        "authorsLength": 1,
+        "affiliationsLength": 1,
+        "hasAbstract": true,
+        "abstractLength": 1729,
+        "sectionsLength": 111,
+        "tablesLength": 7,
+        "figuresLength": 3,
+        "referencesLength": 40
+      }
+    },
+    "templates/Bài mẫu template tiếng Việt.docx": {
+      "category": "template",
+      "fileName": "Bài mẫu template tiếng Việt.docx",
+      "relativePath": "templates/Bài mẫu template tiếng Việt.docx",
+      "fileSizeBytes": 45008,
+      "metrics": {
+        "title": "CÁC YẾU TỐ TÁC ĐỘNG ĐẾN THỰC HIỆN MỤC TIÊU PHÁT TRIỂN BỀN VỮNG",
+        "authorsLength": 2,
+        "affiliationsLength": 1,
+        "hasAbstract": true,
+        "abstractLength": 2279,
+        "sectionsLength": 79,
+        "tablesLength": 5,
+        "figuresLength": 0,
+        "referencesLength": 36
+      }
+    },
+    "papers/ID630_HS-2026-10-02-06-42.docx": {
+      "category": "paper",
+      "fileName": "ID630_HS-2026-10-02-06-42.docx",
+      "relativePath": "papers/ID630_HS-2026-10-02-06-42.docx",
+      "fileSizeBytes": 849444,
+      "metrics": {
+        "title": "Tổng quan về loét dạ dày tá tràng ở người cao tuổi và cập nhật trong điều trị",
+        "authorsLength": 2,
+        "affiliationsLength": 1,
+        "hasAbstract": true,
+        "abstractLength": 1886,
+        "sectionsLength": 150,
+        "tablesLength": 1,
+        "figuresLength": 5,
+        "referencesLength": 13
+      }
+    },
+    "papers/phlhuong,+Journal+editor,+1421.docx": {
+      "category": "paper",
+      "fileName": "phlhuong,+Journal+editor,+1421.docx",
+      "relativePath": "papers/phlhuong,+Journal+editor,+1421.docx",
+      "fileSizeBytes": 3554752,
+      "metrics": {
+        "title": "ĐIỀU CHẾ VẬT LIỆU TỪ TÍNH MANG CHẤT LỎNG ION KHUNG 1,8-DIAZABICYCLO[5.4.0]UNDECENIUM LÀM XÚC TÁC CHO PHẢN ỨNG CHUYỂN HÓA XYLOSE THÀNH FURFURAL",
+        "authorsLength": 4,
+        "affiliationsLength": 3,
+        "hasAbstract": true,
+        "abstractLength": 1615,
+        "sectionsLength": 79,
+        "tablesLength": 1,
+        "figuresLength": 14,
+        "referencesLength": 35
+      }
+    },
+    "papers/eic_stdjelm,+Journal+editor,+3.+1750.docx": {
+      "category": "paper",
+      "fileName": "eic_stdjelm,+Journal+editor,+3.+1750.docx",
+      "relativePath": "papers/eic_stdjelm,+Journal+editor,+3.+1750.docx",
+      "fileSizeBytes": 154596,
+      "metrics": {
+        "title": "ẢNH HƯỞNG CỦA NĂNG LỰC VÀ SÁNG TẠO SỐ ĐẾN HIỆU QUẢ KINH DOANH LOGISTICS CẢM NHẬN: VAI TRÒ CỦA CHUYỂN ĐỔI SỐ VÀ HỖ TRỢ CHÍNH SÁCH",
+        "authorsLength": 1,
+        "affiliationsLength": 2,
+        "hasAbstract": true,
+        "abstractLength": 1307,
+        "sectionsLength": 53,
+        "tablesLength": 3,
+        "figuresLength": 2,
+        "referencesLength": 43
+      }
+    },
+    "papers/tranhien05,+Production+editor,+VNUHCM-EES+ID850+Copyedited.docx": {
+      "category": "paper",
+      "fileName": "tranhien05,+Production+editor,+VNUHCM-EES+ID850+Copyedited.docx",
+      "relativePath": "papers/tranhien05,+Production+editor,+VNUHCM-EES+ID850+Copyedited.docx",
+      "fileSizeBytes": 1481177,
+      "metrics": {
+        "title": "Thử nghiệm dự báo mưa lớn bằng mô hình WRF tại khu vực đông nam tỉnh Vĩnh Long",
+        "authorsLength": 4,
+        "affiliationsLength": 1,
+        "hasAbstract": true,
+        "abstractLength": 1746,
+        "sectionsLength": 59,
+        "tablesLength": 5,
+        "figuresLength": 2,
+        "referencesLength": 13
+      }
+    },
+    "papers/tranhien05,+Journal+editor,+VNUHCM+-+HS+ID+722+copyedited.docx": {
+      "category": "paper",
+      "fileName": "tranhien05,+Journal+editor,+VNUHCM+-+HS+ID+722+copyedited.docx",
+      "relativePath": "papers/tranhien05,+Journal+editor,+VNUHCM+-+HS+ID+722+copyedited.docx",
+      "fileSizeBytes": 612103,
+      "metrics": {
+        "title": "Effects of non-combustible alternative tobacco products on respiratory function and chronic lung disease in adults: a systematic review.",
+        "authorsLength": 4,
+        "affiliationsLength": 4,
+        "hasAbstract": true,
+        "abstractLength": 1677,
+        "sectionsLength": 63,
+        "tablesLength": 5,
+        "figuresLength": 4,
+        "referencesLength": 31
+      }
+    },
+    "papers/[SSH]+ID+1102+copyedited+(4-2025).docx": {
+      "category": "paper",
+      "fileName": "[SSH]+ID+1102+copyedited+(4-2025).docx",
+      "relativePath": "papers/[SSH]+ID+1102+copyedited+(4-2025).docx",
+      "fileSizeBytes": 71129,
+      "metrics": {
+        "title": "Căn tính di cư trong sáng tác Nghiêm Ca Linh (khảo sát qua Người ở trọ và Thiếu nữ Tiểu Ngư)",
+        "authorsLength": 1,
+        "affiliationsLength": 1,
+        "hasAbstract": true,
+        "abstractLength": 1726,
+        "sectionsLength": 96,
+        "tablesLength": 1,
+        "figuresLength": 0,
+        "referencesLength": 26
+      }
+    },
+    "papers/1563-Fulltext-12989-1-15-20260326-20260622_V3.docx": {
+      "category": "paper",
+      "fileName": "1563-Fulltext-12989-1-15-20260326-20260622_V3.docx",
+      "relativePath": "papers/1563-Fulltext-12989-1-15-20260326-20260622_V3.docx",
+      "fileSizeBytes": 965747,
+      "metrics": {
+        "title": "Thiết kế thiết bị sử dụng đầu dò uốn (BE) để đo vận tốc sóng cắt trong nền cát đắp công trình giao thông",
+        "authorsLength": 4,
+        "affiliationsLength": 7,
+        "hasAbstract": true,
+        "abstractLength": 1907,
+        "sectionsLength": 84,
+        "tablesLength": 1,
+        "figuresLength": 7,
+        "referencesLength": 27
+      }
+    }
+  }
+}
