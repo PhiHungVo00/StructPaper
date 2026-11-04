@@ -3,7 +3,18 @@
 import React, { useRef, useEffect } from 'react';
 import { MetadataTabProps } from './types';
 import { Select, SelectOption, DatePicker } from '../ui';
-import { FileText, Calendar } from 'lucide-react';
+import { FileText, Calendar, BookOpen, Tag } from 'lucide-react';
+import {
+  useEditorCommandBus,
+  dispatchTitleChange,
+  dispatchTitleEnChange,
+  dispatchAbstractChange,
+  dispatchAbstractEnChange,
+  dispatchKeywordsChange,
+  dispatchKeywordsEnChange,
+  dispatchDatesChange,
+  dispatchMetadataField,
+} from './command-bus-adapter';
 
 // Health Sciences (VNUHCM-HS) has 8 distinct article types per requirements
 export const HS_ARTICLE_TYPE_OPTIONS: SelectOption[] = [
@@ -22,9 +33,19 @@ export const STANDARD_ARTICLE_TYPE_OPTIONS: SelectOption[] = [
   { value: 'Bài báo nghiên cứu', label: 'Bài báo nghiên cứu', badge: 'Research Article', description: 'Công trình nghiên cứu khoa học nguyên bản' },
 ];
 
-export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) => {
+export const MetadataTab: React.FC<MetadataTabProps> = ({
+  metadata,
+  onChange,
+  commandBus: propCommandBus,
+  showAbstractAndKeywords = true,
+}) => {
+  const contextCommandBus = useEditorCommandBus().commandBus;
+  const activeBus = propCommandBus || contextCommandBus;
+
   const titleViRef = useRef<HTMLTextAreaElement>(null);
   const titleEnRef = useRef<HTMLTextAreaElement>(null);
+  const abstractViRef = useRef<HTMLTextAreaElement>(null);
+  const abstractEnRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea to fit content without any maximum height limit
   const autoResize = (element: HTMLTextAreaElement | null) => {
@@ -41,6 +62,14 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
     autoResize(titleEnRef.current);
   }, [metadata.titleEn]);
 
+  useEffect(() => {
+    autoResize(abstractViRef.current);
+  }, [metadata.abstract]);
+
+  useEffect(() => {
+    autoResize(abstractEnRef.current);
+  }, [metadata.abstractEn]);
+
   // Determine available article types based on journal ID
   // Only VNUHCM-HS has 8 multiple article types; all others only have 'Bài báo nghiên cứu'
   const isHealthSciences = !metadata.journalId || metadata.journalId === 'VNUHCM-HS' || metadata.journalId.includes('HS');
@@ -49,9 +78,19 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
   // Auto-normalize if an unsupported article type is selected for a non-HS journal
   useEffect(() => {
     if (!isHealthSciences && metadata.articleType && metadata.articleType !== 'Bài báo nghiên cứu') {
-      onChange({ ...metadata, articleType: 'Bài báo nghiên cứu' });
+      dispatchMetadataField(activeBus, 'articleType', 'Bài báo nghiên cứu', onChange, metadata);
     }
-  }, [isHealthSciences, metadata.articleType]);
+  }, [isHealthSciences, metadata.articleType, activeBus, onChange, metadata]);
+
+  const handleKeywordsChange = (val: string) => {
+    const list = val.split(',').map((k) => k.trim()).filter(Boolean);
+    dispatchKeywordsChange(activeBus, list, onChange, metadata);
+  };
+
+  const handleKeywordsEnChange = (val: string) => {
+    const list = val.split(',').map((k) => k.trim()).filter(Boolean);
+    dispatchKeywordsEnChange(activeBus, list, onChange, metadata);
+  };
 
   return (
     <div className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 pb-12 space-y-4">
@@ -63,7 +102,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
         </h3>
       </div>
 
-      {/* Vietnamese Title - Auto expands to fit content without any maximum height limit */}
+      {/* Vietnamese Title */}
       <div>
         <label className="text-xs font-bold text-zinc-700 block mb-1.5">
           Tựa đề bài báo (Tiếng Việt):
@@ -72,7 +111,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
           ref={titleViRef}
           value={metadata.title}
           onChange={(e) => {
-            onChange({ ...metadata, title: e.target.value });
+            dispatchTitleChange(activeBus, e.target.value, onChange, metadata);
             autoResize(e.target);
           }}
           spellCheck={false}
@@ -84,7 +123,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
         />
       </div>
 
-      {/* English Title - Auto expands to fit content without any maximum height limit */}
+      {/* English Title */}
       <div>
         <label className="text-xs font-bold text-zinc-700 block mb-1.5">
           Tựa đề bài báo (Tiếng Anh - nếu có):
@@ -93,7 +132,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
           ref={titleEnRef}
           value={metadata.titleEn || ''}
           onChange={(e) => {
-            onChange({ ...metadata, titleEn: e.target.value });
+            dispatchTitleEnChange(activeBus, e.target.value, onChange, metadata);
             autoResize(e.target);
           }}
           spellCheck={false}
@@ -111,7 +150,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
           <Select
             label="Loại bài báo (Article Type):"
             value={metadata.articleType || 'Bài báo nghiên cứu'}
-            onChange={(val) => onChange({ ...metadata, articleType: val })}
+            onChange={(val) => dispatchMetadataField(activeBus, 'articleType', val, onChange, metadata)}
             options={articleOptions}
             size="md"
           />
@@ -125,7 +164,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
             <input
               type="text"
               value={metadata.doi || ''}
-              onChange={(e) => onChange({ ...metadata, doi: e.target.value })}
+              onChange={(e) => dispatchMetadataField(activeBus, 'doi', e.target.value, onChange, metadata)}
               spellCheck={false}
               autoCorrect="off"
               autoCapitalize="off"
@@ -146,52 +185,123 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({ metadata, onChange }) 
           <DatePicker
             label="Ngày nhận:"
             value={metadata.dates?.received || ''}
-            onChange={(val) =>
-              onChange({
-                ...metadata,
-                dates: { ...metadata.dates, received: val },
-              })
-            }
+            onChange={(val) => dispatchDatesChange(activeBus, { received: val }, onChange, metadata)}
             placeholder="02-10-2026"
           />
 
           <DatePicker
             label="Ngày sửa đổi:"
             value={metadata.dates?.revised || ''}
-            onChange={(val) =>
-              onChange({
-                ...metadata,
-                dates: { ...metadata.dates, revised: val },
-              })
-            }
+            onChange={(val) => dispatchDatesChange(activeBus, { revised: val }, onChange, metadata)}
             placeholder="05-10-2026"
           />
 
           <DatePicker
             label="Ngày chấp nhận:"
             value={metadata.dates?.accepted || ''}
-            onChange={(val) =>
-              onChange({
-                ...metadata,
-                dates: { ...metadata.dates, accepted: val },
-              })
-            }
+            onChange={(val) => dispatchDatesChange(activeBus, { accepted: val }, onChange, metadata)}
             placeholder="08-10-2026"
           />
 
           <DatePicker
             label="Ngày xuất bản:"
             value={metadata.dates?.published || ''}
-            onChange={(val) =>
-              onChange({
-                ...metadata,
-                dates: { ...metadata.dates, published: val },
-              })
-            }
+            onChange={(val) => dispatchDatesChange(activeBus, { published: val }, onChange, metadata)}
             placeholder="10-10-2026"
           />
         </div>
       </div>
+
+      {/* Tóm tắt & Từ khóa (Abstract & Keywords) */}
+      {showAbstractAndKeywords && (
+        <div className="pt-4 border-t border-zinc-200/60 space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-zinc-200/60">
+            <BookOpen className="w-4 h-4 text-zinc-700" />
+            <h3 className="font-extrabold text-sm sm:text-base text-zinc-900">
+              Tóm tắt & Từ khóa (Abstract & Keywords)
+            </h3>
+          </div>
+
+          {/* Vietnamese Abstract */}
+          <div>
+            <label className="text-xs font-bold text-zinc-700 block mb-1.5">
+              Tóm tắt bài báo (Tiếng Việt):
+            </label>
+            <textarea
+              ref={abstractViRef}
+              value={metadata.abstract || ''}
+              onChange={(e) => {
+                dispatchAbstractChange(activeBus, e.target.value, onChange, metadata);
+                autoResize(e.target);
+              }}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+              style={{ resize: 'none', overflow: 'hidden' }}
+              className="w-full min-h-[72px] p-3 rounded-2xl border border-zinc-200 text-xs text-zinc-900 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 leading-relaxed shadow-2xs"
+              placeholder="Nhập phần tóm tắt tiếng Việt..."
+            />
+          </div>
+
+          {/* English Abstract */}
+          <div>
+            <label className="text-xs font-bold text-zinc-700 block mb-1.5">
+              Tóm tắt tiếng Anh (Abstract in English):
+            </label>
+            <textarea
+              ref={abstractEnRef}
+              value={metadata.abstractEn || ''}
+              onChange={(e) => {
+                dispatchAbstractEnChange(activeBus, e.target.value, onChange, metadata);
+                autoResize(e.target);
+              }}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+              style={{ resize: 'none', overflow: 'hidden' }}
+              className="w-full min-h-[72px] p-3 rounded-2xl border border-zinc-200 text-xs italic text-zinc-800 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 leading-relaxed shadow-2xs"
+              placeholder="Enter English abstract..."
+            />
+          </div>
+
+          {/* Keywords Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="text-xs font-bold text-zinc-700 flex items-center gap-1.5 mb-1.5">
+                <Tag className="w-3.5 h-3.5 text-zinc-500" />
+                Từ khóa bài báo (Tiếng Việt, cách nhau bằng dấu phẩy):
+              </label>
+              <input
+                type="text"
+                value={(metadata.keywords || []).join(', ')}
+                onChange={(e) => handleKeywordsChange(e.target.value)}
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                className="w-full p-2.5 rounded-2xl border border-zinc-200 text-xs text-zinc-900 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 shadow-2xs"
+                placeholder="nghiên cứu y sinh, tế bào, thử nghiệm lâm sàng"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-zinc-700 flex items-center gap-1.5 mb-1.5">
+                <Tag className="w-3.5 h-3.5 text-zinc-500" />
+                Keywords in English (comma-separated):
+              </label>
+              <input
+                type="text"
+                value={(metadata.keywordsEn || []).join(', ')}
+                onChange={(e) => handleKeywordsEnChange(e.target.value)}
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                className="w-full p-2.5 rounded-2xl border border-zinc-200 text-xs italic text-zinc-800 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 shadow-2xs"
+                placeholder="biomedical research, cell culture, clinical trial"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -77,6 +77,86 @@ describe('CommandBus & Base Commands', () => {
     expect(authorsRes.doc.meta.authors).toEqual(newAuthors);
   });
 
+  it('dispatches metadata/updateKeywords, metadata/updateDates, and metadata/updateField', () => {
+    const initialDoc = createSampleManuscript();
+    const bus = new CommandBus({ initialDoc });
+
+    bus.dispatch({
+      type: 'metadata/updateKeywords',
+      payload: { keywords: ['deep learning', 'nlp', 'react'] },
+    });
+    expect(bus.getDocument()?.meta.keywords).toEqual(['deep learning', 'nlp', 'react']);
+
+    bus.dispatch({
+      type: 'metadata/updateDates',
+      payload: { dates: { received: '2026-05-01', revised: '2026-05-15' } },
+    });
+    expect(bus.getDocument()?.meta.dates.received).toBe('2026-05-01');
+    expect(bus.getDocument()?.meta.dates.revised).toBe('2026-05-15');
+
+    bus.dispatch({
+      type: 'metadata/updateField',
+      payload: { field: 'doi', value: '10.1234/test.doi' },
+    });
+    expect(bus.getDocument()?.meta.doi).toBe('10.1234/test.doi');
+  });
+
+  it('dispatches author/add, author/update, and author/remove', () => {
+    const initialDoc = createSampleManuscript();
+    const bus = new CommandBus({ initialDoc });
+
+    bus.dispatch({
+      type: 'author/add',
+      payload: {
+        author: {
+          id: 'auth_new_1',
+          name: 'Nguyễn Văn Mới',
+          affiliationIds: ['aff_1'],
+          email: 'moi@test.vn',
+          orcid: '0000-0001-2345-6789',
+        },
+      },
+    });
+
+    const doc = bus.getDocument()!;
+    expect(doc.meta.authors).toHaveLength(2);
+    expect(doc.meta.authors[1].name).toBe('Nguyễn Văn Mới');
+    expect(doc.meta.authors[1].orcid).toBe('0000-0001-2345-6789');
+
+    const updatedDoc = bus.dispatch({
+      type: 'author/update',
+      payload: {
+        authorId: 'auth_new_1',
+        updates: { email: 'updated@test.vn', isCorresponding: true },
+      },
+    }).doc;
+    expect(updatedDoc.meta.authors[1].email).toBe('updated@test.vn');
+    expect(updatedDoc.meta.authors[1].isCorresponding).toBe(true);
+
+    bus.dispatch({
+      type: 'author/remove',
+      payload: { authorId: 'auth_new_1' },
+    });
+    expect(bus.getDocument()!.meta.authors).toHaveLength(1);
+  });
+
+  it('dispatches reference/update in addition to add and remove', () => {
+    const initialDoc = createSampleManuscript();
+    const bus = new CommandBus({ initialDoc });
+
+    bus.dispatch({
+      type: 'reference/update',
+      payload: {
+        referenceId: 'ref_001',
+        updates: { doi: '10.1001/updated.doi', raw: 'Updated Citation Vancouver 2026' },
+      },
+    });
+
+    const ref = bus.getDocument()!.references.find((r) => r.id === 'ref_001');
+    expect(ref?.doi).toBe('10.1001/updated.doi');
+    expect(ref?.raw).toBe('Updated Citation Vancouver 2026');
+  });
+
   describe('block commands', () => {
     it('inserts a block at the start, at the end, and after a specific blockId', () => {
       const initialDoc = createSampleManuscript();

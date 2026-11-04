@@ -345,16 +345,19 @@
     - Test: `apps/web/tests/components/unified-editor-view.test.tsx` (8/8 pass)
   - **Hoàn thành:** Rút gọn thành công `UnifiedEditorView.tsx` xuống còn 183 dòng (< 200 dòng), bảo toàn 100% bố cục Split Layout, Left Dock, Tab Nav và các Modal/Drawers; tách 3 custom hooks nghiệp vụ độc lập tích hợp `CompileScheduler`; hỗ trợ ma trận `Cell[][]` trong `TableSpreadsheetModal` và asset hash SHA-256 trong `FigureSettingsModal`. 8/8 tests mới và 246/246 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 4.3: Refactor Các Tab Giao diện (`MetadataTab`, `AuthorsTab`, `ReferencesTab`) sang CommandBus**
+- [x] **Task 4.3: Refactor Các Tab Giao diện (`MetadataTab`, `AuthorsTab`, `ReferencesTab`) sang CommandBus**
   - **Files:**
     - Sửa: `apps/web/src/components/editor/MetadataTab.tsx`
-    - Sửa: `apps/web/src/components/editor/AuthorsTab.tsx`
+    - Sửa: `apps/web/src/components/editor/AuthorsTab.tsx` (tách `AuthorItemCard.tsx` và `AffiliationItemCard.tsx`)
     - Sửa: `apps/web/src/components/editor/ReferencesTab.tsx`
-    - Sửa: `apps/web/src/components/editor/PreflightQCTab.tsx` (dùng wrapper tạm cho `computePreflightCheck`)
-    - Test: `apps/web/tests/components/editor-tabs.test.tsx`
+    - Sửa: `apps/web/src/components/editor/PreflightQCTab.tsx` & `apps/web/src/components/editor/preflight-wrapper.ts` (wrapper cho `computePreflightCheck`)
+    - Tạo: `apps/web/src/components/editor/command-bus-adapter.ts` và `apps/web/src/components/editor/dispatchers/`
+    - Mở rộng: `packages/editor-core/src/commands/` (`block-commands.ts`, `metadata/updateKeywords`, `metadata/updateDates`, `author/add`, `author/update`, `author/remove`, `reference/update`)
+    - Test: `apps/web/tests/components/editor-tabs.test.tsx` (5/5 pass)
   - **Bước 1:** Viết unit test cho các thao tác trên từng tab: thêm/sửa tác giả, sửa ngày nhận bài, thêm/xóa tài liệu tham khảo qua CommandBus.
-  - **Bước 2:** Thay thế toàn bộ lời gọi `setFormData` hoặc `setPaper` trong các tab bằng các selectors và hàm `dispatch` của `editor-core`.
+  - **Bước 2:** Thay thế toàn bộ lời gọi `setFormData` hoặc `setPaper` trong các tab bằng các selectors và hàm `dispatch` của `editor-core` (hoặc adapter tương thích hỗ trợ 2 luồng).
   - **Bước 3:** Chạy test xác nhận các tab hoạt động trơn tru và hỗ trợ Undo/Redo tức thì.
+  - **Hoàn thành:** Hoàn thành refactor toàn bộ các tab giao diện (`MetadataTab`, `AuthorsTab`, `ReferencesTab`, `PreflightQCTab`) sang CommandBus của `@structpaper/editor-core`. Bảo toàn 100% giao diện người dùng (inputs, textareas, selects, badges, buttons, labels tiếng Việt); mở rộng hỗ trợ ORCID trong `AuthorItemCard`; bọc bộ kiểm định preflight qua `preflight-wrapper.ts` sẵn sàng cho Phase 5 `qc-engine`. Tách subcomponents giúp `AuthorsTab.tsx` giảm mạnh từ 522 dòng xuống còn 195 dòng (< 523 dòng allowlist). 5/5 tests mới và 254/254 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 4.4: Refactor `SectionsTab` với Khung Danh sách Block & Ô Đoạn văn Tạm thời**
   - **Files:**

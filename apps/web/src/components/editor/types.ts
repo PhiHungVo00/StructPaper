@@ -1,3 +1,4 @@
+import type { CommandBus } from '@structpaper/editor-core';
 import { CompletePaper, PaperMetadata, PaperSection, PaperReference, PreflightCheck } from '@/types/paper';
 
 export type EditorTabKey = 'metadata' | 'authors' | 'abstract' | 'sections' | 'refs' | 'citation' | 'preflight';
@@ -26,11 +27,16 @@ export interface CompileErrorInfo {
 export interface MetadataTabProps {
   metadata: PaperMetadata;
   onChange: (updated: PaperMetadata) => void;
+  commandBus?: CommandBus;
+  onDispatch?: (command: unknown) => void;
+  showAbstractAndKeywords?: boolean;
 }
 
 export interface AuthorsTabProps {
   metadata: PaperMetadata;
   onChange: (updated: PaperMetadata) => void;
+  commandBus?: CommandBus;
+  onDispatch?: (command: unknown) => void;
 }
 
 export interface AbstractTabProps {
@@ -48,10 +54,13 @@ export interface SectionsTabProps {
 export interface ReferencesTabProps {
   references: PaperReference[];
   onChange: (updated: PaperReference[]) => void;
+  commandBus?: CommandBus;
+  onDispatch?: (command: unknown) => void;
 }
 
 export interface PreflightQCTabProps {
-  preflight: PreflightCheck;
+  preflight?: PreflightCheck;
+  paper?: CompletePaper;
   onNavigateTab: (tab: EditorTabKey) => void;
 }
 

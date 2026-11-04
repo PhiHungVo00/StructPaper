@@ -4,6 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ReferencesTabProps } from './types';
 import { Quote, Plus, Trash2, ExternalLink, CheckCircle, AlertTriangle } from 'lucide-react';
 import { EndOfListIndicator } from './EndOfListIndicator';
+import {
+  useEditorCommandBus,
+  dispatchAddReference,
+  dispatchUpdateReference,
+  dispatchRemoveReference,
+} from './command-bus-adapter';
 
 interface AutoResizeTextareaProps {
   value: string;
@@ -18,7 +24,7 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
   placeholder,
   className = '',
 }) => {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const resize = React.useCallback(() => {
     const el = textareaRef.current;
@@ -27,11 +33,11 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
     el.style.height = `${el.scrollHeight}px`;
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     resize();
   }, [value, resize]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleWindowResize = () => resize();
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
@@ -56,7 +62,14 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
   );
 };
 
-export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChange }) => {
+export const ReferencesTab: React.FC<ReferencesTabProps> = ({
+  references,
+  onChange,
+  commandBus: propCommandBus,
+}) => {
+  const contextCommandBus = useEditorCommandBus().commandBus;
+  const activeBus = propCommandBus || contextCommandBus;
+
   const [newlyAddedId, setNewlyAddedId] = useState<number | null>(null);
   const [deletingRefIds, setDeletingRefIds] = useState<Set<number>>(new Set());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +109,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChan
       isCited: true,
       citationCount: 1,
     };
-    onChange([...references, newRef]);
+    dispatchAddReference(activeBus, newRef, onChange, references);
     setNewlyAddedId(nextId);
   };
 
@@ -106,9 +119,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChan
     setDeletingRefIds((prev) => new Set(prev).add(id));
 
     setTimeout(() => {
-      const filtered = references.filter((r) => r.id !== id);
-      const renumbered = filtered.map((r, i) => ({ ...r, id: i + 1 }));
-      onChange(renumbered);
+      dispatchRemoveReference(activeBus, id, onChange, references);
       setDeletingRefIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -117,16 +128,12 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChan
     }, 320);
   };
 
-  const handleUpdateRaw = (idx: number, val: string) => {
-    const updated = [...references];
-    updated[idx].raw = val;
-    onChange(updated);
+  const handleUpdateRaw = (refId: number, val: string) => {
+    dispatchUpdateReference(activeBus, refId, { raw: val }, onChange, references);
   };
 
-  const handleUpdateDoi = (idx: number, val: string) => {
-    const updated = [...references];
-    updated[idx].doi = val;
-    onChange(updated);
+  const handleUpdateDoi = (refId: number, val: string) => {
+    dispatchUpdateReference(activeBus, refId, { doi: val }, onChange, references);
   };
 
   return (
@@ -161,15 +168,17 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChan
             <div
               key={ref.id || idx}
               id={`ref-item-${ref.id}`}
-              className={`grid transition-all duration-300 ease-in-out ${isDeleting
-                ? 'grid-rows-[0fr] opacity-0 scale-95 -translate-y-2 pointer-events-none'
-                : 'grid-rows-[1fr] opacity-100 scale-100 translate-y-0'
-                } ${isNewlyAdded ? 'animate-section-enter' : ''}`}
+              className={`grid transition-all duration-300 ease-in-out ${
+                isDeleting
+                  ? 'grid-rows-[0fr] opacity-0 scale-95 -translate-y-2 pointer-events-none'
+                  : 'grid-rows-[1fr] opacity-100 scale-100 translate-y-0'
+              } ${isNewlyAdded ? 'animate-section-enter' : ''}`}
             >
               <div className="">
                 <div
-                  className={`p-3.5 rounded-3xl bg-gray-200/50 flex items-start gap-3 shadow-2xs transition-all duration-300 ${isNewlyAdded ? 'section-highlight-glow ring-2 ring-blue-300' : ''
-                    }`}
+                  className={`p-3.5 rounded-3xl bg-gray-200/50 flex items-start gap-3 shadow-2xs transition-all duration-300 ${
+                    isNewlyAdded ? 'section-highlight-glow ring-2 ring-blue-300' : ''
+                  }`}
                 >
                   {/* Number Pill */}
                   <span className="w-7 h-7 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1 shadow-2xs">
@@ -180,7 +189,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChan
                   <div className="flex-1 space-y-2">
                     <AutoResizeTextarea
                       value={ref.raw}
-                      onChange={(val) => handleUpdateRaw(idx, val)}
+                      onChange={(val) => handleUpdateRaw(ref.id, val)}
                       placeholder="Chuỗi trích dẫn theo chuẩn Vancouver..."
                       className="w-full p-2.5 rounded-2xl text-xs text-zinc-900 bg-white leading-relaxed focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 transition-all shadow-2xs"
                     />
@@ -191,7 +200,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({ references, onChan
                         type="text"
                         value={ref.doi || ''}
                         placeholder="10.1001/..."
-                        onChange={(e) => handleUpdateDoi(idx, e.target.value)}
+                        onChange={(e) => handleUpdateDoi(ref.id, e.target.value)}
                         spellCheck={false}
                         autoCorrect="off"
                         autoCapitalize="off"

@@ -14,5 +14,9 @@ export { EndOfListIndicator } from './EndOfListIndicator';
 export { LayoutSettingsDrawer } from './LayoutSettingsDrawer';
 export { FigureSettingsModal } from './FigureSettingsModal';
 export { TableSettingsModal } from './TableSettingsModal';
+export { AuthorItemCard } from './AuthorItemCard';
+export { AffiliationItemCard } from './AffiliationItemCard';
+export * from './command-bus-adapter';
+export * from './preflight-wrapper';
 export * from './types';
 

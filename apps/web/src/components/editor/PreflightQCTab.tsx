@@ -1,23 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PreflightQCTabProps, EditorTabKey } from './types';
 import {
-  ShieldCheck,
   AlertCircle,
   AlertTriangle,
   Info,
   CheckCircle2,
   ArrowRight,
-  FileText,
-  UserCheck,
-  BookOpen,
-  Sliders,
-  Building,
-  Quote,
 } from 'lucide-react';
+import { computePreflightCheckWrapper } from './preflight-wrapper';
 
-export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNavigateTab }) => {
+export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({
+  preflight,
+  paper,
+  onNavigateTab,
+}) => {
+  // Evaluates preflight check via wrapper (ready for @structpaper/qc-engine in Phase 5)
+  const activePreflight = useMemo(() => {
+    return computePreflightCheckWrapper(preflight || paper);
+  }, [preflight, paper]);
+
   return (
     <div className="h-full flex flex-col min-h-0 space-y-4 p-4 sm:p-5 sm:pt-4 sm:pb-1">
       {/* Header Summary directly on background */}
@@ -37,14 +40,15 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
             </span>
           </div>
           <span
-            className={`text-2xl font-black ${preflight.score >= 85
-              ? 'text-[#14532D]'
-              : preflight.score >= 70
-                ? 'text-amber-700'
-                : 'text-red-700'
-              }`}
+            className={`text-2xl font-black ${
+              activePreflight.score >= 85
+                ? 'text-[#14532D]'
+                : activePreflight.score >= 70
+                  ? 'text-amber-700'
+                  : 'text-red-700'
+            }`}
           >
-            {preflight.score}
+            {activePreflight.score}
             <span className="text-xs font-normal text-zinc-400">/100</span>
           </span>
         </div>
@@ -52,31 +56,31 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
 
       {/* Internal Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-6">
-
         {/* Issues list */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-900 flex items-center gap-1.5">
               <AlertCircle className="w-4 h-4 text-zinc-700" />
-              Báo cáo các mục cần bổ sung ({preflight.issues?.length || 0})
+              Báo cáo các mục cần bổ sung ({activePreflight.issues?.length || 0})
             </h4>
             <span className="text-[11px] text-zinc-500 font-medium">
-              {preflight.issues?.filter((i) => i.severity === 'error').length || 0} mục bắt buộc,{' '}
-              {preflight.issues?.filter((i) => i.severity === 'warning').length || 0} khuyến nghị
+              {activePreflight.issues?.filter((i) => i.severity === 'error').length || 0} mục bắt buộc,{' '}
+              {activePreflight.issues?.filter((i) => i.severity === 'warning').length || 0} khuyến nghị
             </span>
           </div>
 
-          {preflight.issues && preflight.issues.length > 0 ? (
+          {activePreflight.issues && activePreflight.issues.length > 0 ? (
             <div className="space-y-2.5">
-              {preflight.issues.map((issue) => (
+              {activePreflight.issues.map((issue) => (
                 <div
                   key={issue.id}
-                  className={`p-3.5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 transition-all ${issue.severity === 'error'
-                    ? 'bg-red-50/60 border-red-200'
-                    : issue.severity === 'warning'
-                      ? 'bg-amber-50/60 border-amber-200'
-                      : 'bg-blue-50/60 border-blue-200'
-                    }`}
+                  className={`p-3.5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 transition-all ${
+                    issue.severity === 'error'
+                      ? 'bg-red-50/60 border-red-200'
+                      : issue.severity === 'warning'
+                        ? 'bg-amber-50/60 border-amber-200'
+                        : 'bg-blue-50/60 border-blue-200'
+                  }`}
                 >
                   <div className="flex items-start gap-2.5 flex-1">
                     <div className="mt-0.5">
@@ -91,22 +95,24 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         <h5
-                          className={`font-bold text-xs ${issue.severity === 'error'
-                            ? 'text-red-950'
-                            : issue.severity === 'warning'
-                              ? 'text-amber-950'
-                              : 'text-blue-950'
-                            }`}
+                          className={`font-bold text-xs ${
+                            issue.severity === 'error'
+                              ? 'text-red-950'
+                              : issue.severity === 'warning'
+                                ? 'text-amber-950'
+                                : 'text-blue-950'
+                          }`}
                         >
                           {issue.title}
                         </h5>
                         <span
-                          className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider ${issue.severity === 'error'
-                            ? 'bg-red-200 text-red-800'
-                            : issue.severity === 'warning'
-                              ? 'bg-amber-200 text-amber-800'
-                              : 'bg-blue-200 text-blue-800'
-                            }`}
+                          className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider ${
+                            issue.severity === 'error'
+                              ? 'bg-red-200 text-red-800'
+                              : issue.severity === 'warning'
+                                ? 'bg-amber-200 text-amber-800'
+                                : 'bg-blue-200 text-blue-800'
+                          }`}
                         >
                           {issue.severity === 'error'
                             ? 'Bắt buộc'
@@ -124,12 +130,13 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
                     <button
                       type="button"
                       onClick={() => onNavigateTab(issue.fixTab as EditorTabKey)}
-                      className={`text-xs font-bold py-1.5 px-3 rounded-xl border flex items-center gap-1 flex-shrink-0 self-end sm:self-center transition-colors cursor-pointer shadow-2xs ${issue.severity === 'error'
-                        ? 'bg-white text-red-700 border-red-300 hover:bg-red-50'
-                        : issue.severity === 'warning'
-                          ? 'bg-white text-amber-800 border-amber-300 hover:bg-amber-50'
-                          : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                        }`}
+                      className={`text-xs font-bold py-1.5 px-3 rounded-xl border flex items-center gap-1 flex-shrink-0 self-end sm:self-center transition-colors cursor-pointer shadow-2xs ${
+                        issue.severity === 'error'
+                          ? 'bg-white text-red-700 border-red-300 hover:bg-red-50'
+                          : issue.severity === 'warning'
+                            ? 'bg-white text-amber-800 border-amber-300 hover:bg-amber-50'
+                            : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                      }`}
                     >
                       <span>Sửa ngay</span>
                       <ArrowRight className="w-3 h-3" />
@@ -166,7 +173,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Tiêu đề tiếng Việt:</span>
-                  {preflight.titleOk ? (
+                  {activePreflight.titleOk ? (
                     <span className="text-lime-700 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Đạt
                     </span>
@@ -178,7 +185,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
                 </div>
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Tiêu đề tiếng Anh:</span>
-                  {preflight.titleEnOk ? (
+                  {activePreflight.titleEnOk ? (
                     <span className="text-lime-700 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Đạt
                     </span>
@@ -191,7 +198,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
                 <div className="flex items-center justify-between py-0.5">
                   <span className="text-zinc-500">Mã DOI:</span>
                   <span className="font-mono text-[11px] text-zinc-800">
-                    {preflight.titleOk ? '✓ Khả dụng' : 'Chưa có'}
+                    {activePreflight.titleOk ? '✓ Khả dụng' : 'Chưa có'}
                   </span>
                 </div>
               </div>
@@ -205,15 +212,15 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Số lượng tác giả:</span>
-                  <span className="font-bold text-zinc-900">{preflight.authorsCount} tác giả</span>
+                  <span className="font-bold text-zinc-900">{activePreflight.authorsCount} tác giả</span>
                 </div>
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Đơn vị công tác:</span>
-                  <span className="font-bold text-zinc-900">{preflight.affiliationsCount} cơ quan</span>
+                  <span className="font-bold text-zinc-900">{activePreflight.affiliationsCount} cơ quan</span>
                 </div>
                 <div className="flex items-center justify-between py-0.5">
                   <span className="text-zinc-500">Email liên hệ:</span>
-                  {preflight.correspondingOk ? (
+                  {activePreflight.correspondingOk ? (
                     <span className="text-lime-700 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Hợp lệ
                     </span>
@@ -234,7 +241,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Tóm tắt tiếng Việt:</span>
-                  {preflight.abstractOk ? (
+                  {activePreflight.abstractOk ? (
                     <span className="text-lime-700 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Đạt chuẩn
                     </span>
@@ -246,7 +253,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
                 </div>
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Abstract tiếng Anh:</span>
-                  {preflight.abstractEnOk ? (
+                  {activePreflight.abstractEnOk ? (
                     <span className="text-lime-700 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> Đạt chuẩn
                     </span>
@@ -259,7 +266,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
                 <div className="flex items-center justify-between py-0.5">
                   <span className="text-zinc-500">Từ khóa song ngữ:</span>
                   <span className="font-bold text-zinc-900">
-                    {preflight.keywordsCount} VN / {preflight.keywordsEnCount} EN
+                    {activePreflight.keywordsCount} VN / {activePreflight.keywordsEnCount} EN
                   </span>
                 </div>
               </div>
@@ -278,20 +285,20 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Mở đầu / Giới thiệu:</span>
-                  <span className={preflight.foundImradSections.intro ? 'text-lime-700 font-bold' : 'text-zinc-400 font-normal'}>
-                    {preflight.foundImradSections.intro ? '✓ Có' : 'Chưa rõ'}
+                  <span className={activePreflight.foundImradSections.intro ? 'text-lime-700 font-bold' : 'text-zinc-400 font-normal'}>
+                    {activePreflight.foundImradSections.intro ? '✓ Có' : 'Chưa rõ'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Phương pháp (Methods):</span>
-                  <span className={preflight.foundImradSections.methods ? 'text-lime-700 font-bold' : 'text-zinc-400 font-normal'}>
-                    {preflight.foundImradSections.methods ? '✓ Có' : 'Chưa rõ'}
+                  <span className={activePreflight.foundImradSections.methods ? 'text-lime-700 font-bold' : 'text-zinc-400 font-normal'}>
+                    {activePreflight.foundImradSections.methods ? '✓ Có' : 'Chưa rõ'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-0.5">
                   <span className="text-zinc-500">Kết quả & Kết luận:</span>
-                  <span className={preflight.foundImradSections.results && preflight.foundImradSections.conclusion ? 'text-lime-700 font-bold' : 'text-amber-600 font-bold'}>
-                    {preflight.foundImradSections.results && preflight.foundImradSections.conclusion ? '✓ Đạt' : 'Một phần'}
+                  <span className={activePreflight.foundImradSections.results && activePreflight.foundImradSections.conclusion ? 'text-lime-700 font-bold' : 'text-amber-600 font-bold'}>
+                    {activePreflight.foundImradSections.results && activePreflight.foundImradSections.conclusion ? '✓ Đạt' : 'Một phần'}
                   </span>
                 </div>
               </div>
@@ -310,11 +317,11 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Tổng số bảng biểu:</span>
-                  <span className="font-bold text-zinc-900">{preflight.totalTables} bảng</span>
+                  <span className="font-bold text-zinc-900">{activePreflight.totalTables} bảng</span>
                 </div>
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Tổng số hình ảnh:</span>
-                  <span className="font-bold text-zinc-900">{preflight.totalFigures} hình</span>
+                  <span className="font-bold text-zinc-900">{activePreflight.totalFigures} hình</span>
                 </div>
                 <div className="flex items-center justify-between py-0.5">
                   <span className="text-zinc-500">Trạng thái dữ liệu:</span>
@@ -333,22 +340,22 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({ preflight, onNav
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Tổng số tài liệu:</span>
-                  <span className="font-bold text-zinc-900">{preflight.totalReferences} mục</span>
+                  <span className="font-bold text-zinc-900">{activePreflight.totalReferences} mục</span>
                 </div>
                 <div className="flex items-center justify-between py-0.5 border-b border-zinc-200/60">
                   <span className="text-zinc-500">Chưa gọi trong bài:</span>
-                  {preflight.uncitedReferences.length === 0 ? (
+                  {activePreflight.uncitedReferences.length === 0 ? (
                     <span className="text-lime-700 font-bold">0 mục (Tốt)</span>
                   ) : (
-                    <span className="text-amber-600 font-bold">{preflight.uncitedReferences.length} mục</span>
+                    <span className="text-amber-600 font-bold">{activePreflight.uncitedReferences.length} mục</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between py-0.5">
                   <span className="text-zinc-500">Thiếu danh mục:</span>
-                  {preflight.missingCitations.length === 0 ? (
+                  {activePreflight.missingCitations.length === 0 ? (
                     <span className="text-lime-700 font-bold">0 (Đạt)</span>
                   ) : (
-                    <span className="text-red-600 font-bold">{preflight.missingCitations.length} mục</span>
+                    <span className="text-red-600 font-bold">{activePreflight.missingCitations.length} mục</span>
                   )}
                 </div>
               </div>
