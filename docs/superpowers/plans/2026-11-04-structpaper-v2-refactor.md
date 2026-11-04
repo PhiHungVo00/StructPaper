@@ -400,25 +400,23 @@
 
 ### Phase 5: Động cơ QC & Bộ Xuất bản Đa định dạng `packages/exporters`
 
-- [ ] **Task 5.1: Xây dựng `packages/qc-engine` theo Specification Pattern**
+- [x] **Task 5.1: Xây dựng `packages/qc-engine` theo Specification Pattern**
   - **Files:**
     - Tạo: `packages/qc-engine/package.json`
+    - Tạo: `packages/qc-engine/tsconfig.json`
     - Tạo: `packages/qc-engine/src/interfaces/rule.ts`
-    - Tạo: `packages/qc-engine/src/engine/qc-engine.ts`
     - Tạo: `packages/qc-engine/src/rules/metadata-rules.ts`
     - Tạo: `packages/qc-engine/src/rules/numbering-rules.ts`
-    - Tạo: `packages/qc-engine/src/rules/reference-rules.ts`
     - Tạo: `packages/qc-engine/src/rules/float-rules.ts`
-    - Sửa: `apps/web/src/components/editor/PreflightQCTab.tsx` (nối sang `qc-engine` chính thức)
-    - Test: `packages/qc-engine/tests/qc-rules.test.ts`
-  - **Bước 1:** Viết test cho các luật QC:
-    - Báo lỗi khi tóm tắt vượt quá 500 từ theo profile `VNUHCM-HS`.
-    - Báo lỗi khi có trích dẫn `[5]` mà danh mục chỉ có 4 bài.
-    - Báo lỗi khi ảnh có DPI < 300.
-    - Cung cấp `fix` Command cho nút "Sửa nhanh".
-  - **Bước 2:** Triển khai `QcEngine` và các class Specification rules.
-  - **Bước 3:** Nối trực tiếp vào `PreflightQCTab` trên giao diện người dùng.
-  - **Bước 4:** Chạy test kiểm tra toàn bộ luật QC pass 100%.
+    - Tạo: `packages/qc-engine/src/rules/reference-rules.ts`
+    - Tạo: `packages/qc-engine/src/rules/structure-rules.ts`
+    - Tạo: `packages/qc-engine/src/engine/scoring.ts`
+    - Tạo: `packages/qc-engine/src/engine/qc-engine.ts`
+    - Tạo: `packages/qc-engine/src/index.ts`
+    - Sửa: `apps/web/src/components/editor/preflight-wrapper.ts` (kết nối trực tiếp sang `qc-engine`)
+    - Test: `packages/qc-engine/tests/qc-rules.test.ts` (15/15 pass)
+    - Test: `apps/web/tests/components/preflight-qc.test.tsx` (2/2 pass)
+  - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/qc-engine` theo Specification Pattern. Triển khai các tập luật specification kiểm tra độ dài tóm tắt (275-500 từ theo profile VNUHCM-HS), từ khóa (3-5), tích hợp `computeNumbering` phát hiện trích dẫn dangling/uncited và firstMentionBeforeFloat, phát hiện ảnh DPI < 300 và bảng/hình thiếu caption. `QcEngine` chuẩn hóa bảng điểm 0-100/100 chia đều theo 6 trụ cột cấu trúc (IMRaD, Hình ảnh, Bảng biểu, Trích dẫn, Tác giả & Tóm tắt, Định dạng) và hỗ trợ quickFix. Nối trực tiếp vào `PreflightQCTab.tsx` bảo toàn 100% giao diện và nút "Sửa ngay". 17/17 tests mới và 300/300 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
 - [ ] **Task 5.2: Xây dựng Bộ Sinh Mã `LatexExporter` Hợp nhất & Tệp Khuôn mẫu `structpaper-hs.cls`**
   - **Files:**

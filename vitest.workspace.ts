@@ -13,6 +13,7 @@ export default defineWorkspace([
         '@structpaper/storage': path.resolve(__dirname, 'packages/storage/src'),
         '@structpaper/ingest-docx': path.resolve(__dirname, 'packages/ingest-docx/src'),
         '@structpaper/compiler-client': path.resolve(__dirname, 'packages/compiler-client/src'),
+        '@structpaper/qc-engine': path.resolve(__dirname, 'packages/qc-engine/src'),
         '@': path.resolve(__dirname, 'apps/web/src'),
       },
     },
