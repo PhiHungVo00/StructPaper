@@ -77,8 +77,8 @@ describe('packages/storage - AutosaveEngine', () => {
     expect(store.getState().isDirty).toBe(true);
     expect(extractTitle(store.getState().manuscript!)).toBe('Tiêu đề sau khi sửa');
 
-    // Wait for debounce timer to fire (60ms > 50ms)
-    await new Promise((resolve) => setTimeout(resolve, 80));
+    // Wait for debounce timer to fire (120ms > 50ms)
+    await new Promise((resolve) => setTimeout(resolve, 120));
 
     expect(statusHistory).toContain('saving');
     expect(statusHistory).toContain('saved');

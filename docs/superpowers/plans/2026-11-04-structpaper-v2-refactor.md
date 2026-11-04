@@ -249,12 +249,17 @@
   - **Bước 4:** Chạy test kiểm tra trả về danh sách `RawBlock[]` thô chuẩn xác.
   - **Hoàn thành:** Đã khởi tạo hoàn chỉnh package `@structpaper/ingest-docx` với JSZip và fast-xml-parser isomorphic (chạy trên Node, Browser, Web Worker không phụ thuộc DOMParser). `DocxPackage` bóc tách nhanh XML parts và thư mục `word/media/` cùng bản đồ quan hệ `rels`. `StyleResolver` phân giải đầy đủ tên style, chuỗi kế thừa `w:basedOn` chống loop và hỗ trợ tra cứu không phân biệt hoa thường. `RawDocVisitor` duyệt cây OOXML trích xuất formatting (bold, italic, sup, sub, code, font, size), OMML Math (inline & block), drawings, fields đơn và phức tạp, bảng với `gridSpan` và `vMerge`, hỗ trợ Track Changes và content controls `w:sdt`. 16/16 tests trong `ooxml-reader.test.ts` và toàn bộ 163/163 unit tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
-- [ ] **Task 3.2: Xây dựng `StyleMapRecognizer` cho ~35 Word Styles Chuẩn & StructureRecognizer**
+- [x] **Task 3.2: Xây dựng `StyleMapRecognizer` cho ~35 Word Styles Chuẩn & StructureRecognizer**
   - **Files:**
+    - Tạo: `packages/ingest-docx/src/recognizers/types.ts` (SemanticRole, Claim, IngestContext, Recognizer)
     - Tạo: `packages/ingest-docx/src/recognizers/style-map-recognizer.ts`
     - Tạo: `packages/ingest-docx/src/recognizers/structure-recognizer.ts`
     - Tạo: `packages/ingest-docx/src/recognizers/recognizer-chain.ts`
-    - Test: `packages/ingest-docx/tests/style-map-recognizer.test.ts`
+    - Tạo: `packages/ingest-docx/src/recognizers/index.ts`
+    - Sửa: `packages/ingest-docx/src/index.ts` (export recognizers)
+    - Sửa: `packages/ingest-docx/package.json` (thêm phụ thuộc `@structpaper/journal-profiles` và export recognizers)
+    - Sửa: `.dependency-cruiser.js` (cho phép `@structpaper/ingest-docx` phụ thuộc `@structpaper/journal-profiles`)
+    - Test: `packages/ingest-docx/tests/style-map-recognizer.test.ts` (18/18 pass)
   - **Bước 1:** Viết test với dữ liệu từ `Template_EN.docx` và `Template_VI.docx`:
     - Đoạn có style `ArticleTitle` nhận diện đúng vai trò Title (confidence 1.0).
     - Đoạn có style `Authors`, `Affiliation`, `SectionAbstract` nhận diện đúng FrontMatter.
@@ -263,6 +268,7 @@
   - **Bước 2:** Triển khai `StyleMapRecognizer` đọc bản đồ `styleMap` từ `packages/journal-profiles`.
   - **Bước 3:** Triển khai `StructureRecognizer` theo Chain of Responsibility.
   - **Bước 4:** Chạy test xác nhận nhận diện chính xác 100% các đoạn mẫu.
+  - **Hoàn thành:** Đã xây dựng hoàn chỉnh hệ thống nhận diện ngữ nghĩa đa tầng DOCX (`StyleMapRecognizer`, `StructureRecognizer`, `RecognizerChain`). `StyleMapRecognizer` (Priority 1) ánh xạ trọn vẹn 35 standard Word styles trong profile `VNUHCM-HS` với độ tin cậy 1.0, hỗ trợ chuẩn hóa tên style không phân biệt hoa thường/khoảng trắng, duyệt chuỗi kế thừa `w:basedOn` qua `StyleResolver`, và loại bỏ toàn bộ các đoạn hướng dẫn template `Guide*`/`Instruction` vào vai trò `ignore`. `StructureRecognizer` (Priority 2) nhận diện bằng heuristic cho đoạn unstyled: bảng biểu (`table.cell`, 0.9), table captions (`table.caption`, 0.85), figure captions (`figure.caption`, 0.85), keywords (`keywords`, 0.85), trích dẫn tài liệu tham khảo `[n]` (`reference`, 0.8), đánh số đề mục La Mã / số Ả Rập (`h1`/`h2`/`h3`, 0.8), và tiêu đề đậm/giữa ở đầu văn bản (`title`, 0.6). `RecognizerChain` điều phối thực thi theo thứ tự ưu tiên, short-circuit khi đạt confidence 1.0, chọn claim có độ tin cậy cao nhất và fallback về body paragraph mặc định (confidence 0.5). 18/18 tests mới và 181/181 unit tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint.
 
 - [ ] **Task 3.3: Xây dựng Bộ Assemblers (Table, Figure, Equation, Reference, Section)**
   - **Files:**

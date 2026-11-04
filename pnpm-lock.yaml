@@ -151,6 +151,9 @@ importers:
       '@structpaper/doc-model':
         specifier: workspace:*
         version: link:../doc-model
+      '@structpaper/journal-profiles':
+        specifier: workspace:*
+        version: link:../journal-profiles
       fast-xml-parser:
         specifier: ^5.11.2
         version: 5.12.0
