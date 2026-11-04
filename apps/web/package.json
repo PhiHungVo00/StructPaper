@@ -11,6 +11,16 @@
   },
   "dependencies": {
     "@fortune-sheet/react": "^1.0.4",
+    "@structpaper/compiler-client": "workspace:*",
+    "@structpaper/doc-model": "workspace:*",
+    "@structpaper/editor-core": "workspace:*",
+    "@structpaper/storage": "workspace:*",
+    "@tiptap/core": "^3.32.2",
+    "@tiptap/extension-subscript": "^3.32.2",
+    "@tiptap/extension-superscript": "^3.32.2",
+    "@tiptap/pm": "^3.32.2",
+    "@tiptap/react": "^3.32.2",
+    "@tiptap/starter-kit": "^3.32.2",
     "docx": "^9.8.1",
     "fast-xml-parser": "^5.11.2",
     "framer-motion": "^14.1.0",
@@ -24,11 +34,7 @@
     "pdfjs-dist": "^3.11.174",
     "react": "^18",
     "react-dom": "^18",
-    "sileo": "^0.1.6",
-    "@structpaper/compiler-client": "workspace:*",
-    "@structpaper/doc-model": "workspace:*",
-    "@structpaper/editor-core": "workspace:*",
-    "@structpaper/storage": "workspace:*"
+    "sileo": "^0.1.6"
   },
   "devDependencies": {
     "@types/node": "^20",

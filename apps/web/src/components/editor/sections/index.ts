@@ -1,5 +1,7 @@
 export * from './AutoResizeTextarea';
 export * from './TemporaryParagraphInput';
+export * from './TipTapParagraphEditor';
+export * from './tiptap-schema';
 export * from './SectionCardHeader';
 export * from './SectionHeaderCard';
 export * from './SectionActionToolbar';

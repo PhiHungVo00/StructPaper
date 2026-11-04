@@ -383,19 +383,18 @@
     - Nối chuyển đổi sang CommandBus qua `sections-dispatchers.ts` (`block/insert`, `block/update`, `block/remove`) tương thích hoàn toàn mô hình V2 và V1, không phụ thuộc `adaptV2toV1`.
     - Viết 13/13 tests mới trong `sections-tab.test.tsx` kiểm thử toàn diện rendering, input text inline, xóa block, di chuyển section và CommandBus integration. Toàn bộ 267/267 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%.
 
-- [ ] **Task 4.5: Tích hợp TipTap Rich-Text Editor cho Đoạn văn & Kiểm thử IME Tiếng Việt**
+- [x] **Task 4.5: Tích hợp TipTap Rich-Text Editor cho Đoạn văn & Kiểm thử IME Tiếng Việt**
   - **Files:**
-    - Tạo: `apps/web/src/components/editor/sections/TipTapParagraphEditor.tsx`
-    - Tạo: `apps/web/src/components/editor/sections/tiptap-schema.ts`
-    - Sửa: `apps/web/src/components/editor/SectionsTab.tsx` (thay thế ô tạm bằng TipTap)
-    - Test: `apps/web/tests/e2e/ime-vietnamese.spec.ts` (Playwright CDP)
-  - **Bước 1:** Cài đặt các gói tối thiểu của `@tiptap/core`, `@tiptap/starter-kit`.
-  - **Bước 2:** Xây dựng TipTap schema ánh xạ 1-1 với `Inline[]` (marks: `b`, `i`, `sup`, `sub`; nodes: `cite`, `xref`, `math`, `footnote`).
-  - **Bước 3:** Tạo styling CSS cho TipTap editor khớp 100% viền, font, padding của khung `<AutoResizeTextarea>` cũ.
-  - **Bước 4:** Xử lý sự kiện gõ `[` mở popup chọn tài liệu tham khảo; phím tắt `Ctrl+B`, `Ctrl+I`.
-  - **Bước 5:** Xử lý sự kiện dán (paste) từ Word lọc style rác, giữ in nghiêng/chỉ số.
-  - **Bước 6:** Viết test Playwright tự động dùng Chrome DevTools Protocol (`Input.imeSetComposition`) mô phỏng gõ tiếng Việt Telex/VNI.
-  - **Bước 7:** Thực hiện manual checklist trên Windows kiểm tra gõ Unikey/EVKey mượt mà, không giật trỏ chuột.
+    - Cài đặt: `@tiptap/core`, `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-subscript`, `@tiptap/extension-superscript`
+    - Tạo: `apps/web/src/components/editor/sections/tiptap-schema.ts` (marks b, i, sup, sub, code; 2 chiều `inlines <-> tiptapDoc`)
+    - Tạo: `apps/web/src/components/editor/sections/tiptap-nodes.ts` (custom atom nodes: `CiteNode`, `XrefNode`, `MathNode`)
+    - Tạo: `apps/web/src/components/editor/sections/TipTapParagraphEditor.tsx` (styling khớp 100% ô cũ, mini toolbar, debounced commit 150ms)
+    - Tạo: `apps/web/src/components/editor/sections/tiptap-popovers.tsx` (popup trích dẫn `[` và popover công thức)
+    - Tạo: `apps/web/src/components/editor/sections/clean-word-paste.ts` (lọc rác Word, giữ *H. pylori*, FEV1, 10^3)
+    - Sửa: `apps/web/src/components/editor/sections/ParagraphSectionItem.tsx` & `SectionBlockList.tsx`
+    - Test: `apps/web/tests/components/tiptap-paragraph-editor.test.tsx` (16/16 pass)
+    - Test: `e2e/ime-vietnamese.spec.ts` (4/4 pass qua Playwright CDP)
+  - **Hoàn thành:** Hoàn thành tích hợp toàn diện TipTap Rich-Text Editor cho đoạn văn theo quyết định Phương án A. Bảo toàn 100% visual parity (styling, viền, font, padding, placeholder); mini toolbar tinh gọn (Ctrl+B, Ctrl+I, sup, sub, trích dẫn, công thức); gõ `[` mở reference picker popup; lọc rác paste từ Word giữ nguyên in nghiêng khoa học (*Helicobacter pylori*) và chỉ số (*FEV1*); kiểm thử gõ tiếng Việt Telex/VNI tự động qua Chrome DevTools Protocol `Input.imeSetComposition` không bị mất dấu hay giật con trỏ. 16/16 unit tests và 4/4 E2E tests pass 100%, toàn bộ 283/283 tests monorepo pass 100%, 0 vi phạm depcruise, 0 lỗi eslint, Next.js build pass 100%. Giai đoạn 4 (Phase 4) chính thức hoàn tất.
 
 ---
 

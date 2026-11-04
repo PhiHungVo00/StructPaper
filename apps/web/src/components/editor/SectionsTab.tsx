@@ -22,6 +22,7 @@ import {
 export const SectionsTab: React.FC<SectionsTabProps> = ({
   sections,
   onChange,
+  references,
   commandBus: propCommandBus,
 }) => {
   const contextCommandBus = useEditorCommandBus().commandBus;
@@ -285,6 +286,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       {/* Main Scrollable Sections & Blocks List */}
       <SectionBlockList
         sections={sections}
+        references={references}
         filterType={filterType}
         setFilterType={setFilterType}
         newlyAddedId={newlyAddedId}

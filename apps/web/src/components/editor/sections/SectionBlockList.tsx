@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { PaperSection, PaperTable, PaperFigure } from '@/types/paper';
+import { PaperSection, PaperTable, PaperFigure, PaperReference } from '@/types/paper';
 import { EndOfListIndicator } from '../EndOfListIndicator';
 import {
   SectionHeaderCard,
@@ -54,6 +54,7 @@ export interface SectionBlockListProps {
   onAddTable: (insertAfterIndex?: number) => void;
   onAddFigure: (insertAfterIndex?: number) => void;
   setFileInputRef: (idx: number, el: HTMLInputElement | null) => void;
+  references?: PaperReference[];
 }
 
 export const SectionBlockList: React.FC<SectionBlockListProps> = ({
@@ -88,6 +89,7 @@ export const SectionBlockList: React.FC<SectionBlockListProps> = ({
   onTriggerFileInput,
   onPasteTableData,
   onPasteTableFromClipboardButton,
+  references,
   onAddHeading,
   onAddParagraph,
   onAddTable,
@@ -208,6 +210,7 @@ export const SectionBlockList: React.FC<SectionBlockListProps> = ({
                     setActiveEditingParaId={setActiveEditingParaId}
                     onUpdateSection={onUpdateSection}
                     onMergeParagraphIntoPrevFigure={onMergeParagraphIntoPrevFigure}
+                    references={references}
                   />
                 )}
 

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { PaperSection } from '@/types/paper';
-import { TemporaryParagraphInput } from './TemporaryParagraphInput';
+import { PaperSection, PaperReference } from '@/types/paper';
+import { TipTapParagraphEditor } from './TipTapParagraphEditor';
 import { ImageIcon, Link2 } from 'lucide-react';
 
 export interface ParagraphSectionItemProps {
@@ -14,6 +14,7 @@ export interface ParagraphSectionItemProps {
   onUpdateSection: (index: number, updated: PaperSection) => void;
   onMergeParagraphIntoPrevFigure: (index: number) => void;
   onConvertToCitation?: (index: number) => void;
+  references?: PaperReference[];
 }
 
 export const ParagraphSectionItem: React.FC<ParagraphSectionItemProps> = ({
@@ -24,6 +25,7 @@ export const ParagraphSectionItem: React.FC<ParagraphSectionItemProps> = ({
   setActiveEditingParaId,
   onUpdateSection,
   onMergeParagraphIntoPrevFigure,
+  references,
 }) => {
   const secId = sec.id || `sec_${idx}`;
   const isEditing = activeEditingParaId === secId;
@@ -61,13 +63,14 @@ export const ParagraphSectionItem: React.FC<ParagraphSectionItemProps> = ({
           </div>
         )}
 
-      <TemporaryParagraphInput
+      <TipTapParagraphEditor
         value={sec.content || ''}
         isEditing={isEditing}
         onStartEdit={() => setActiveEditingParaId(secId)}
         onBlur={() => setActiveEditingParaId(null)}
         onChange={(_inlines, plainText) => onUpdateSection(idx, { ...sec, content: plainText })}
         placeholder="Nội dung đoạn văn bản..."
+        references={references}
       />
     </div>
   );
