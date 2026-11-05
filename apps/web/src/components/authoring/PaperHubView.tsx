@@ -19,6 +19,7 @@ import {
   RecentPapersRow,
   PaperFiltersBar,
   PaperCard,
+  PaperCardShimmer,
   PaperTable,
   PaperQuickEditModal,
   EmptyPapersState,
@@ -357,9 +358,7 @@ export const PaperHubView: React.FC = () => {
 
       {/* 3. Sticky Filter Toolbar matching Eatzy */}
       <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
-        {/* Frosted Glass Backdrop with soft bottom fade mask */}
-        <div className="absolute inset-0 bg-[#F7F7F7]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
-
+        <div className="absolute inset-0 bg-[#F8F9FA]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
         <PaperFiltersBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -376,8 +375,15 @@ export const PaperHubView: React.FC = () => {
         />
       </div>
 
-      {/* 4. Papers List (Grid vs Table vs Empty) */}
-      {filteredPapers.length === 0 ? (
+      {/* 4. Papers List (Loading Shimmer vs Grid vs Table vs Empty) */}
+      {isLoading ? (
+        <div
+          data-testid="papers-shimmer-grid"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        >
+          <PaperCardShimmer cardCount={8} />
+        </div>
+      ) : filteredPapers.length === 0 ? (
         <EmptyPapersState
           isFiltered={Boolean(searchQuery || statusFilter !== 'all' || journalFilter !== 'all')}
           onResetFilters={() => {
@@ -430,7 +436,7 @@ export const PaperHubView: React.FC = () => {
       )}
 
       {/* 5. End of list indicator matching Eatzy */}
-      {filteredPapers.length > 0 && (
+      {!isLoading && filteredPapers.length > 0 && (
         <div className="py-10 flex items-center justify-center gap-4 opacity-50 select-none">
           <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
           <div className="flex flex-col items-center gap-1.5">

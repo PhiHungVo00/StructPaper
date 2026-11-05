@@ -97,7 +97,8 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm theo tên bài, mã bài, tác giả..."
-            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/30 rounded-3xl py-3 sm:py-3.5 pl-14 pr-12 text-xs sm:text-sm font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/10 focus:bg-white transition-all shadow-[inset_0_0_20px_rgba(0,0,0,0.09)] hover:shadow-[inset_0_0_20px_rgba(0,0,0,0.14)] hover:border-zinc-200/80"
+            style={{ boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)' }}
+            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
           />
 
           {searchQuery && (

@@ -30,6 +30,10 @@ const config: Config = {
         mono: ['"JetBrains Mono"', 'Consolas', 'monospace'],
         display: ['"Plus Jakarta Sans"', 'sans-serif'],
       },
+      boxShadow: {
+        'eatzy-inner': 'inset 0 0 20px rgba(0, 0, 0, 0.09)',
+        'eatzy-inner-hover': 'inset 0 0 20px rgba(0, 0, 0, 0.14)',
+      },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },

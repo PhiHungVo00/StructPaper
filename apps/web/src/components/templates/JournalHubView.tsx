@@ -11,6 +11,7 @@ import {
 } from '@/lib/templates/journal-storage';
 import { JournalFiltersBar } from './JournalFiltersBar';
 import { JournalProfilesList } from './JournalProfilesList';
+import { JournalProfileCardShimmer } from './JournalProfileCardShimmer';
 import { toast } from '@/components/DynamicIslandToast';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
 
@@ -80,15 +81,16 @@ export const JournalHubView: React.FC = () => {
               <BookOpen className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
               <span>Quản Lý Mẫu &amp; Tạp Chí Khoa Học</span>
             </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E4F8D5] text-[#14532D]">
+              7 Tạp chí ĐHQG-HCM
+            </span>
           </div>
         </div>
       </div>
 
       {/* 2. Top Sticky Filter Toolbar matching Eatzy */}
       <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
-        {/* Frosted Glass Backdrop with soft bottom fade mask */}
-        <div className="absolute inset-0 bg-[#F7F7F7]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
-
+        <div className="absolute inset-0 bg-[#F8F9FA]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
         <JournalFiltersBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -101,8 +103,8 @@ export const JournalHubView: React.FC = () => {
 
       {/* 3. Journal Profiles Grid */}
       {isLoading ? (
-        <div className="h-64 flex items-center justify-center text-slate-400 text-xs font-bold animate-pulse">
-          Đang nạp danh mục tạp chí...
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+          <JournalProfileCardShimmer cardCount={7} />
         </div>
       ) : (
         <JournalProfilesList

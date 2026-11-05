@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { FolderArchive, Sparkles, UploadCloud, RotateCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FileText, RotateCcw, Sparkles } from 'lucide-react';
 
 interface EmptyPapersStateProps {
   isFiltered?: boolean;
@@ -15,65 +16,35 @@ export const EmptyPapersState: React.FC<EmptyPapersStateProps> = ({
   onResetFilters,
   onCreateFromTemplate,
 }) => {
+  const router = useRouter();
+
+  if (isFiltered) {
+    return (
+      <div data-testid="empty-papers-state">
+        <EmptyState
+          icon={FileText}
+          title="Không tìm thấy bài báo nào"
+          description="Không có bài báo nào khớp với từ khóa tìm kiếm hoặc bộ lọc hiện tại."
+          buttonText={onResetFilters ? 'Đặt lại bộ lọc' : undefined}
+          buttonIcon={RotateCcw}
+          onButtonClick={onResetFilters}
+          className="py-14 md:py-20"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      data-testid="empty-papers-state"
-      className="bg-white rounded-3xl border border-dashed border-slate-300/90 p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-2xs"
-    >
-      <div className="w-16 h-16 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shadow-2xs">
-        <FolderArchive className="w-8 h-8 stroke-[1.5]" />
-      </div>
-
-      <div className="max-w-md space-y-1">
-        <h3 className="text-base font-bold text-slate-800">
-          {isFiltered
-            ? 'Không tìm thấy bài báo phù hợp'
-            : 'Chưa có bài báo nào trong danh sách'}
-        </h3>
-        <p className="text-xs text-slate-400">
-          {isFiltered
-            ? 'Hãy thử thay đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc trạng thái và tạp chí.'
-            : 'Bắt đầu soạn thảo bài báo khoa học đầu tiên của bạn từ mẫu chuẩn hoặc tải tệp Word (.docx) lên.'}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2.5 pt-2 flex-wrap justify-center">
-        {isFiltered && onResetFilters && (
-          <button
-            onClick={onResetFilters}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Đặt lại bộ lọc</span>
-          </button>
-        )}
-
-        <Link
-          href="/upload"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 shadow-2xs transition-all"
-        >
-          <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
-          <span>Tải file DOCX mới</span>
-        </Link>
-
-        {onCreateFromTemplate ? (
-          <button
-            onClick={onCreateFromTemplate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Tạo từ mẫu</span>
-          </button>
-        ) : (
-          <Link
-            href="/templates"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Tạo từ mẫu</span>
-          </Link>
-        )}
-      </div>
+    <div data-testid="empty-papers-state">
+      <EmptyState
+        icon={FileText}
+        title="Chưa có bài báo nào"
+        description="Bắt đầu tạo bài báo khoa học đầu tiên của bạn từ mẫu chuẩn ĐHQG-HCM."
+        buttonText="Tạo từ mẫu"
+        buttonIcon={Sparkles}
+        onButtonClick={onCreateFromTemplate || (() => router.push('/templates'))}
+        className="py-14 md:py-20"
+      />
     </div>
   );
 };
