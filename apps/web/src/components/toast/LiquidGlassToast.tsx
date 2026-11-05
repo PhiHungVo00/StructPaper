@@ -136,6 +136,14 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
     const borderClasses = isTop
       ? theme.containerBorder
       : theme.containerBorder.replace('border-b-2 border-x-2', 'border-2');
+    const maxWClasses = isHovered
+      ? 'max-w-[94vw] sm:max-w-xl md:max-w-2xl'
+      : 'max-w-[92vw] sm:max-w-lg';
+    const containerPadding = isSingleLine
+      ? isHovered
+        ? 'min-h-[40px] sm:min-h-[44px] py-2 sm:py-2.5'
+        : 'h-10 sm:h-11'
+      : 'py-2.5 sm:py-3';
 
     return (
       <motion.div
@@ -144,6 +152,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         data-liquid-toast
         data-toast-id={id}
         data-toast-type={type}
+        data-toast-hovered={isHovered ? 'true' : undefined}
         initial={isTest ? false : { y: -52, opacity: 0, scale: 0.96 }}
         animate={isTest ? false : { y: 0, opacity: 1, scale: 1 }}
         exit={isTest ? false : { y: -56, opacity: 0, scale: 0.95 }}
@@ -160,53 +169,84 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{ boxShadow: combinedBoxShadow }}
-        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg`}
+        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] ${maxWClasses}`}
       >
         {/* Main Toast Content Container */}
         <div
-          className={`flex items-center justify-between gap-3 px-3.5 transition-all ${
-            isSingleLine ? 'h-10 sm:h-11' : 'py-2.5 sm:py-3'
-          }`}
+          className={`flex items-center justify-between gap-3 px-3.5 ${containerPadding}`}
         >
           {/* Left: Themed Icon Badge */}
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div
+          <div
+            className={`flex gap-2.5 min-w-0 flex-1 ${
+              isHovered && isTwoLine ? 'items-start pt-0.5' : 'items-center'
+            }`}
+          >
+            <motion.div
+              layout="position"
               className={`w-6 h-6 rounded-full grid place-items-center shrink-0 shadow-2xs leading-none p-0 m-0 ${theme.badgeBg} ${theme.badgeText}`}
             >
               {theme.icon}
-            </div>
+            </motion.div>
 
             {/* Text Area: Single Line Inline vs Two-Line vs Title-Only */}
-            <div className="flex flex-col justify-center min-w-0 flex-1 text-left">
+            <motion.div
+              layout="position"
+              className="flex flex-col justify-center min-w-0 flex-1 text-left"
+            >
               {isInline ? (
-                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <div
+                  className={`flex gap-1.5 min-w-0 ${
+                    isHovered
+                      ? 'flex-wrap items-baseline'
+                      : 'items-center truncate'
+                  }`}
+                >
                   <span className="font-extrabold text-xs sm:text-[13px] text-zinc-950 shrink-0">
                     {cleanTitle}:
                   </span>
-                  <span className="text-[11px] sm:text-xs text-zinc-600 font-medium truncate">
+                  <span
+                    className={`text-[11px] sm:text-xs text-zinc-500 font-semibold ${
+                      isHovered ? 'whitespace-normal break-words' : 'truncate'
+                    }`}
+                  >
                     {description}
                   </span>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-extrabold text-xs sm:text-[13px] text-zinc-950 truncate tracking-tight leading-tight">
+                    <span
+                      className={`font-extrabold text-xs sm:text-[13px] text-zinc-950 tracking-tight leading-tight ${
+                        isHovered ? 'whitespace-normal break-words' : 'truncate'
+                      }`}
+                    >
                       {title}
                     </span>
                   </div>
 
                   {isTwoLine && (
-                    <p className="text-[11px] sm:text-xs text-zinc-600 line-clamp-2 leading-snug mt-0.5 font-medium">
+                    <p
+                      className={`text-[11px] sm:text-xs text-zinc-500 leading-snug mt-0.5 font-semibold ${
+                        isHovered
+                          ? 'line-clamp-none whitespace-normal break-words'
+                          : 'line-clamp-2'
+                      }`}
+                    >
                       {description}
                     </p>
                   )}
                 </>
               )}
-            </div>
+            </motion.div>
           </div>
 
           {/* Right side: Action Button & Dismiss Button */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-1">
+          <motion.div
+            layout="position"
+            className={`flex items-center gap-1.5 shrink-0 ml-1 ${
+              isHovered && isTwoLine ? 'self-start pt-0.5' : ''
+            }`}
+          >
             {action && (
               <button
                 type="button"
@@ -232,7 +272,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
                 <X className="w-3.5 h-3.5 stroke-[2.4]" />
               </button>
             )}
-          </div>
+          </motion.div>
         </div>
       </motion.div>
     );

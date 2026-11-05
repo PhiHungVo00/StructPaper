@@ -186,4 +186,73 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
     const toastEl = container.querySelector('[data-liquid-toast]');
     expect(toastEl?.className).toContain('bg-[#E0F2FE]/70');
   });
+
+  it('smoothly expands truncated text on hover and restores on mouse leave', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.warning(
+        'Cảnh báo kiểm tra',
+        'Nội dung rất dài có thể bị cắt thành hai dòng hoặc có dấu ba chấm khi hiển thị bình thường trên màn hình.'
+      );
+    });
+
+    const toastEl = container.querySelector('[data-liquid-toast]') as HTMLElement;
+    expect(toastEl).toBeDefined();
+
+    // Before hover: compact max-w and line-clamp-2
+    expect(toastEl.className).toContain('sm:max-w-lg');
+    expect(toastEl.getAttribute('data-toast-hovered')).toBeNull();
+
+    const descEl = screen.getByText(/Nội dung rất dài/);
+    expect(descEl.className).toContain('line-clamp-2');
+
+    // Hover in (MouseEnter)
+    act(() => {
+      fireEvent.mouseEnter(toastEl);
+    });
+
+    expect(toastEl.getAttribute('data-toast-hovered')).toBe('true');
+    expect(toastEl.className).toContain('sm:max-w-xl');
+    expect(descEl.className).toContain('line-clamp-none');
+    expect(descEl.className).not.toContain('line-clamp-2');
+
+    // Hover out (MouseLeave)
+    act(() => {
+      fireEvent.mouseLeave(toastEl);
+    });
+
+    expect(toastEl.getAttribute('data-toast-hovered')).toBeNull();
+    expect(toastEl.className).toContain('sm:max-w-lg');
+    expect(descEl.className).toContain('line-clamp-2');
+  });
+
+  it('expands inline toast text on hover and restores on mouse leave', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.success('Đồng bộ', 'Dữ liệu nghiên cứu dài vượt quá một dòng hiển thị bình thường', { inline: true });
+    });
+
+    const toastEl = container.querySelector('[data-liquid-toast]') as HTMLElement;
+    const descEl = screen.getByText('Dữ liệu nghiên cứu dài vượt quá một dòng hiển thị bình thường');
+
+    // Before hover: truncate
+    expect(descEl.className).toContain('truncate');
+
+    // Hover in
+    act(() => {
+      fireEvent.mouseEnter(toastEl);
+    });
+
+    expect(descEl.className).toContain('whitespace-normal');
+    expect(descEl.className).not.toContain('truncate');
+
+    // Hover out
+    act(() => {
+      fireEvent.mouseLeave(toastEl);
+    });
+
+    expect(descEl.className).toContain('truncate');
+  });
 });
