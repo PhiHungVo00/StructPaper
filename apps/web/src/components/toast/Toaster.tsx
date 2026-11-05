@@ -50,7 +50,9 @@ export const Toaster: React.FC = () => {
           <LiquidGlassToast
             key={toastItem.id}
             toast={toastItem}
+            index={index}
             isTop={index === 0}
+            isExpanded={isAnyHovered}
             isPaused={isAnyHovered}
             resetKey={hoverResetKey}
             onHoverStart={handleHoverStart}

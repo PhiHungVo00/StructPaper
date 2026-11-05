@@ -14,7 +14,9 @@ import type { ToastItem, ToastType } from './toast-store';
 
 interface LiquidGlassToastProps {
   toast: ToastItem;
+  index?: number;
   isTop?: boolean;
+  isExpanded?: boolean;
   isPaused?: boolean;
   resetKey?: number;
   onHoverStart?: () => void;
@@ -98,7 +100,9 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
   (
     {
       toast,
+      index = 0,
       isTop = true,
+      isExpanded = false,
       isPaused = false,
       resetKey = 0,
       onHoverStart,
@@ -118,6 +122,35 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const remainingTimeRef = useRef<number>(duration);
     const startTimeRef = useRef<number>(Date.now());
+
+    const isStacked = !isExpanded && index > 0;
+    const stackedY = index === 1 ? 12 : index === 2 ? 22 : 28;
+    const stackedScale = index === 1 ? 0.94 : index === 2 ? 0.88 : 0.82;
+    const stackedOpacity = index === 1 ? 0.88 : index === 2 ? 0.72 : 0;
+    const toastZIndex = isStacked ? (index === 1 ? 40 : index === 2 ? 30 : 20) : 50 - index;
+
+    // Check if inline description exceeds horizontal limit before hovering
+    const descRef = useRef<HTMLSpanElement | null>(null);
+    const [isOverflowing, setIsOverflowing] = useState(() => {
+      return (cleanTitle.length + (description?.length || 0)) > 52;
+    });
+
+    useEffect(() => {
+      if (!isInline || isTest) return;
+
+      const checkOverflow = () => {
+        if (descRef.current && !isHovered) {
+          const hasOverflow = descRef.current.scrollWidth > descRef.current.clientWidth + 1;
+          setIsOverflowing(hasOverflow);
+        }
+      };
+
+      checkOverflow();
+      window.addEventListener('resize', checkOverflow);
+      return () => window.removeEventListener('resize', checkOverflow);
+    }, [isInline, isHovered, cleanTitle, description]);
+
+    const shouldWrapInline = isInline && isHovered && isOverflowing;
 
     const springConfig = isTest
       ? { duration: 0 }
@@ -172,7 +205,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
       ? 'max-w-[94vw] sm:max-w-xl md:max-w-2xl'
       : 'max-w-[92vw] sm:max-w-lg';
     const containerPadding = isSingleLine
-      ? isHovered
+      ? shouldWrapInline
         ? 'min-h-[40px] sm:min-h-[44px] py-2 sm:py-2.5'
         : 'h-10 sm:h-11'
       : 'py-2.5 sm:py-3';
@@ -185,8 +218,18 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         data-toast-id={id}
         data-toast-type={type}
         data-toast-hovered={isHovered ? 'true' : undefined}
+        data-toast-stacked={isStacked ? 'true' : undefined}
         initial={isTest ? false : { y: -52, opacity: 0, scale: 0.96 }}
-        animate={isTest ? false : { y: 0, opacity: 1, scale: 1 }}
+        animate={
+          isTest
+            ? false
+            : {
+                x: isStacked ? '-50%' : '0%',
+                y: isStacked ? stackedY : 0,
+                scale: isStacked ? stackedScale : 1,
+                opacity: isStacked ? stackedOpacity : 1,
+              }
+        }
         exit={isTest ? false : { y: -56, opacity: 0, scale: 0.95 }}
         transition={springConfig}
         onMouseEnter={() => {
@@ -197,8 +240,15 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
           setIsHovered(false);
           onHoverEnd?.();
         }}
-        style={{ boxShadow: combinedBoxShadow }}
-        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] ${maxWClasses}`}
+        style={{
+          boxShadow: combinedBoxShadow,
+          zIndex: toastZIndex,
+          position: isStacked ? 'absolute' : 'relative',
+          top: 0,
+          left: isStacked ? '50%' : undefined,
+          pointerEvents: isStacked && index >= 3 ? 'none' : 'auto',
+        }}
+        className={`select-none overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] ${maxWClasses}`}
       >
         {/* Main Toast Content Container */}
         <div
@@ -227,7 +277,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
                   layout
                   transition={springConfig}
                   className={`min-w-0 ${
-                    isHovered
+                    shouldWrapInline
                       ? 'flex flex-col gap-0.5'
                       : 'flex items-center gap-1.5 truncate'
                   }`}
@@ -241,11 +291,12 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
                     {cleanTitle}:
                   </motion.span>
                   <motion.span
+                    ref={descRef}
                     layout="position"
                     layoutId={`toast-inline-desc-${id}`}
                     transition={springConfig}
                     className={`text-[11px] sm:text-xs text-zinc-500 font-semibold leading-snug ${
-                      isHovered
+                      shouldWrapInline
                         ? 'whitespace-normal break-words block'
                         : 'truncate inline-block'
                     }`}

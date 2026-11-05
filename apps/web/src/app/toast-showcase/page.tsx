@@ -105,10 +105,13 @@ export default function ToastShowcasePage() {
 
   const handleTestStack = () => {
     toast.clear();
-    toast.info('Thông báo 1 (Đầu stack)', 'Chỉ bo góc ở 2 cạnh đáy (Top Notch)', { duration: 8000 });
+    toast.info('Thông báo 1 (Đầu stack)', 'Chỉ bo góc ở 2 cạnh đáy (Top Notch)', { duration: 10000 });
     setTimeout(() => {
-      toast.success('Thông báo 2 (Bị đẩy xuống)', 'Tự động bo tròn đều cả 4 góc!', { duration: 8000 });
-    }, 250);
+      toast.success('Thông báo 2 (Tầng giữa)', 'Xếp chồng Sonner phía sau (peeking 12px)', { duration: 10000 });
+    }, 200);
+    setTimeout(() => {
+      toast.warning('Thông báo 3 (Tầng đáy)', 'Xếp chồng Sonner phía sau (peeking 22px)', { duration: 10000 });
+    }, 400);
   };
 
   const handleFireCustom = () => {

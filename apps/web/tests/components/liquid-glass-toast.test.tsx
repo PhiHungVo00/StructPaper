@@ -256,6 +256,64 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
     expect(descEl.className).toContain('truncate');
   });
 
+  it('keeps short inline toast on 1 line without converting to 2 lines when hovered', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.success('Đã lưu', 'Bản thảo đã cập nhật.', { inline: true });
+    });
+
+    const toastEl = container.querySelector('[data-liquid-toast]') as HTMLElement;
+    const descEl = screen.getByText('Bản thảo đã cập nhật.');
+
+    // Before hover: truncate
+    expect(descEl.className).toContain('truncate');
+
+    // Hover in
+    act(() => {
+      fireEvent.mouseEnter(toastEl);
+    });
+
+    // Should NOT convert to 2 lines because it didn't exceed horizontal limit
+    expect(descEl.className).toContain('truncate');
+    expect(descEl.className).not.toContain('whitespace-normal');
+  });
+
+  it('renders Sonner layered stack when collapsed and expands to full list on hover', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.info('Thông báo 1', 'Nội dung 1');
+      toast.success('Thông báo 2', 'Nội dung 2');
+    });
+
+    const toastEls = container.querySelectorAll('[data-liquid-toast]') as NodeListOf<HTMLElement>;
+    expect(toastEls.length).toBe(2);
+
+    // Collapsed state: Toast 0 is front, Toast 1 is stacked behind
+    expect(toastEls[0].getAttribute('data-toast-stacked')).toBeNull();
+    expect(toastEls[1].getAttribute('data-toast-stacked')).toBe('true');
+    expect(toastEls[1].style.position).toBe('absolute');
+
+    // Hover on Toast 0: stack expands
+    act(() => {
+      fireEvent.mouseEnter(toastEls[0]);
+    });
+
+    // Both toasts are now relative in the full list
+    expect(toastEls[1].getAttribute('data-toast-stacked')).toBeNull();
+    expect(toastEls[1].style.position).toBe('relative');
+
+    // Mouse leave: stack collapses back after debounce
+    act(() => {
+      fireEvent.mouseLeave(toastEls[0]);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(toastEls[1].getAttribute('data-toast-stacked')).toBe('true');
+    expect(toastEls[1].style.position).toBe('absolute');
+  });
+
   it('resets and pauses dismiss timer for all visible toasts when user hovers on any toast', () => {
     const { container } = render(<Toaster />);
 
