@@ -1,14 +1,17 @@
 import { JournalProfile } from './types';
 import { ALL_JOURNAL_PROFILES } from './profiles';
+import { resolveProfile } from './resolver/resolve-profile';
 
 export * from './types';
 export * from './schemas';
 export * from './profiles';
+export * from './resolver';
 
 /**
  * Retrieves a journal profile by its unique ID (case-insensitive).
+ * Supports both legacy registered profiles and 3-tier resolved profiles.
  *
- * @param id The journal identifier, e.g. 'VNUHCM-HS' or 'vnuhcm-hs'
+ * @param id The journal identifier, e.g. 'VNUHCM-HS' or 'vnuhcm-hs' or 'std'
  * @throws Error if no profile matches the provided id
  */
 export function getJournalProfile(id: string): JournalProfile {
@@ -17,14 +20,18 @@ export function getJournalProfile(id: string): JournalProfile {
     (p) => p.id.toLowerCase() === normalizedId
   );
 
-  if (!profile) {
+  if (profile) {
+    return profile;
+  }
+
+  try {
+    return resolveProfile(id);
+  } catch {
     const available = ALL_JOURNAL_PROFILES.map((p) => p.id).join(', ');
     throw new Error(
       `No journal profile found for id: "${id}". Available profiles: [${available}]`
     );
   }
-
-  return profile;
 }
 
 /**

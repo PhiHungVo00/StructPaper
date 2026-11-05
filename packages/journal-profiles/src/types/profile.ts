@@ -31,7 +31,7 @@ export interface JournalKeywordsConfig {
 }
 
 export interface JournalFrontMatterConfig {
-  abstract: JournalAbstractConfig;
+  abstract: JournalAbstractConfig | null;
   keywords: JournalKeywordsConfig;
   dateFormat: string;
   doiPattern: string;
@@ -125,4 +125,40 @@ export interface JournalProfile {
   typography: JournalTypographyConfig;
   latex: JournalLatexConfig;
   qc: JournalQcConfig;
+  [key: string]: unknown;
+}
+
+export interface ArticleTypeProfile {
+  id: string;
+  label?: Record<string, string>;
+  requiredSections?: string[];
+  frontMatter?: Partial<Omit<JournalFrontMatterConfig, 'abstract'>> & {
+    abstract?: JournalAbstractConfig | null;
+  };
+  layout?: Partial<JournalLayoutConfig>;
+  typography?: Partial<JournalTypographyConfig>;
+  latex?: Partial<JournalLatexConfig>;
+  qc?: Partial<JournalQcConfig>;
+  [key: string]: unknown;
+}
+
+export interface JournalTierProfile {
+  id: string;
+  names?: JournalProfileNames;
+  color?: string;
+  languages?: ('vi' | 'en')[];
+  articleTypes?: JournalArticleType[];
+  frontMatter?: Partial<JournalFrontMatterConfig>;
+  citation?: Partial<JournalCitationConfig>;
+  styleMap?: Record<string, string>;
+  layout?: Partial<JournalLayoutConfig>;
+  typography?: Partial<JournalTypographyConfig>;
+  latex?: Partial<JournalLatexConfig>;
+  qc?: Partial<JournalQcConfig>;
+  [key: string]: unknown;
+}
+
+export interface ResolvedProfile extends JournalProfile {
+  articleType?: string;
+  [key: string]: unknown;
 }

@@ -25,7 +25,7 @@ export const JournalKeywordsConfigSchema = z.object({
 });
 
 export const JournalFrontMatterConfigSchema = z.object({
-  abstract: JournalAbstractConfigSchema,
+  abstract: JournalAbstractConfigSchema.nullable(),
   keywords: JournalKeywordsConfigSchema,
   dateFormat: z.string().min(1),
   doiPattern: z.string().min(1),
@@ -83,18 +83,24 @@ export const JournalQcConfigSchema = z.object({
   weights: z.record(z.number()),
 });
 
-export const JournalProfileSchema = z.object({
-  id: z.string().min(1),
-  version: z.string().min(1),
-  names: JournalProfileNamesSchema,
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  languages: z.array(z.enum(['vi', 'en'])).min(1),
-  articleTypes: z.array(JournalArticleTypeSchema).min(1),
-  frontMatter: JournalFrontMatterConfigSchema,
-  citation: JournalCitationConfigSchema,
-  styleMap: z.record(z.string()),
-  layout: JournalLayoutConfigSchema,
-  typography: JournalTypographyConfigSchema,
-  latex: JournalLatexConfigSchema,
-  qc: JournalQcConfigSchema,
-});
+export const JournalProfileSchema = z
+  .object({
+    id: z.string().min(1),
+    version: z.string().min(1),
+    names: JournalProfileNamesSchema,
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    languages: z.array(z.enum(['vi', 'en'])).min(1),
+    articleTypes: z.array(JournalArticleTypeSchema).min(1),
+    frontMatter: JournalFrontMatterConfigSchema,
+    citation: JournalCitationConfigSchema,
+    styleMap: z.record(z.string()),
+    layout: JournalLayoutConfigSchema,
+    typography: JournalTypographyConfigSchema,
+    latex: JournalLatexConfigSchema,
+    qc: JournalQcConfigSchema,
+  })
+  .passthrough();
+
+export const ResolvedProfileSchema = JournalProfileSchema.extend({
+  articleType: z.string().optional(),
+}).passthrough();
