@@ -290,19 +290,19 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
     const toastEls = container.querySelectorAll('[data-liquid-toast]') as NodeListOf<HTMLElement>;
     expect(toastEls.length).toBe(2);
 
-    // Collapsed state: Toast 0 is front, Toast 1 is stacked behind
+    // Collapsed state: Toast 0 is front, Toast 1 is stacked behind in relative flow
     expect(toastEls[0].getAttribute('data-toast-stacked')).toBeNull();
     expect(toastEls[1].getAttribute('data-toast-stacked')).toBe('true');
-    expect(toastEls[1].style.position).toBe('absolute');
+    expect(toastEls[1].className).toContain('relative');
 
     // Hover on Toast 0: stack expands
     act(() => {
       fireEvent.mouseEnter(toastEls[0]);
     });
 
-    // Both toasts are now relative in the full list
+    // Both toasts are now unstacked in the full list
     expect(toastEls[1].getAttribute('data-toast-stacked')).toBeNull();
-    expect(toastEls[1].style.position).toBe('relative');
+    expect(toastEls[1].className).toContain('relative');
 
     // Mouse leave: stack collapses back after debounce
     act(() => {
@@ -311,7 +311,7 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
     });
 
     expect(toastEls[1].getAttribute('data-toast-stacked')).toBe('true');
-    expect(toastEls[1].style.position).toBe('absolute');
+    expect(toastEls[1].className).toContain('relative');
   });
 
   it('resets and pauses dismiss timer for all visible toasts when user hovers on any toast', () => {

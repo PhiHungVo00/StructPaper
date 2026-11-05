@@ -9,6 +9,7 @@ export const Toaster: React.FC = () => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [isAnyHovered, setIsAnyHovered] = useState(false);
   const [hoverResetKey, setHoverResetKey] = useState(0);
+  const [toastHeights, setToastHeights] = useState<Record<string, number>>({});
   const hoverEndTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -20,6 +21,10 @@ export const Toaster: React.FC = () => {
 
   const handleDismiss = (id: string) => {
     toastStore.dismissToast(id);
+  };
+
+  const handleHeightChange = (id: string, h: number) => {
+    setToastHeights((prev) => (prev[id] === h ? prev : { ...prev, [id]: h }));
   };
 
   const handleHoverStart = () => {
@@ -36,7 +41,7 @@ export const Toaster: React.FC = () => {
     if (hoverEndTimeoutRef.current) clearTimeout(hoverEndTimeoutRef.current);
     hoverEndTimeoutRef.current = setTimeout(() => {
       setIsAnyHovered(false);
-    }, 120);
+    }, 150);
   };
 
   return (
@@ -46,20 +51,38 @@ export const Toaster: React.FC = () => {
       className="fixed top-0 left-1/2 -translate-x-1/2 z-[99999] pointer-events-none flex flex-col items-center gap-2 w-full max-w-xl px-4 pt-0 select-none"
     >
       <AnimatePresence mode="popLayout">
-        {toasts.map((toastItem, index) => (
-          <LiquidGlassToast
-            key={toastItem.id}
-            toast={toastItem}
-            index={index}
-            isTop={index === 0}
-            isExpanded={isAnyHovered}
-            isPaused={isAnyHovered}
-            resetKey={hoverResetKey}
-            onHoverStart={handleHoverStart}
-            onHoverEnd={handleHoverEnd}
-            onDismiss={handleDismiss}
-          />
-        ))}
+        {toasts.map((toastItem, index) => {
+          let collapsedY = 0;
+          if (index === 1) {
+            const h1 = toastHeights[toastItem.id] || 44;
+            collapsedY = -(h1 + 8) + 12;
+          } else if (index === 2) {
+            const h1 = toastHeights[toasts[1]?.id] || 44;
+            const h2 = toastHeights[toastItem.id] || 44;
+            collapsedY = -(h1 + h2 + 16) + 22;
+          } else if (index >= 3) {
+            const h1 = toastHeights[toasts[1]?.id] || 44;
+            const h2 = toastHeights[toasts[2]?.id] || 44;
+            collapsedY = -(h1 + h2 + 16) + 28;
+          }
+
+          return (
+            <LiquidGlassToast
+              key={toastItem.id}
+              toast={toastItem}
+              index={index}
+              isTop={index === 0}
+              isExpanded={isAnyHovered}
+              collapsedY={collapsedY}
+              isPaused={isAnyHovered}
+              resetKey={hoverResetKey}
+              onHoverStart={handleHoverStart}
+              onHoverEnd={handleHoverEnd}
+              onHeightChange={handleHeightChange}
+              onDismiss={handleDismiss}
+            />
+          );
+        })}
       </AnimatePresence>
     </div>
   );

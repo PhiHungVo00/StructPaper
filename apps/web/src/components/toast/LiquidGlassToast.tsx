@@ -17,10 +17,12 @@ interface LiquidGlassToastProps {
   index?: number;
   isTop?: boolean;
   isExpanded?: boolean;
+  collapsedY?: number;
   isPaused?: boolean;
   resetKey?: number;
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
+  onHeightChange?: (id: string, height: number) => void;
   onDismiss: (id: string) => void;
 }
 
@@ -39,61 +41,36 @@ const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
 // Common neutral outer shadow for all themes
 const COMMON_OUTER_SHADOW = '0 12px 28px rgba(0, 0, 0, 0.09), 0 2px 6px rgba(0, 0, 0, 0.04)';
 
+const THEME_CONFIGS: Record<string, ThemeConfig> = {
+  success: {
+    accent: '#78C841', containerBg: 'bg-[#ECFCCB]/70', containerBorder: 'border-b-2 border-x-2 border-white/10',
+    innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.28)', badgeBg: 'bg-[#78C841]', badgeText: 'text-white',
+    icon: <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
+  },
+  error: {
+    accent: '#FB4141', containerBg: 'bg-[#FEE2E2]/70', containerBorder: 'border-b-2 border-x-2 border-white/10',
+    innerShadow: 'inset 0 0 20px rgba(225, 29, 72, 0.22)', badgeBg: 'bg-[#FB4141]', badgeText: 'text-white',
+    icon: <AlertCircle className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
+  },
+  warning: {
+    accent: '#FF9B2F', containerBg: 'bg-[#FEF3C7]/70', containerBorder: 'border-b-2 border-x-2 border-white/10',
+    innerShadow: 'inset 0 0 20px rgba(217, 119, 6, 0.24)', badgeBg: 'bg-[#FF9B2F]', badgeText: 'text-white',
+    icon: <AlertTriangle className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
+  },
+  loading: {
+    accent: '#0284C7', containerBg: 'bg-[#E0F2FE]/70', containerBorder: 'border-b-2 border-x-2 border-white/10',
+    innerShadow: 'inset 0 0 20px rgba(2, 132, 199, 0.25)', badgeBg: 'bg-[#0284C7]', badgeText: 'text-white',
+    icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white block shrink-0" />,
+  },
+  default: {
+    accent: '#1A1A1A', containerBg: 'bg-gray-200/70', containerBorder: 'border-b-2 border-x-2 border-gray-300/80',
+    innerShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)', badgeBg: 'bg-zinc-800', badgeText: 'text-white',
+    icon: <Sparkles className="w-3.5 h-3.5 stroke-[2.4] block shrink-0" />,
+  },
+};
+
 function getThemeConfig(type: ToastType): ThemeConfig {
-  switch (type) {
-    case 'success':
-      return {
-        accent: '#78C841',
-        containerBg: 'bg-[#ECFCCB]/70',
-        containerBorder: 'border-b-2 border-x-2 border-white/10',
-        innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.28)',
-        badgeBg: 'bg-[#78C841]',
-        badgeText: 'text-white',
-        icon: <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
-      };
-    case 'error':
-      return {
-        accent: '#FB4141',
-        containerBg: 'bg-[#FEE2E2]/70',
-        containerBorder: 'border-b-2 border-x-2 border-white/10',
-        innerShadow: 'inset 0 0 20px rgba(225, 29, 72, 0.22)',
-        badgeBg: 'bg-[#FB4141]',
-        badgeText: 'text-white',
-        icon: <AlertCircle className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
-      };
-    case 'warning':
-      return {
-        accent: '#FF9B2F',
-        containerBg: 'bg-[#FEF3C7]/70',
-        containerBorder: 'border-b-2 border-x-2 border-white/10',
-        innerShadow: 'inset 0 0 20px rgba(217, 119, 6, 0.24)',
-        badgeBg: 'bg-[#FF9B2F]',
-        badgeText: 'text-white',
-        icon: <AlertTriangle className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
-      };
-    case 'loading':
-      return {
-        accent: '#0284C7',
-        containerBg: 'bg-[#E0F2FE]/70',
-        containerBorder: 'border-b-2 border-x-2 border-white/10',
-        innerShadow: 'inset 0 0 20px rgba(2, 132, 199, 0.25)',
-        badgeBg: 'bg-[#0284C7]',
-        badgeText: 'text-white',
-        icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white block shrink-0" />,
-      };
-    case 'info':
-    case 'default':
-    default:
-      return {
-        accent: '#1A1A1A',
-        containerBg: 'bg-gray-200/70',
-        containerBorder: 'border-b-2 border-x-2 border-gray-300/80',
-        innerShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)',
-        badgeBg: 'bg-zinc-800',
-        badgeText: 'text-white',
-        icon: <Sparkles className="w-3.5 h-3.5 stroke-[2.4] block shrink-0" />,
-      };
-  }
+  return THEME_CONFIGS[type] || THEME_CONFIGS.default;
 }
 
 export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToastProps>(
@@ -103,10 +80,12 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
       index = 0,
       isTop = true,
       isExpanded = false,
+      collapsedY,
       isPaused = false,
       resetKey = 0,
       onHoverStart,
       onHoverEnd,
+      onHeightChange,
       onDismiss,
     },
     ref
@@ -122,21 +101,25 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const remainingTimeRef = useRef<number>(duration);
     const startTimeRef = useRef<number>(Date.now());
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
+    // Sonner-style stacking: purely vertical offset, scale stays 100% natural so it never narrows
     const isStacked = !isExpanded && index > 0;
-    const stackedY = index === 1 ? 12 : index === 2 ? 22 : 28;
-    const stackedScale = index === 1 ? 0.94 : index === 2 ? 0.88 : 0.82;
-    const stackedOpacity = index === 1 ? 0.88 : index === 2 ? 0.72 : 0;
+    const targetY = isStacked ? (collapsedY ?? (index === 1 ? -40 : -80)) : 0;
+    const targetOpacity = isStacked ? (index === 1 ? 0.94 : index === 2 ? 0.8 : 0) : 1;
     const toastZIndex = isStacked ? (index === 1 ? 40 : index === 2 ? 30 : 20) : 50 - index;
 
     // Check if inline description exceeds horizontal limit before hovering
     const descRef = useRef<HTMLSpanElement | null>(null);
-    const [isOverflowing, setIsOverflowing] = useState(() => {
-      return (cleanTitle.length + (description?.length || 0)) > 52;
-    });
+    const [isOverflowing, setIsOverflowing] = useState(false);
 
     useEffect(() => {
-      if (!isInline || isTest) return;
+      if (!isInline) return;
+
+      if (isTest) {
+        setIsOverflowing((cleanTitle.length + (description?.length || 0)) > 60);
+        return;
+      }
 
       const checkOverflow = () => {
         if (descRef.current && !isHovered) {
@@ -145,9 +128,12 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         }
       };
 
-      checkOverflow();
+      const raf = requestAnimationFrame(checkOverflow);
       window.addEventListener('resize', checkOverflow);
-      return () => window.removeEventListener('resize', checkOverflow);
+      return () => {
+        cancelAnimationFrame(raf);
+        window.removeEventListener('resize', checkOverflow);
+      };
     }, [isInline, isHovered, cleanTitle, description]);
 
     const shouldWrapInline = isInline && isHovered && isOverflowing;
@@ -160,6 +146,14 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
           damping: 18,
           mass: 0.7,
         };
+
+    // Report height back to parent so collapsed stack offsets are mathematically exact
+    useEffect(() => {
+      if (containerRef.current) {
+        const h = containerRef.current.offsetHeight;
+        if (h > 0) onHeightChange?.(id, h);
+      }
+    }, [id, onHeightChange, isSingleLine, shouldWrapInline, title, description]);
 
     // When resetKey changes (hovering on ANY toast in the stack), reset timer back to full duration
     useEffect(() => {
@@ -212,25 +206,27 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
 
     return (
       <motion.div
-        ref={ref}
+        ref={(node) => {
+          if (typeof ref === 'function') ref(node);
+          else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+          containerRef.current = node;
+        }}
         layout
         data-liquid-toast
         data-toast-id={id}
         data-toast-type={type}
         data-toast-hovered={isHovered ? 'true' : undefined}
         data-toast-stacked={isStacked ? 'true' : undefined}
-        initial={isTest ? false : { y: -52, opacity: 0, scale: 0.96 }}
+        initial={isTest ? false : { y: -64, opacity: 0 }}
         animate={
           isTest
             ? false
             : {
-                x: isStacked ? '-50%' : '0%',
-                y: isStacked ? stackedY : 0,
-                scale: isStacked ? stackedScale : 1,
-                opacity: isStacked ? stackedOpacity : 1,
+                y: targetY,
+                opacity: targetOpacity,
               }
         }
-        exit={isTest ? false : { y: -56, opacity: 0, scale: 0.95 }}
+        exit={isTest ? false : { y: -64, opacity: 0 }}
         transition={springConfig}
         onMouseEnter={() => {
           setIsHovered(true);
@@ -243,12 +239,9 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         style={{
           boxShadow: combinedBoxShadow,
           zIndex: toastZIndex,
-          position: isStacked ? 'absolute' : 'relative',
-          top: 0,
-          left: isStacked ? '50%' : undefined,
           pointerEvents: isStacked && index >= 3 ? 'none' : 'auto',
         }}
-        className={`select-none overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] ${maxWClasses}`}
+        className={`relative select-none overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] ${maxWClasses}`}
       >
         {/* Main Toast Content Container */}
         <div
