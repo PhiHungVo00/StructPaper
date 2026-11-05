@@ -80,17 +80,14 @@ export const JournalHubView: React.FC = () => {
               <BookOpen className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
               <span>Quản Lý Mẫu &amp; Tạp Chí Khoa Học</span>
             </h1>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-black bg-blue-50 text-blue-700 border border-blue-200/80">
-              7 Tạp chí ĐHQG-HCM
-            </span>
           </div>
         </div>
       </div>
 
       {/* 2. Top Sticky Filter Toolbar matching Eatzy */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300">
+      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
         {/* Frosted Glass Backdrop with soft bottom fade mask */}
-        <div className="absolute inset-0 bg-[#F7F7F7]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
+        <div className="absolute inset-0 bg-[#F7F7F7]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
 
         <JournalFiltersBar
           searchQuery={searchQuery}
@@ -123,7 +120,7 @@ export const JournalHubView: React.FC = () => {
         <div className="py-10 flex items-center justify-center gap-4 opacity-50 select-none">
           <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
           <div className="flex flex-col items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-[#78C841]" />
+            <CheckCircle2 className="w-4 h-4 text-zinc-500" />
             <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-wider">
               Bạn đã xem hết danh sách mẫu tạp chí
             </span>

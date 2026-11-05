@@ -356,9 +356,9 @@ export const PaperHubView: React.FC = () => {
       />
 
       {/* 3. Sticky Filter Toolbar matching Eatzy */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300">
+      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
         {/* Frosted Glass Backdrop with soft bottom fade mask */}
-        <div className="absolute inset-0 bg-[#F7F7F7]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
+        <div className="absolute inset-0 bg-[#F7F7F7]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
 
         <PaperFiltersBar
           searchQuery={searchQuery}
