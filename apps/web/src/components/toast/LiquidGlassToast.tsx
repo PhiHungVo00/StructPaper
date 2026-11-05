@@ -21,7 +21,7 @@ interface ThemeConfig {
   accent: string;
   containerBg: string;
   containerBorder: string;
-  glowShadow: string;
+  innerShadow: string;
   badgeBg: string;
   badgeText: string;
   icon: React.ReactNode;
@@ -29,45 +29,48 @@ interface ThemeConfig {
 
 const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
+// Common neutral outer shadow for all themes
+const COMMON_OUTER_SHADOW = '0 12px 28px rgba(0, 0, 0, 0.09), 0 2px 6px rgba(0, 0, 0, 0.04)';
+
 function getThemeConfig(type: ToastType): ThemeConfig {
   switch (type) {
     case 'success':
       return {
-        accent: '#16A34A',
-        containerBg: 'bg-[#DCFCE7]',
-        containerBorder: 'border-b-2 border-x-2 border-[#86EFAC]',
-        glowShadow: 'shadow-[0_10px_28px_rgba(34,197,94,0.22),0_2px_8px_rgba(34,197,94,0.12)]',
-        badgeBg: 'bg-[#16A34A]',
+        accent: '#78C841',
+        containerBg: 'bg-[#ECFCCB]',
+        containerBorder: 'border-b-2 border-x-2 border-[#B4E50D]/80',
+        innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.28)',
+        badgeBg: 'bg-[#78C841]',
         badgeText: 'text-white',
         icon: <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8]" />,
       };
     case 'error':
       return {
-        accent: '#DC2626',
+        accent: '#FB4141',
         containerBg: 'bg-[#FEE2E2]',
-        containerBorder: 'border-b-2 border-x-2 border-[#FCA5A5]',
-        glowShadow: 'shadow-[0_10px_28px_rgba(239,68,68,0.22),0_2px_8px_rgba(239,68,68,0.12)]',
-        badgeBg: 'bg-[#DC2626]',
+        containerBorder: 'border-b-2 border-x-2 border-rose-300',
+        innerShadow: 'inset 0 0 20px rgba(225, 29, 72, 0.22)',
+        badgeBg: 'bg-[#FB4141]',
         badgeText: 'text-white',
         icon: <AlertCircle className="w-3.5 h-3.5 stroke-[2.8]" />,
       };
     case 'warning':
       return {
-        accent: '#D97706',
+        accent: '#FF9B2F',
         containerBg: 'bg-[#FEF3C7]',
-        containerBorder: 'border-b-2 border-x-2 border-[#FCD34D]',
-        glowShadow: 'shadow-[0_10px_28px_rgba(245,158,11,0.22),0_2px_8px_rgba(245,158,11,0.12)]',
-        badgeBg: 'bg-[#D97706]',
+        containerBorder: 'border-b-2 border-x-2 border-amber-300',
+        innerShadow: 'inset 0 0 20px rgba(217, 119, 6, 0.24)',
+        badgeBg: 'bg-[#FF9B2F]',
         badgeText: 'text-white',
         icon: <AlertTriangle className="w-3.5 h-3.5 stroke-[2.8]" />,
       };
     case 'loading':
       return {
-        accent: '#16A34A',
-        containerBg: 'bg-[#DCFCE7]',
-        containerBorder: 'border-b-2 border-x-2 border-[#86EFAC]',
-        glowShadow: 'shadow-[0_10px_28px_rgba(34,197,94,0.18),0_2px_8px_rgba(34,197,94,0.08)]',
-        badgeBg: 'bg-[#16A34A]',
+        accent: '#78C841',
+        containerBg: 'bg-[#ECFCCB]',
+        containerBorder: 'border-b-2 border-x-2 border-[#B4E50D]/80',
+        innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.28)',
+        badgeBg: 'bg-[#78C841]',
         badgeText: 'text-white',
         icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />,
       };
@@ -78,7 +81,7 @@ function getThemeConfig(type: ToastType): ThemeConfig {
         accent: '#1A1A1A',
         containerBg: 'bg-gray-200/50',
         containerBorder: 'border-b-2 border-x-2 border-gray-300/80',
-        glowShadow: 'shadow-[0_10px_28px_rgba(0,0,0,0.08),0_2px_6px_rgba(0,0,0,0.04)]',
+        innerShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)',
         badgeBg: 'bg-zinc-800',
         badgeText: 'text-white',
         icon: <Sparkles className="w-3.5 h-3.5 stroke-[2.4]" />,
@@ -122,6 +125,8 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
       };
     }, [id, duration, isHovered, onDismiss]);
 
+    const combinedBoxShadow = `${theme.innerShadow}, ${COMMON_OUTER_SHADOW}`;
+
     return (
       <motion.div
         ref={ref}
@@ -144,7 +149,8 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-md ${theme.containerBg} ${theme.containerBorder} rounded-b-2xl sm:rounded-b-[26px] rounded-t-none transition-[background-color,border-color,box-shadow] duration-300 ${theme.glowShadow} w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)]`}
+        style={{ boxShadow: combinedBoxShadow }}
+        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-md ${theme.containerBg} ${theme.containerBorder} rounded-b-2xl sm:rounded-b-[26px] rounded-t-none transition-[background-color,border-color] duration-300 w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg`}
       >
         {/* Specular glass highlight reflection at top edge */}
         <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />

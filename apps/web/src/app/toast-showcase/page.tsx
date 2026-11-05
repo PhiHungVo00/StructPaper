@@ -92,17 +92,17 @@ export default function ToastShowcasePage() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Green - Success */}
+          {/* Lime - Success */}
           <div className="p-4 sm:p-5 rounded-3xl bg-white border border-zinc-200/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-[#D9F99D] text-[#14532D] flex items-center justify-center">
                   <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8]" />
                 </div>
-                <h3 className="font-extrabold text-sm text-zinc-900">Theme Xanh Lá (Success)</h3>
+                <h3 className="font-extrabold text-sm text-zinc-900">Theme Xanh Lime (Success)</h3>
               </div>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-lime-100 text-lime-800">
-                #78C841
+                Lime #78C841
               </span>
             </div>
             <div className="flex items-center gap-2 pt-1 flex-wrap">
