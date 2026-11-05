@@ -37,7 +37,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
   metadata,
   onChange,
   commandBus: propCommandBus,
-  showAbstractAndKeywords = true,
+  showAbstractAndKeywords = false,
 }) => {
   const contextCommandBus = useEditorCommandBus().commandBus;
   const activeBus = propCommandBus || contextCommandBus;

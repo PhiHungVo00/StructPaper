@@ -170,6 +170,7 @@ describe('Task 4.3: Editor Tabs Refactoring to CommandBus', () => {
           metadata={paper.metadata}
           onChange={onChangeMock}
           commandBus={bus}
+          showAbstractAndKeywords={true}
         />
       );
 

@@ -102,7 +102,16 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         />
       </div>
       <div className="flex-1 min-h-0 min-w-0 h-full w-full overflow-hidden">
-        {activeSubTab === 'metadata' && <MetadataTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
+        {activeSubTab === 'metadata' && (
+          <MetadataTab
+            metadata={formData.metadata}
+            showAbstractAndKeywords={false}
+            onChange={(m) => {
+              setFormData((p) => ({ ...p, metadata: m }));
+              setIsDirty(true);
+            }}
+          />
+        )}
         {activeSubTab === 'authors' && <AuthorsTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
         {activeSubTab === 'abstract' && <AbstractTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
         {activeSubTab === 'sections' && <SectionsTab sections={formData.sections} onChange={(s) => { setFormData((p) => ({ ...p, sections: s })); setIsDirty(true); }} metadata={formData.metadata} references={formData.references} />}
