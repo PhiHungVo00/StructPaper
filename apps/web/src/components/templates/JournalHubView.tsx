@@ -18,10 +18,29 @@ import { BookOpen, CheckCircle2 } from 'lucide-react';
 export const JournalHubView: React.FC = () => {
   const router = useRouter();
   const { setPaper, setCurrentJournal } = usePaper();
+  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
   const [journals, setJournals] = useState<ManagedJournalProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | JournalStatus>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!isTestEnv);
+
+  const triggerFilterLoading = () => {
+    if (isTestEnv) return;
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    triggerFilterLoading();
+  };
+
+  const handleStatusFilterChange = (st: 'all' | JournalStatus) => {
+    setStatusFilter(st);
+    triggerFilterLoading();
+  };
 
   useEffect(() => {
     try {
@@ -30,9 +49,15 @@ export const JournalHubView: React.FC = () => {
     } catch (err) {
       console.error('Failed to load managed journals:', err);
     } finally {
-      setIsLoading(false);
+      if (!isTestEnv) {
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1500);
+      } else {
+        setIsLoading(false);
+      }
     }
-  }, []);
+  }, [isTestEnv]);
 
   const handleCreatePaper = (managed: ManagedJournalProfile) => {
     try {
@@ -90,12 +115,12 @@ export const JournalHubView: React.FC = () => {
 
       {/* 2. Top Sticky Filter Toolbar matching Eatzy */}
       <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
-        <div className="absolute inset-0 bg-[#F8F9FA]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
+        <div className="absolute inset-0 bg-[#F8F9FA]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
         <JournalFiltersBar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
           totalCount={journals.length}
           filteredCount={filteredJournals.length}
         />

@@ -20,16 +20,20 @@ import {
   formatRelativeTime,
 } from './types';
 
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+
 interface RecentPapersRowProps {
   papers: ManuscriptRecord[];
   onOpenPaper: (id: string) => void;
   onCreateNew?: () => void;
+  isLoading?: boolean;
 }
 
 export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
   papers,
   onOpenPaper,
   onCreateNew,
+  isLoading = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -115,24 +119,82 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
           </div>
         </motion.div>
 
-        {/* Recent Papers Cards */}
-        {recentPapers.map((paper) => {
-          const title = getManuscriptTitle(paper);
-          const authors = getManuscriptAuthors(paper);
-          const journalColor = getJournalColor(paper.doc.journalId);
-          const journalShort = getJournalShortName(paper.doc.journalId);
-          const statusConfig = getWorkflowStatusConfig(paper.info.workflowStatus);
-          const relativeTime = formatRelativeTime(
-            paper.info.lastOpenedAt || paper.info.updatedAt
-          );
+        {/* Recent Papers Cards (Loading Shimmer vs Real Cards) */}
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={`recent-shimmer-${idx}`}
+              className="shrink-0 w-60 sm:w-64 snap-start select-none bg-gray-200/50 p-4 rounded-3xl flex flex-col justify-between overflow-hidden relative min-h-[148px]"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div
+                    style={{
+                      background: 'linear-gradient(90deg, #e5e7eb 25%, rgba(255,255,255,0.85) 50%, #e5e7eb 75%)',
+                      backgroundSize: '200% 100%',
+                    }}
+                    className="h-4 w-14 rounded-full animate-pulse"
+                  />
+                  <div
+                    style={{
+                      background: 'linear-gradient(90deg, #e5e7eb 25%, rgba(255,255,255,0.85) 50%, #e5e7eb 75%)',
+                      backgroundSize: '200% 100%',
+                    }}
+                    className="h-4 w-12 rounded-full animate-pulse"
+                  />
+                </div>
+                <div
+                  style={{
+                    background: 'linear-gradient(90deg, #e5e7eb 25%, rgba(255,255,255,0.85) 50%, #e5e7eb 75%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                  className="h-3.5 w-4/5 rounded mb-1.5 animate-pulse"
+                />
+                <div
+                  style={{
+                    background: 'linear-gradient(90deg, #e5e7eb 25%, rgba(255,255,255,0.85) 50%, #e5e7eb 75%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                  className="h-3 w-1/2 rounded mb-2 animate-pulse"
+                />
+              </div>
+              <div className="mt-3 pt-2.5 border-t border-gray-300/40 flex items-center justify-between">
+                <div
+                  style={{
+                    background: 'linear-gradient(90deg, #e5e7eb 25%, rgba(255,255,255,0.85) 50%, #e5e7eb 75%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                  className="h-3 w-16 rounded animate-pulse"
+                />
+                <div
+                  style={{
+                    background: 'linear-gradient(90deg, #e5e7eb 25%, rgba(255,255,255,0.85) 50%, #e5e7eb 75%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                  className="h-3.5 w-3.5 rounded-full animate-pulse"
+                />
+              </div>
+            </div>
+          ))
+        ) : (
+          recentPapers.map((paper) => {
+            const title = getManuscriptTitle(paper);
+            const authors = getManuscriptAuthors(paper);
+            const journalColor = getJournalColor(paper.doc.journalId);
+            const journalShort = getJournalShortName(paper.doc.journalId);
+            const statusConfig = getWorkflowStatusConfig(paper.info.workflowStatus);
+            const relativeTime = formatRelativeTime(
+              paper.info.lastOpenedAt || paper.info.updatedAt
+            );
 
-          return (
-            <motion.div
-              key={paper.info.id}
-              data-testid={`recent-paper-${paper.info.id}`}
-              onClick={() => onOpenPaper(paper.info.id)}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.15 }}
+            return (
+              <motion.div
+                key={paper.info.id}
+                data-testid={`recent-paper-${paper.info.id}`}
+                onClick={() => onOpenPaper(paper.info.id)}
+                whileHover={isTest ? undefined : { scale: 1.02 }}
+                whileTap={isTest ? undefined : { scale: 0.98 }}
+                transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
               className="group cursor-pointer shrink-0 w-64 sm:w-72 snap-start select-none bg-white p-4 rounded-3xl border border-zinc-200/80 transition-shadow duration-300 flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
             >
               <div>
@@ -185,8 +247,9 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
               </div>
             </motion.div>
           );
-        })}
-      </div>
+        })
+      )}
+    </div>
     </div>
   );
 };

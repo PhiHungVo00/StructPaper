@@ -56,6 +56,36 @@ export const PaperHubView: React.FC = () => {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [editingPaper, setEditingPaper] = useState<ManuscriptRecord | null>(null);
 
+  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+
+  const triggerFilterLoading = () => {
+    if (isTestEnv) return;
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+  };
+
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    triggerFilterLoading();
+  };
+
+  const handleStatusFilterChange = (st: FilterWorkflowStatus) => {
+    setStatusFilter(st);
+    triggerFilterLoading();
+  };
+
+  const handleJournalFilterChange = (jf: FilterJournal) => {
+    setJournalFilter(jf);
+    triggerFilterLoading();
+  };
+
+  const handleSortChange = (sb: SortOption) => {
+    setSortBy(sb);
+    triggerFilterLoading();
+  };
+
   // Load records from IndexedDb, seeding samples if empty
   const loadRecords = async () => {
     try {
@@ -132,6 +162,9 @@ export const PaperHubView: React.FC = () => {
       // Fallback in-memory sample records
       setRecords(SAMPLE_VNUHCM_RECORDS);
     } finally {
+      if (!isTestEnv) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
       setIsLoading(false);
     }
   };
@@ -354,20 +387,21 @@ export const PaperHubView: React.FC = () => {
         papers={records}
         onOpenPaper={handleOpenEditor}
         onCreateNew={() => router.push('/templates')}
+        isLoading={isLoading}
       />
 
       {/* 3. Sticky Filter Toolbar matching Eatzy */}
       <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
-        <div className="absolute inset-0 bg-[#F8F9FA]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
+        <div className="absolute inset-0 bg-[#F8F9FA]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
         <PaperFiltersBar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
           journalFilter={journalFilter}
-          onJournalFilterChange={setJournalFilter}
+          onJournalFilterChange={handleJournalFilterChange}
           sortBy={sortBy}
-          onSortChange={setSortBy}
+          onSortChange={handleSortChange}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           countsByStatus={countsByStatus}

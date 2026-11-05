@@ -26,6 +26,18 @@ vi.mock('@/components/DynamicIslandToast', () => ({
   },
 }));
 
+// Suppress unhandled rejection on happy-dom animation cancel on unmount
+if (typeof Element !== 'undefined' && Element.prototype.animate) {
+  const origAnimate = Element.prototype.animate;
+  Element.prototype.animate = function (...args: Parameters<typeof origAnimate>) {
+    const anim = origAnimate.apply(this, args);
+    if (anim && anim.finished) {
+      anim.finished.catch(() => {});
+    }
+    return anim;
+  };
+}
+
 import { JournalHubView } from '@/components/templates/JournalHubView';
 import { JournalProfileCard } from '@/components/templates/JournalProfileCard';
 import { JournalFiltersBar } from '@/components/templates/JournalFiltersBar';

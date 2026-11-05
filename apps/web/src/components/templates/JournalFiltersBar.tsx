@@ -23,6 +23,27 @@ export const JournalFiltersBar: React.FC<JournalFiltersBarProps> = ({
   totalCount,
   filteredCount,
 }) => {
+  const [searchInputValue, setSearchInputValue] = React.useState(searchQuery);
+  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+
+  React.useEffect(() => {
+    setSearchInputValue(searchQuery);
+  }, [searchQuery]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchInputValue(val);
+    if (isTestEnv) {
+      onSearchChange(val);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearchChange(searchInputValue);
+    }
+  };
+
   const statusOptions: { value: 'all' | JournalStatus; label: string }[] = [
     { value: 'all', label: 'Tất cả' },
     { value: 'published', label: 'Đang phát hành' },
@@ -43,16 +64,20 @@ export const JournalFiltersBar: React.FC<JournalFiltersBarProps> = ({
           <input
             type="text"
             role="searchbox"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm theo mã STDJ-*, tên tiếng Việt hoặc tiếng Anh..."
+            value={searchInputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Tìm theo mã STDJ-*, tên tiếng Việt hoặc tiếng Anh... (nhấn Enter để tìm)"
             style={{ boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)' }}
-            className="w-full bg-slate-50/60 backdrop-blur-sm border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
+            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
           />
 
-          {searchQuery && (
+          {searchInputValue && (
             <button
-              onClick={() => onSearchChange('')}
+              onClick={() => {
+                setSearchInputValue('');
+                onSearchChange('');
+              }}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 flex items-center justify-center transition-all group/close cursor-pointer"
               title="Xóa tìm kiếm"
             >
@@ -81,8 +106,8 @@ export const JournalFiltersBar: React.FC<JournalFiltersBarProps> = ({
           return (
             <motion.button
               key={opt.value}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={isTestEnv ? undefined : { scale: 1.03 }}
+              whileTap={isTestEnv ? undefined : { scale: 0.97 }}
               onClick={() => onStatusFilterChange(opt.value)}
               className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 active

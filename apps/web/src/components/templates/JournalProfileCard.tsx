@@ -12,6 +12,8 @@ interface JournalProfileCardProps {
   onCreatePaper: (managed: ManagedJournalProfile) => void;
 }
 
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+
 export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
   managed,
   onCreatePaper,
@@ -33,9 +35,10 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
   return (
     <motion.div
       onClick={() => router.push(`/templates/journal/${id}`)}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.15 }}
-      className="bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 cursor-pointer flex flex-col justify-between hover:bg-white group select-none"
+      whileHover={isTest ? undefined : { scale: 1.02 }}
+      whileTap={isTest ? undefined : { scale: 0.98 }}
+      transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+      className="bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 cursor-pointer flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none"
     >
       <div>
         {/* Top Badges matching UploadView */}

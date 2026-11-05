@@ -22,8 +22,8 @@ const shimmerVariants = {
 };
 
 const cardVariants = {
-  initial: isTest ? false : { opacity: 0, y: 15 },
-  animate: isTest ? false : { opacity: 1, y: 0 },
+  initial: isTest ? false : { opacity: 1 },
+  animate: isTest ? false : { opacity: 1 },
 };
 
 const shimmerStyle: React.CSSProperties = {
@@ -39,9 +39,9 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
       {Array.from({ length: cardCount }, (_, index) => (
         <motion.div
           key={`journal-shimmer-${index}`}
-          variants={cardVariants}
-          initial="initial"
-          animate="animate"
+          variants={isTest ? undefined : cardVariants}
+          initial={isTest ? undefined : "initial"}
+          animate={isTest ? undefined : "animate"}
           transition={isTest ? { duration: 0 } : {
             delay: index * 0.04,
             duration: 0.35,
@@ -52,16 +52,16 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
             {/* Top row badges */}
             <div className="flex items-center justify-between mb-3">
               <motion.div
-                variants={shimmerVariants}
-                initial="initial"
-                animate="animate"
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
                 style={shimmerStyle}
                 className="h-5 w-16 rounded-full"
               />
               <motion.div
-                variants={shimmerVariants}
-                initial="initial"
-                animate="animate"
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
                 style={shimmerStyle}
                 className="h-5 w-24 rounded-full"
               />
@@ -70,16 +70,16 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
             {/* Bilingual Journal Names */}
             <div className="space-y-1.5 mb-3">
               <motion.div
-                variants={shimmerVariants}
-                initial="initial"
-                animate="animate"
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
                 style={shimmerStyle}
                 className="h-4 w-3/4 rounded-md"
               />
               <motion.div
-                variants={shimmerVariants}
-                initial="initial"
-                animate="animate"
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
                 style={shimmerStyle}
                 className="h-3.5 w-1/2 rounded-md"
               />
@@ -87,9 +87,9 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
 
             {/* Specification stats row */}
             <motion.div
-              variants={shimmerVariants}
-              initial="initial"
-              animate="animate"
+              variants={isTest ? undefined : shimmerVariants}
+              initial={isTest ? undefined : "initial"}
+              animate={isTest ? undefined : "animate"}
               style={shimmerStyle}
               className="h-3 w-4/5 rounded-md mb-2"
             />
@@ -98,16 +98,16 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
           {/* Action Footer */}
           <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between">
             <motion.div
-              variants={shimmerVariants}
-              initial="initial"
-              animate="animate"
+              variants={isTest ? undefined : shimmerVariants}
+              initial={isTest ? undefined : "initial"}
+              animate={isTest ? undefined : "animate"}
               style={shimmerStyle}
               className="h-3.5 w-20 rounded-md"
             />
             <motion.div
-              variants={shimmerVariants}
-              initial="initial"
-              animate="animate"
+              variants={isTest ? undefined : shimmerVariants}
+              initial={isTest ? undefined : "initial"}
+              animate={isTest ? undefined : "animate"}
               style={shimmerStyle}
               className="h-3.5 w-28 rounded-md"
             />

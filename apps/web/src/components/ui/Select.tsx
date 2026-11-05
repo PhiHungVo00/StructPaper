@@ -24,7 +24,7 @@ export interface SelectProps<T extends string | number = string> {
   helperText?: string;
   error?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'pill' | 'subtle' | 'liquid-glass' | 'slate' | 'clean' | 'flat-white' | 'white-shadow-4' | 'custom';
+  variant?: 'default' | 'pill' | 'subtle' | 'liquid-glass' | 'slate' | 'clean' | 'flat-white' | 'white-shadow-4' | 'eatzy-inner' | 'custom';
   align?: 'left' | 'right';
   fullWidth?: boolean;
   disabled?: boolean;
@@ -279,25 +279,19 @@ export function Select<T extends string | number = string>({
 
   // Variant styling tokens
   const variantClasses = {
-    default:
-      'bg-white border-[#E8E8EE] hover:border-zinc-400 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/30 rounded-2xl shadow-xs',
+    default: 'bg-white border-[#E8E8EE] hover:border-zinc-400 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/30 rounded-2xl shadow-xs',
     pill: 'bg-white border-[#E8E8EE] hover:border-zinc-400 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/30 rounded-full shadow-xs',
-    subtle:
-      'bg-zinc-50 border-[#E8E8EE] hover:bg-white hover:border-zinc-400 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/30 rounded-2xl shadow-xs',
-    slate:
-      'bg-slate-50 hover:bg-white border-slate-200 hover:border-slate-300 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 rounded-xl shadow-2xs text-slate-800',
-    clean:
-      'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 rounded-xl shadow-2xs text-slate-800',
-    'flat-white':
-      'bg-white hover:bg-slate-50/70 border-0 shadow-none focus:ring-2 focus:ring-[#78C841]/30 rounded-xl text-slate-800',
-    'white-shadow-4':
-      'bg-white hover:bg-slate-50/70 border-0 shadow-[0_0_12px_rgba(0,0,0,0.08),0_0_3px_rgba(0,0,0,0.04)] hover:shadow-[0_0_16px_rgba(0,0,0,0.12),0_0_4px_rgba(0,0,0,0.06)] focus:ring-2 focus:ring-[#78C841]/30 rounded-xl text-slate-800',
-    'liquid-glass':
-      'bg-white/45 hover:bg-white/75 backdrop-blur-md border border-white/60 shadow-[inset_0_0_14px_8px_rgba(255,255,255,0.85)] text-[#1A1A1A] rounded-2xl focus:border-[#78C841]/50 focus:ring-2 focus:ring-[#78C841]/20',
+    subtle: 'bg-zinc-50 border-[#E8E8EE] hover:bg-white hover:border-zinc-400 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/30 rounded-2xl shadow-xs',
+    slate: 'bg-slate-50 hover:bg-white border-slate-200 hover:border-slate-300 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 rounded-xl shadow-2xs text-slate-800',
+    clean: 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 rounded-xl shadow-2xs text-slate-800',
+    'flat-white': 'bg-white hover:bg-slate-50/70 border-0 shadow-none focus:ring-2 focus:ring-[#78C841]/30 rounded-xl text-slate-800',
+    'white-shadow-4': 'bg-white hover:bg-slate-50/70 border-0 shadow-[0_0_12px_rgba(0,0,0,0.08),0_0_3px_rgba(0,0,0,0.04)] hover:shadow-[0_0_16px_rgba(0,0,0,0.12),0_0_4px_rgba(0,0,0,0.06)] focus:ring-2 focus:ring-[#78C841]/30 rounded-xl text-slate-800',
+    'liquid-glass': 'bg-white/45 hover:bg-white/75 backdrop-blur-md border border-white/60 shadow-[inset_0_0_14px_8px_rgba(255,255,255,0.85)] text-[#1A1A1A] rounded-2xl focus:border-[#78C841]/50 focus:ring-2 focus:ring-[#78C841]/20',
+    'eatzy-inner': 'bg-slate-50 border-2 border-white hover:border-zinc-200/80 focus:border-[#78C841]/20 rounded-2xl shadow-eatzy-inner hover:shadow-eatzy-inner-hover text-zinc-900',
     custom: '',
   }[variant];
 
-  const hasBorder = variant !== 'custom' && variant !== 'flat-white' && variant !== 'white-shadow-4';
+  const hasBorder = variant !== 'custom' && variant !== 'flat-white' && variant !== 'white-shadow-4' && variant !== 'eatzy-inner';
 
   return (
     <div
@@ -330,6 +324,7 @@ export function Select<T extends string | number = string>({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-disabled={disabled}
+        style={variant === 'eatzy-inner' ? { boxShadow: 'inset 0 0 16px rgba(0, 0, 0, 0.08)' } : undefined}
         className={`group relative flex items-center justify-between gap-1.5 transition-all text-left font-medium cursor-pointer ${
           hasBorder ? 'border' : 'border-0'
         } ${fullWidth ? 'w-full' : ''} ${

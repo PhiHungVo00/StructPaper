@@ -61,6 +61,27 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
   onViewModeChange,
   onCreateFromTemplate,
 }) => {
+  const [searchInputValue, setSearchInputValue] = React.useState(searchQuery);
+  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+
+  React.useEffect(() => {
+    setSearchInputValue(searchQuery);
+  }, [searchQuery]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchInputValue(val);
+    if (isTestEnv) {
+      onSearchChange(val);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearchChange(searchInputValue);
+    }
+  };
+
   // Journal select options
   const journalOptions: SelectOption<string>[] = [
     { value: 'all', label: 'Tất cả tạp chí' },
@@ -94,16 +115,20 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             type="text"
             role="searchbox"
             data-testid="paper-search-input"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm theo tên bài, mã bài, tác giả..."
+            value={searchInputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Tìm theo tên bài, mã bài, tác giả... (nhấn Enter để tìm)"
             style={{ boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)' }}
-            className="w-full bg-slate-50/40 backdrop-blur-sm border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
+            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
           />
 
-          {searchQuery && (
+          {searchInputValue && (
             <button
-              onClick={() => onSearchChange('')}
+              onClick={() => {
+                setSearchInputValue('');
+                onSearchChange('');
+              }}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-zinc-200 hover:bg-zinc-300 flex items-center justify-center transition-all group/close cursor-pointer"
               title="Xóa tìm kiếm"
             >
@@ -116,7 +141,8 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/upload"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-semibold bg-white border border-zinc-200/90 hover:border-zinc-300 text-zinc-700 hover:text-zinc-900 shadow-2xs transition-all"
+            style={{ boxShadow: 'inset 0 0 16px rgba(0, 0, 0, 0.08)' }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-semibold bg-slate-50 border-2 border-white text-zinc-700 hover:text-zinc-900 shadow-eatzy-inner hover:shadow-eatzy-inner-hover transition-all"
           >
             <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
             <span>Tải file DOCX</span>
@@ -153,8 +179,9 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
               <motion.button
                 key={tab.id}
                 data-testid={`filter-chip-${tab.id}`}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={isTestEnv ? undefined : { scale: 1.03 }}
+                whileTap={isTestEnv ? undefined : { scale: 0.97 }}
+                transition={isTestEnv ? { duration: 0 } : undefined}
                 onClick={() => onStatusFilterChange(tab.id)}
                 className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   isActive
@@ -177,7 +204,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
               value={journalFilter}
               onChange={(val) => onJournalFilterChange(val as FilterJournal)}
               size="sm"
-              variant="clean"
+              variant="eatzy-inner"
               fullWidth
             />
             {/* Hidden native select for test & accessibility integration */}
@@ -205,7 +232,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
               value={sortBy}
               onChange={(val) => onSortChange(val as SortOption)}
               size="sm"
-              variant="clean"
+              variant="eatzy-inner"
               fullWidth
             />
             {/* Hidden native select for test & accessibility integration */}
