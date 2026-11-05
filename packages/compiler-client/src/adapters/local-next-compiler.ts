@@ -31,7 +31,14 @@ export class LocalNextCompilerAdapter implements CompilerPort {
   constructor(options: LocalNextCompilerOptions = {}) {
     this.endpoint = options.endpoint ?? '/api/compile-latex';
     this.baseUrl = options.baseUrl ?? '';
-    this.fetchFn = options.fetchFn ?? (typeof fetch !== 'undefined' ? fetch : undefined as any);
+    const defaultFetch =
+      typeof window !== 'undefined' && typeof window.fetch === 'function'
+        ? window.fetch.bind(window)
+        : typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
+        ? globalThis.fetch.bind(globalThis)
+        : undefined;
+
+    this.fetchFn = options.fetchFn ? options.fetchFn.bind(globalThis) : defaultFetch as any;
     this.fallbackCompiler = options.fallbackCompiler;
   }
 
@@ -43,11 +50,19 @@ export class LocalNextCompilerAdapter implements CompilerPort {
     const url = `${this.baseUrl}${this.endpoint}`;
 
     try {
-      if (!this.fetchFn) {
+      const fetchImpl =
+        this.fetchFn ??
+        (typeof window !== 'undefined' && typeof window.fetch === 'function'
+          ? window.fetch.bind(window)
+          : typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
+          ? globalThis.fetch.bind(globalThis)
+          : undefined);
+
+      if (!fetchImpl) {
         throw new Error('fetch is not defined in this environment and no custom fetchFn was provided');
       }
 
-      const response = await this.fetchFn(url, {
+      const response = await fetchImpl(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

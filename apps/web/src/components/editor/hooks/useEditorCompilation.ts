@@ -77,6 +77,7 @@ export function useEditorCompilation({
   if (!schedulerRef.current) {
     const adapter = new LocalNextCompilerAdapter({
       endpoint: '/api/compile-latex',
+      fetchFn: typeof window !== 'undefined' && typeof window.fetch === 'function' ? window.fetch.bind(window) : undefined,
     });
     schedulerRef.current = new CompileScheduler({
       compiler: adapter,
@@ -128,6 +129,9 @@ export function useEditorCompilation({
             timestamp: new Date().toLocaleTimeString('vi-VN'),
           });
           return url;
+        } else if (result.cancelled) {
+          // Bỏ qua khi yêu cầu bị hủy hoặc thay thế bởi tác vụ mới (debounce)
+          return null;
         } else {
           setCompileErrorInfo({
             error: result.error || 'Biên dịch thất bại',
@@ -138,6 +142,15 @@ export function useEditorCompilation({
           return null;
         }
       } catch (e: any) {
+        if (
+          e?.name === 'CompileAbortError' ||
+          e?.name === 'AbortError' ||
+          e?.message?.includes('aborted') ||
+          e?.message?.includes('superseded')
+        ) {
+          // Yêu cầu bị hủy bình thường do debounce hoặc chuyển bản thảo
+          return null;
+        }
         setCompileErrorInfo({
           error: 'Lỗi kết nối máy chủ biên dịch',
           details: e?.message || 'Không thể gửi yêu cầu biên dịch tới backend.',

@@ -35,8 +35,7 @@ test.describe('Phase 8: End-to-End Browser & System Verification (Agent Omega)',
     page,
   }) => {
     // Navigate to editor page
-    await page.goto('/editor');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/editor', { waitUntil: 'domcontentloaded' });
 
     // Verify main navigation buttons or tabs
     const pageContent = await page.textContent('body');
@@ -50,7 +49,7 @@ test.describe('Phase 8: End-to-End Browser & System Verification (Agent Omega)',
     page,
   }) => {
     // Navigate to tiptap harness
-    await page.goto('/dev-tiptap-test');
+    await page.goto('/dev-tiptap-test', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('ready-indicator')).toBeVisible({ timeout: 15000 });
 
     const editor = page.locator('.tiptap-paragraph-editor .ProseMirror');
