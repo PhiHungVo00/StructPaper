@@ -1,6 +1,7 @@
 import type { Id, Inline } from './inline';
 import type { Block, Section } from './block';
 import type { Reference } from './citation';
+import type { ProfilePin } from './manuscript-record';
 
 export interface Author {
   id: Id;
@@ -72,6 +73,7 @@ export interface Manuscript {
   back: (BackMatterItem | unknown)[];
   references: Reference[];
   assets: Record<string, AssetMeta>;
+  profilePin?: ProfilePin;
   layoutOverrides?: Record<string, unknown>;
   provenance?: Record<Id, unknown>;
 }

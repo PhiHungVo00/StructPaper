@@ -262,6 +262,13 @@ export const BackMatterItemSchema: z.ZodType<BackMatterItem> = z.object({
   content: z.array(BlockSchema),
 });
 
+export const ProfilePinSchema = z.object({
+  base: z.number().int().nonnegative(),
+  journal: z.number().int().nonnegative(),
+  articleType: z.number().int().nonnegative(),
+  environmentId: z.string().optional(),
+});
+
 export const ManuscriptSchema: z.ZodType<Manuscript> = z.object({
   schemaVersion: z.literal(2),
   id: z.string().min(1),
@@ -273,6 +280,7 @@ export const ManuscriptSchema: z.ZodType<Manuscript> = z.object({
   back: z.array(z.union([BackMatterItemSchema, z.record(z.unknown())])),
   references: z.array(ReferenceSchema),
   assets: z.record(AssetMetaSchema),
+  profilePin: ProfilePinSchema.optional(),
   layoutOverrides: z.record(z.unknown()).optional(),
   provenance: z.record(z.unknown()).optional(),
 });
