@@ -97,7 +97,7 @@ export const JournalHubView: React.FC = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-16 px-4 sm:px-6">
       {/* 1. Header Hero Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
         <div>
@@ -128,7 +128,7 @@ export const JournalHubView: React.FC = () => {
 
       {/* 3. Journal Profiles Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
           <JournalProfileCardShimmer cardCount={7} />
         </div>
       ) : (

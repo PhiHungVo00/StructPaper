@@ -53,7 +53,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
   };
 
   return (
-    <div className="space-y-3.5">
+    <div className="w-full space-y-3.5">
       {/* Header with Title and Scroll Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
           <h2 className="text-sm font-extrabold text-[#1A1A1A] tracking-tight flex items-center gap-2">
             <span>Bài chỉnh sửa gần đây</span>
             <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
-              {recentPapers.length}
+              {isLoading ? '...' : recentPapers.length}
             </span>
           </h2>
         </div>
@@ -92,7 +92,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
       <div
         ref={scrollContainerRef}
         data-testid="recent-papers-scroll-container"
-        className="flex items-stretch gap-3.5 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-transparent snap-x snap-mandatory"
+        className="w-full flex items-stretch gap-3.5 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-transparent snap-x snap-mandatory"
         style={{ scrollbarWidth: 'thin' }}
       >
         {/* Quick New Paper Starter Card */}
@@ -124,7 +124,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
           Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={`recent-shimmer-${idx}`}
-              className="shrink-0 w-60 sm:w-64 snap-start select-none bg-gray-200/50 p-4 rounded-3xl flex flex-col justify-between overflow-hidden relative min-h-[148px]"
+              className="shrink-0 w-64 sm:w-72 snap-start select-none bg-gray-200/50 p-4 rounded-3xl flex flex-col justify-between overflow-hidden relative min-h-[148px]"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">

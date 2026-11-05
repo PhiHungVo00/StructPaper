@@ -46,7 +46,7 @@ export const PaperCardShimmer: React.FC<PaperCardShimmerProps> = ({
             delay: index * 0.04,
             duration: 0.35,
           }}
-          className="bg-gray-200/50 p-4 rounded-3xl flex flex-col justify-between relative overflow-hidden select-none min-h-[178px]"
+          className="w-full bg-gray-200/50 p-4 rounded-3xl flex flex-col justify-between relative overflow-hidden select-none min-h-[178px]"
         >
           <div>
             {/* Top row: Journal badge & Status badge */}

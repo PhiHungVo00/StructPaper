@@ -379,7 +379,7 @@ export const PaperHubView: React.FC = () => {
   }, [records, searchQuery, statusFilter, journalFilter, sortBy]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-7 pb-16 pt-4 px-4 sm:px-6">
+    <div className="w-full max-w-7xl mx-auto space-y-7 pb-16 pt-4 px-4 sm:px-6">
       {/* 1. Header Banner */}
 
       {/* 2. Top Horizontal Recent Papers Row */}
@@ -413,7 +413,7 @@ export const PaperHubView: React.FC = () => {
       {isLoading ? (
         <div
           data-testid="papers-shimmer-grid"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
         >
           <PaperCardShimmer cardCount={8} />
         </div>
@@ -430,7 +430,7 @@ export const PaperHubView: React.FC = () => {
       ) : viewMode === 'grid' ? (
         <div
           data-testid="papers-grid"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
         >
           {filteredPapers.map((paper) => (
             <PaperCard

@@ -34,8 +34,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <Sidebar />
 
       {/* Main Application Flow Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        <main className="flex-1 px-3 sm:px-4 lg:px-6 py-3 pb-24 sm:pb-6 flex flex-col min-w-0 min-h-0">
+      <div className="w-full flex-1 flex flex-col min-w-0 min-h-screen">
+        <main className="w-full flex-1 px-3 sm:px-4 lg:px-6 py-3 pb-24 sm:pb-6 flex flex-col min-w-0 min-h-0">
           {children}
         </main>
       </div>

@@ -46,7 +46,7 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
             delay: index * 0.04,
             duration: 0.35,
           }}
-          className="bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] flex flex-col justify-between select-none relative overflow-hidden min-h-[252px]"
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] flex flex-col justify-between select-none relative overflow-hidden min-h-[252px]"
         >
           <div>
             {/* Top row badges */}
