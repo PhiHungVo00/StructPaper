@@ -255,4 +255,52 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
 
     expect(descEl.className).toContain('truncate');
   });
+
+  it('resets and pauses dismiss timer for all visible toasts when user hovers on any toast', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.info('Thông báo A', 'Mô tả A', { duration: 3000 });
+      toast.warning('Thông báo B', 'Mô tả B', { duration: 3000 });
+    });
+
+    let toastEls = container.querySelectorAll('[data-liquid-toast]');
+    expect(toastEls.length).toBe(2);
+
+    // Advance timer 2.5s (normally only 0.5s remaining)
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    // Hover on Toast A
+    act(() => {
+      fireEvent.mouseEnter(toastEls[0]);
+    });
+
+    // While hovering, advance 4s (timers are paused, neither should dismiss)
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(toastStore.getToasts().length).toBe(2);
+
+    // Mouse leaves Toast A
+    act(() => {
+      fireEvent.mouseLeave(toastEls[0]);
+      // Advance debounce 120ms
+      vi.advanceTimersByTime(150);
+    });
+
+    // Because timer reset back to full duration (3000ms), 1.5s later they are still visible
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(toastStore.getToasts().length).toBe(2);
+
+    // Advance another 2s (total > 3s after hover leave), both dismiss
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(toastStore.getToasts().length).toBe(0);
+  });
 });

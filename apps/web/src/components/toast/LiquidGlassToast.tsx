@@ -15,6 +15,10 @@ import type { ToastItem, ToastType } from './toast-store';
 interface LiquidGlassToastProps {
   toast: ToastItem;
   isTop?: boolean;
+  isPaused?: boolean;
+  resetKey?: number;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
   onDismiss: (id: string) => void;
 }
 
@@ -91,7 +95,18 @@ function getThemeConfig(type: ToastType): ThemeConfig {
 }
 
 export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToastProps>(
-  ({ toast, isTop = true, onDismiss }, ref) => {
+  (
+    {
+      toast,
+      isTop = true,
+      isPaused = false,
+      resetKey = 0,
+      onHoverStart,
+      onHoverEnd,
+      onDismiss,
+    },
+    ref
+  ) => {
     const { id, type, title, description, duration = 3500, action, dismissible = true } = toast;
     const isInline = Boolean(toast.inline && description && description.trim().length > 0);
     const isTwoLine = Boolean(!isInline && description && description.trim().length > 0);
@@ -104,30 +119,47 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
     const remainingTimeRef = useRef<number>(duration);
     const startTimeRef = useRef<number>(Date.now());
 
-    useEffect(() => {
-      if (duration === Infinity || isTest) return;
+    const springConfig = isTest
+      ? { duration: 0 }
+      : {
+          type: 'spring' as const,
+          stiffness: 150,
+          damping: 18,
+          mass: 0.7,
+        };
 
-      const startTimer = () => {
+    // When resetKey changes (hovering on ANY toast in the stack), reset timer back to full duration
+    useEffect(() => {
+      remainingTimeRef.current = duration;
+      startTimeRef.current = Date.now();
+    }, [resetKey, duration]);
+
+    useEffect(() => {
+      if (duration === Infinity) return;
+
+      const shouldPause = isPaused || isHovered;
+
+      if (!shouldPause) {
         startTimeRef.current = Date.now();
         timerRef.current = setTimeout(() => {
           onDismiss(id);
         }, remainingTimeRef.current);
-      };
-
-      if (!isHovered) {
-        startTimer();
       } else {
         if (timerRef.current) {
           clearTimeout(timerRef.current);
+          timerRef.current = null;
           const elapsed = Date.now() - startTimeRef.current;
           remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
         }
       }
 
       return () => {
-        if (timerRef.current) clearTimeout(timerRef.current);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
       };
-    }, [id, duration, isHovered, onDismiss]);
+    }, [id, duration, isPaused, isHovered, resetKey, onDismiss]);
 
     const combinedBoxShadow = `${theme.innerShadow}, ${COMMON_OUTER_SHADOW}`;
     const roundedClasses = isTop
@@ -156,18 +188,15 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         initial={isTest ? false : { y: -52, opacity: 0, scale: 0.96 }}
         animate={isTest ? false : { y: 0, opacity: 1, scale: 1 }}
         exit={isTest ? false : { y: -56, opacity: 0, scale: 0.95 }}
-        transition={
-          isTest
-            ? { duration: 0 }
-            : {
-                type: 'spring',
-                stiffness: 150,
-                damping: 18,
-                mass: 0.7,
-              }
-        }
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        transition={springConfig}
+        onMouseEnter={() => {
+          setIsHovered(true);
+          onHoverStart?.();
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          onHoverEnd?.();
+        }}
         style={{ boxShadow: combinedBoxShadow }}
         className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] ${maxWClasses}`}
       >
@@ -194,38 +223,56 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
               className="flex flex-col justify-center min-w-0 flex-1 text-left"
             >
               {isInline ? (
-                <div
-                  className={`flex gap-1.5 min-w-0 ${
+                <motion.div
+                  layout
+                  transition={springConfig}
+                  className={`min-w-0 ${
                     isHovered
-                      ? 'flex-wrap items-baseline'
-                      : 'items-center truncate'
+                      ? 'flex flex-col gap-0.5'
+                      : 'flex items-center gap-1.5 truncate'
                   }`}
                 >
-                  <span className="font-extrabold text-xs sm:text-[13px] text-zinc-950 shrink-0">
+                  <motion.span
+                    layout="position"
+                    layoutId={`toast-inline-title-${id}`}
+                    transition={springConfig}
+                    className="font-extrabold text-xs sm:text-[13px] text-zinc-950 shrink-0 inline-block leading-tight"
+                  >
                     {cleanTitle}:
-                  </span>
-                  <span
-                    className={`text-[11px] sm:text-xs text-zinc-500 font-semibold ${
-                      isHovered ? 'whitespace-normal break-words' : 'truncate'
+                  </motion.span>
+                  <motion.span
+                    layout="position"
+                    layoutId={`toast-inline-desc-${id}`}
+                    transition={springConfig}
+                    className={`text-[11px] sm:text-xs text-zinc-500 font-semibold leading-snug ${
+                      isHovered
+                        ? 'whitespace-normal break-words block'
+                        : 'truncate inline-block'
                     }`}
                   >
                     {description}
-                  </span>
-                </div>
+                  </motion.span>
+                </motion.div>
               ) : (
                 <>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span
+                    <motion.span
+                      layout="position"
+                      layoutId={`toast-title-${id}`}
+                      transition={springConfig}
                       className={`font-extrabold text-xs sm:text-[13px] text-zinc-950 tracking-tight leading-tight ${
                         isHovered ? 'whitespace-normal break-words' : 'truncate'
                       }`}
                     >
                       {title}
-                    </span>
+                    </motion.span>
                   </div>
 
                   {isTwoLine && (
-                    <p
+                    <motion.p
+                      layout="position"
+                      layoutId={`toast-desc-${id}`}
+                      transition={springConfig}
                       className={`text-[11px] sm:text-xs text-zinc-500 leading-snug mt-0.5 font-semibold ${
                         isHovered
                           ? 'line-clamp-none whitespace-normal break-words'
@@ -233,7 +280,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
                       }`}
                     >
                       {description}
-                    </p>
+                    </motion.p>
                   )}
                 </>
               )}
