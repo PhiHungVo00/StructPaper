@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, cleanup } from '@testing-library/react';
 import { toast, sileo, toastStore } from '@/components/toast/toast-store';
 import { Toaster } from '@/components/toast/Toaster';
 
@@ -13,6 +13,8 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
   });
 
   afterEach(() => {
+    cleanup();
+    toastStore.clear();
     vi.useRealTimers();
   });
 
@@ -139,5 +141,49 @@ describe('Liquid Glass Dynamic Island Toast System', () => {
     });
 
     expect(toastStore.getToasts().length).toBe(0);
+  });
+
+  it('supports single-line inline mode with colon separator', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.success('Thành công', 'File đã lưu vào máy', { inline: true });
+    });
+
+    expect(screen.getByText('Thành công:')).toBeDefined();
+    expect(screen.getByText('File đã lưu vào máy')).toBeDefined();
+    const toastEl = container.querySelector('[data-liquid-toast]');
+    expect(toastEl).toBeDefined();
+  });
+
+  it('correctly styles top toast with bottom rounded only and lower toasts with full rounded', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.info('Thông báo 1', 'Nằm ở đầu');
+      toast.success('Thông báo 2', 'Bị đẩy xuống');
+    });
+
+    const toastEls = container.querySelectorAll('[data-liquid-toast]');
+    expect(toastEls.length).toBe(2);
+
+    // Topmost toast (index 0) has rounded-b only and rounded-t-none
+    expect(toastEls[0].className).toContain('rounded-b-');
+    expect(toastEls[0].className).toContain('rounded-t-none');
+
+    // Lower toast (index 1) has rounded-2xl and NOT rounded-t-none
+    expect(toastEls[1].className).toContain('rounded-2xl');
+    expect(toastEls[1].className).not.toContain('rounded-t-none');
+  });
+
+  it('renders loading toast with sky blue theme config', () => {
+    const { container } = render(<Toaster />);
+
+    act(() => {
+      toast.loading('Đang xử lý...');
+    });
+
+    const toastEl = container.querySelector('[data-liquid-toast]');
+    expect(toastEl?.className).toContain('bg-[#E0F2FE]/70');
   });
 });

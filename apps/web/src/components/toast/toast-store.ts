@@ -15,6 +15,7 @@ export interface ToastItem {
   duration?: number;
   action?: ToastAction;
   dismissible?: boolean;
+  inline?: boolean;
   createdAt: number;
 }
 
@@ -25,7 +26,9 @@ export interface ToastOptions {
   duration?: number;
   action?: ToastAction;
   dismissible?: boolean;
-  theme?: 'success' | 'error' | 'warning' | 'white' | 'default';
+  inline?: boolean;
+  mode?: 'auto' | 'single-line' | 'two-line' | 'inline';
+  theme?: 'success' | 'error' | 'warning' | 'white' | 'default' | 'sky';
 }
 
 type ToastListener = (toasts: ToastItem[]) => void;
@@ -153,6 +156,7 @@ export const toast = {
       duration: options.duration ?? 3500,
       action: options.action,
       dismissible: options.dismissible,
+      inline: options.inline ?? (options.mode === 'inline'),
     });
   },
   error: (title: string | ToastOptions, description?: string | ToastOptions, opts?: ToastOptions) => {
@@ -166,6 +170,7 @@ export const toast = {
       duration: options.duration ?? 4500,
       action: options.action,
       dismissible: options.dismissible,
+      inline: options.inline ?? (options.mode === 'inline'),
     });
   },
   warning: (title: string | ToastOptions, description?: string | ToastOptions, opts?: ToastOptions) => {
@@ -179,6 +184,7 @@ export const toast = {
       duration: options.duration ?? 4000,
       action: options.action,
       dismissible: options.dismissible,
+      inline: options.inline ?? (options.mode === 'inline'),
     });
   },
   info: (title: string | ToastOptions, description?: string | ToastOptions, opts?: ToastOptions) => {
@@ -192,6 +198,7 @@ export const toast = {
       duration: options.duration ?? 3500,
       action: options.action,
       dismissible: options.dismissible,
+      inline: options.inline ?? (options.mode === 'inline'),
     });
   },
   default: (title: string | ToastOptions, description?: string | ToastOptions, opts?: ToastOptions) => {
@@ -205,6 +212,7 @@ export const toast = {
       duration: options.duration ?? 3500,
       action: options.action,
       dismissible: options.dismissible,
+      inline: options.inline ?? (options.mode === 'inline'),
     });
   },
   loading: (title: string | ToastOptions, description?: string | ToastOptions, opts?: ToastOptions) => {
@@ -218,6 +226,7 @@ export const toast = {
       duration: options.duration ?? Infinity,
       action: options.action,
       dismissible: options.dismissible,
+      inline: options.inline ?? (options.mode === 'inline'),
     });
   },
   promise: <T>(

@@ -14,6 +14,7 @@ import type { ToastItem, ToastType } from './toast-store';
 
 interface LiquidGlassToastProps {
   toast: ToastItem;
+  isTop?: boolean;
   onDismiss: (id: string) => void;
 }
 
@@ -37,62 +38,65 @@ function getThemeConfig(type: ToastType): ThemeConfig {
     case 'success':
       return {
         accent: '#78C841',
-        containerBg: 'bg-[#ECFCCB]',
-        containerBorder: 'border-b-2 border-x-2 border-[#B4E50D]/80',
+        containerBg: 'bg-[#ECFCCB]/70',
+        containerBorder: 'border-b-2 border-x-2 border-white/10',
         innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.28)',
         badgeBg: 'bg-[#78C841]',
         badgeText: 'text-white',
-        icon: <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8]" />,
+        icon: <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
       };
     case 'error':
       return {
         accent: '#FB4141',
-        containerBg: 'bg-[#FEE2E2]',
-        containerBorder: 'border-b-2 border-x-2 border-rose-300',
+        containerBg: 'bg-[#FEE2E2]/70',
+        containerBorder: 'border-b-2 border-x-2 border-white/10',
         innerShadow: 'inset 0 0 20px rgba(225, 29, 72, 0.22)',
         badgeBg: 'bg-[#FB4141]',
         badgeText: 'text-white',
-        icon: <AlertCircle className="w-3.5 h-3.5 stroke-[2.8]" />,
+        icon: <AlertCircle className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
       };
     case 'warning':
       return {
         accent: '#FF9B2F',
-        containerBg: 'bg-[#FEF3C7]',
-        containerBorder: 'border-b-2 border-x-2 border-amber-300',
+        containerBg: 'bg-[#FEF3C7]/70',
+        containerBorder: 'border-b-2 border-x-2 border-white/10',
         innerShadow: 'inset 0 0 20px rgba(217, 119, 6, 0.24)',
         badgeBg: 'bg-[#FF9B2F]',
         badgeText: 'text-white',
-        icon: <AlertTriangle className="w-3.5 h-3.5 stroke-[2.8]" />,
+        icon: <AlertTriangle className="w-3.5 h-3.5 stroke-[2.8] block shrink-0" />,
       };
     case 'loading':
       return {
-        accent: '#78C841',
-        containerBg: 'bg-[#ECFCCB]',
-        containerBorder: 'border-b-2 border-x-2 border-[#B4E50D]/80',
-        innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.28)',
-        badgeBg: 'bg-[#78C841]',
+        accent: '#0284C7',
+        containerBg: 'bg-[#E0F2FE]/70',
+        containerBorder: 'border-b-2 border-x-2 border-white/10',
+        innerShadow: 'inset 0 0 20px rgba(2, 132, 199, 0.25)',
+        badgeBg: 'bg-[#0284C7]',
         badgeText: 'text-white',
-        icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />,
+        icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white block shrink-0" />,
       };
     case 'info':
     case 'default':
     default:
       return {
         accent: '#1A1A1A',
-        containerBg: 'bg-gray-200/50',
+        containerBg: 'bg-gray-200/70',
         containerBorder: 'border-b-2 border-x-2 border-gray-300/80',
         innerShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)',
         badgeBg: 'bg-zinc-800',
         badgeText: 'text-white',
-        icon: <Sparkles className="w-3.5 h-3.5 stroke-[2.4]" />,
+        icon: <Sparkles className="w-3.5 h-3.5 stroke-[2.4] block shrink-0" />,
       };
   }
 }
 
 export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToastProps>(
-  ({ toast, onDismiss }, ref) => {
+  ({ toast, isTop = true, onDismiss }, ref) => {
     const { id, type, title, description, duration = 3500, action, dismissible = true } = toast;
-    const isTwoLine = Boolean(description && description.trim().length > 0);
+    const isInline = Boolean(toast.inline && description && description.trim().length > 0);
+    const isTwoLine = Boolean(!isInline && description && description.trim().length > 0);
+    const isSingleLine = !isTwoLine;
+    const cleanTitle = title.endsWith(':') ? title.slice(0, -1).trim() : title;
     const theme = getThemeConfig(type);
 
     const [isHovered, setIsHovered] = useState(false);
@@ -126,6 +130,12 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
     }, [id, duration, isHovered, onDismiss]);
 
     const combinedBoxShadow = `${theme.innerShadow}, ${COMMON_OUTER_SHADOW}`;
+    const roundedClasses = isTop
+      ? 'rounded-b-2xl sm:rounded-b-[26px] rounded-t-none'
+      : 'rounded-2xl sm:rounded-[26px]';
+    const borderClasses = isTop
+      ? theme.containerBorder
+      : theme.containerBorder.replace('border-b-2 border-x-2', 'border-2');
 
     return (
       <motion.div
@@ -142,47 +152,55 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
             ? { duration: 0 }
             : {
                 type: 'spring',
-                stiffness: 440,
-                damping: 28,
+                stiffness: 150,
+                damping: 18,
                 mass: 0.7,
               }
         }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{ boxShadow: combinedBoxShadow }}
-        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-md ${theme.containerBg} ${theme.containerBorder} rounded-b-2xl sm:rounded-b-[26px] rounded-t-none transition-[background-color,border-color] duration-300 w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg`}
+        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-sm ${theme.containerBg} ${borderClasses} ${roundedClasses} transition-[background-color,border-color,border-radius] duration-300 w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg`}
       >
-        {/* Specular glass highlight reflection at top edge */}
-        <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
-
         {/* Main Toast Content Container */}
         <div
           className={`flex items-center justify-between gap-3 px-3.5 transition-all ${
-            isTwoLine ? 'py-2.5 sm:py-3' : 'h-10 sm:h-11'
+            isSingleLine ? 'h-10 sm:h-11' : 'py-2.5 sm:py-3'
           }`}
         >
           {/* Left: Themed Icon Badge */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-2xs ${theme.badgeBg} ${theme.badgeText}`}
+              className={`w-6 h-6 rounded-full grid place-items-center shrink-0 shadow-2xs leading-none p-0 m-0 ${theme.badgeBg} ${theme.badgeText}`}
             >
               {theme.icon}
             </div>
 
-            {/* Text Area: Title in Black, Description in Gray */}
+            {/* Text Area: Single Line Inline vs Two-Line vs Title-Only */}
             <div className="flex flex-col justify-center min-w-0 flex-1 text-left">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className="font-extrabold text-xs sm:text-[13px] text-zinc-950 truncate tracking-tight leading-tight"
-                >
-                  {title}
-                </span>
-              </div>
+              {isInline ? (
+                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                  <span className="font-extrabold text-xs sm:text-[13px] text-zinc-950 shrink-0">
+                    {cleanTitle}:
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-zinc-600 font-medium truncate">
+                    {description}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-extrabold text-xs sm:text-[13px] text-zinc-950 truncate tracking-tight leading-tight">
+                      {title}
+                    </span>
+                  </div>
 
-              {isTwoLine && (
-                <p className="text-[11px] sm:text-xs text-zinc-600 line-clamp-2 leading-snug mt-0.5 font-medium">
-                  {description}
-                </p>
+                  {isTwoLine && (
+                    <p className="text-[11px] sm:text-xs text-zinc-600 line-clamp-2 leading-snug mt-0.5 font-medium">
+                      {description}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
