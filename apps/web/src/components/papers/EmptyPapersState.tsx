@@ -59,7 +59,7 @@ export const EmptyPapersState: React.FC<EmptyPapersStateProps> = ({
         {onCreateFromTemplate ? (
           <button
             onClick={onCreateFromTemplate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Tạo từ mẫu</span>
@@ -67,7 +67,7 @@ export const EmptyPapersState: React.FC<EmptyPapersStateProps> = ({
         ) : (
           <Link
             href="/templates"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Tạo từ mẫu</span>

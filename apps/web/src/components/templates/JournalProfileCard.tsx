@@ -74,13 +74,13 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
           <span
             className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold flex items-center gap-1 ${
               isPublished
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
+                ? 'bg-[#D9F99D] text-[#14532D] border border-[#B4E50D]/40'
                 : 'bg-amber-50 text-amber-700 border border-amber-200/70'
             }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                isPublished ? 'bg-emerald-500' : 'bg-amber-500'
+                isPublished ? 'bg-[#78C841]' : 'bg-amber-500'
               }`}
             />
             {isPublished ? 'Đang phát hành' : 'Bản nháp'}

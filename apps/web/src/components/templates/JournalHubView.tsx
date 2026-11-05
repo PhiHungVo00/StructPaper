@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePaper } from '@/context/PaperContext';
+import { createEmptyPaper } from '@/types/paper';
 import {
   getManagedJournals,
   ManagedJournalProfile,
-  createNewPaperFromJournal,
   JournalStatus,
 } from '@/lib/templates/journal-storage';
 import { JournalFiltersBar } from './JournalFiltersBar';
@@ -15,6 +16,7 @@ import { BookOpen, Layers, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export const JournalHubView: React.FC = () => {
   const router = useRouter();
+  const { setPaper, setCurrentJournal } = usePaper();
   const [journals, setJournals] = useState<ManagedJournalProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | JournalStatus>('all');
@@ -33,12 +35,18 @@ export const JournalHubView: React.FC = () => {
 
   const handleCreatePaper = (managed: ManagedJournalProfile) => {
     try {
-      const newPaper = createNewPaperFromJournal(managed);
+      const journalCode = `VNUHCM-${managed.id.toUpperCase()}`;
+      const emptyPaper = createEmptyPaper(journalCode);
+      emptyPaper.metadata.journalName = managed.profile.names?.vi || managed.profile.names?.en || managed.id;
+      emptyPaper.metadata.journalAbbv = managed.profile.names?.short || managed.id.toUpperCase();
+      setPaper(emptyPaper);
+      setCurrentJournal(journalCode);
+
       toast.success(
         'Đã khởi tạo bản thảo',
         `Đã tạo bài báo mới theo chuẩn mẫu "${managed.profile.names?.short || managed.id.toUpperCase()}"`
       );
-      router.push(`/papers/editor?id=${encodeURIComponent(newPaper.id)}`);
+      router.push('/editor');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
       toast.error('Không thể tạo bài báo', msg);
@@ -75,7 +83,7 @@ export const JournalHubView: React.FC = () => {
             <span className="text-[11px] px-2.5 py-0.5 rounded-full font-black bg-blue-50 text-blue-700 border border-blue-200/80">
               7 Tạp chí ĐHQG-HCM
             </span>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-[#D9F99D] text-[#14532D] border border-[#B4E50D]/40">
               Quy chuẩn 3-Tier
             </span>
           </div>
@@ -87,7 +95,7 @@ export const JournalHubView: React.FC = () => {
         {/* Highlight Stats Badges */}
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-2 text-xs">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <ShieldCheck className="w-4 h-4 text-[#78C841]" />
             <div>
               <div className="text-[10px] text-slate-400 font-semibold leading-tight">Quy chuẩn</div>
               <div className="font-extrabold text-slate-800">Chuẩn IMRaD</div>

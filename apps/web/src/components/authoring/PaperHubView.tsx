@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ManuscriptRecord, ManuscriptInfo, WorkflowStatus } from '@structpaper/doc-model';
+import { adaptV2toV1 } from '@structpaper/doc-model';
+import { usePaper } from '@/context/PaperContext';
+import { ALL_SAMPLE_PAPERS } from '@/lib/sample-papers';
 import {
   defaultDatabase,
   IndexedDbManuscriptRepo,
@@ -30,6 +33,7 @@ import { getAuthoringPapers } from '@/lib/authoring/paper-storage';
 
 export const PaperHubView: React.FC = () => {
   const router = useRouter();
+  const { setPaper, setCurrentJournal } = usePaper();
 
   // Storage Repositories
   const repo = useMemo(() => new IndexedDbManuscriptRepo(defaultDatabase), []);
@@ -143,7 +147,33 @@ export const PaperHubView: React.FC = () => {
 
   // Handlers
   const handleOpenEditor = (id: string) => {
-    router.push(`/papers/editor?id=${encodeURIComponent(id)}`);
+    const record = records.find((r) => r.info.id === id);
+    const sample = ALL_SAMPLE_PAPERS.find(
+      (s) => s.paper.id === id || s.paper.metadata?.doi?.includes(id) || s.id === id
+    );
+
+    if (sample) {
+      setPaper(sample.paper);
+      if (sample.journalId) {
+        setCurrentJournal(sample.journalId);
+      }
+    } else if (record) {
+      try {
+        const v1 = adaptV2toV1(record.doc as any);
+        setPaper(v1 as any);
+        if (record.doc.journalId) {
+          const norm = record.doc.journalId.toUpperCase().startsWith('VNUHCM-')
+            ? record.doc.journalId
+            : `VNUHCM-${record.doc.journalId.toUpperCase()}`;
+          setCurrentJournal(norm);
+        }
+      } catch (err) {
+        console.error('Failed to adapt v2 doc to v1:', err);
+      }
+    }
+
+    toast.success('Đã tải bài báo', 'Đang chuyển sang bộ soạn thảo StructPaper...');
+    router.push('/editor');
   };
 
   const handleTogglePin = async (id: string, currentPinned: boolean) => {

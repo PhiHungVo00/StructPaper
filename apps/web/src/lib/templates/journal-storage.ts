@@ -21,13 +21,13 @@ export interface ManagedJournalProfile {
 export const STORAGE_KEY_JOURNALS = 'structpaper_managed_journals';
 
 export const VNUHCM_COLOR_PALETTE = [
-  { id: 'std', name: 'ĐHQG Khoa học & Công nghệ', hex: '#1e3a8a' },
-  { id: 'hs', name: 'Khoa học Sức khỏe', hex: '#0f766e' },
-  { id: 'ssh', name: 'KH Xã hội & Nhân văn', hex: '#b45309' },
-  { id: 'ebl', name: 'Kinh tế, Luật & Quản lý', hex: '#7c2d12' },
-  { id: 'et', name: 'Kỹ thuật & Công nghệ', hex: '#1d4ed8' },
-  { id: 'ees', name: 'Trái đất & Môi trường', hex: '#15803d' },
-  { id: 'arns', name: 'Khoa học Tự nhiên', hex: '#6b21a8' },
+  { id: 'std', name: 'ĐHQG Khoa học & Công nghệ', hex: '#000099' },
+  { id: 'hs', name: 'Khoa học Sức khỏe', hex: '#2B74B7' },
+  { id: 'ssh', name: 'KH Xã hội & Nhân văn', hex: '#0000FF' },
+  { id: 'ebl', name: 'Kinh tế, Luật & Quản lý', hex: '#8F0B97' },
+  { id: 'et', name: 'Kỹ thuật & Công nghệ', hex: '#0F4761' },
+  { id: 'ees', name: 'Trái đất & Môi trường', hex: '#0C712F' },
+  { id: 'arns', name: 'Khoa học Tự nhiên', hex: '#FF0000' },
 ];
 
 /**

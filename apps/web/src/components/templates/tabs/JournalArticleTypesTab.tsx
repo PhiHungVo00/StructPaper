@@ -103,8 +103,8 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                 <div className="shrink-0 flex items-center gap-1.5">
                   {hasAbstract ? (
                     <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                        isSelected ? 'bg-emerald-500/30 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                      className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold ${
+                        isSelected ? 'bg-[#D9F99D]/30 text-[#D9F99D]' : 'bg-[#D9F99D] text-[#14532D]'
                       }`}
                     >
                       Abstract
@@ -185,7 +185,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                       key={sec.id}
                       className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
                         isChecked
-                          ? 'border-emerald-200 bg-emerald-50/50 text-slate-900'
+                          ? 'border-[#B4E50D]/60 bg-[#D9F99D]/20 text-slate-900'
                           : 'border-slate-200/80 hover:bg-slate-50 text-slate-600'
                       }`}
                     >

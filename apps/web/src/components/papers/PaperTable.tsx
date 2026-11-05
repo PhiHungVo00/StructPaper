@@ -107,7 +107,7 @@ export const PaperTable: React.FC<PaperTableProps> = ({
 
                   {/* Title & Submission ID */}
                   <td className="py-3 px-4">
-                    <div className="font-bold text-slate-900 group-hover:text-emerald-800 line-clamp-1 transition-colors">
+                    <div className="font-bold text-slate-900 group-hover:text-zinc-950 line-clamp-1 transition-colors">
                       {title}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -259,7 +259,7 @@ export const PaperTable: React.FC<PaperTableProps> = ({
                             }}
                             className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
                           >
-                            <Download className="w-3.5 h-3.5 text-emerald-600" />
+                            <Download className="w-3.5 h-3.5 text-[#14532D]" />
                             <span>Xuất .structpaper</span>
                           </button>
 

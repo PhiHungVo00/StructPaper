@@ -54,7 +54,7 @@ export const JournalJsonInspectorTab: React.FC<JournalJsonInspectorTabProps> = (
       {/* Action Header */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Code2 className="w-4 h-4 text-emerald-600" />
+          <Code2 className="w-4 h-4 text-[#78C841]" />
           <div>
             <h3 className="font-extrabold text-sm text-slate-900">
               Resolved JSON Profile (3-Tier Merged Result)
@@ -83,7 +83,7 @@ export const JournalJsonInspectorTab: React.FC<JournalJsonInspectorTabProps> = (
             onClick={handleCopy}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-[#14532D]" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copied ? 'Đã sao chép' : 'Sao chép'}</span>
           </button>
 
@@ -98,7 +98,7 @@ export const JournalJsonInspectorTab: React.FC<JournalJsonInspectorTabProps> = (
       </div>
 
       {/* Code Viewer */}
-      <div className="bg-slate-950 text-emerald-400 font-mono text-xs p-4 rounded-2xl border border-slate-800 shadow-md max-h-[500px] overflow-auto">
+      <div className="bg-slate-950 text-lime-400 font-mono text-xs p-4 rounded-2xl border border-slate-800 shadow-md max-h-[500px] overflow-auto">
         <pre>{resolvedJson}</pre>
       </div>
     </div>

@@ -86,7 +86,7 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
         screen.getByText('Tạp chí Phát triển KH&CN - Khoa học Sức khỏe')
       ).toBeDefined();
       expect(
-        screen.getByText('Tạp chí Phát triển KH&CN - Khoa học Trái đất và Môi trường')
+        screen.getByText('Tạp chí Phát triển KH&CN - Môi trường & Khoa học Trái đất')
       ).toBeDefined();
 
       // Check summary specs are present
@@ -142,7 +142,7 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
       // Click create on first journal
       fireEvent.click(createButtons[0]);
 
-      expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('/papers/editor?id=paper_'));
+      expect(mockPush).toHaveBeenCalledWith('/editor');
     });
   });
 

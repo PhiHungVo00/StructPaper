@@ -77,7 +77,6 @@ export function useEditorCompilation({
   if (!schedulerRef.current) {
     const adapter = new LocalNextCompilerAdapter({
       endpoint: '/api/compile-latex',
-      fetchFn: typeof window !== 'undefined' && typeof window.fetch === 'function' ? window.fetch.bind(window) : undefined,
     });
     schedulerRef.current = new CompileScheduler({
       compiler: adapter,
@@ -129,7 +128,12 @@ export function useEditorCompilation({
             timestamp: new Date().toLocaleTimeString('vi-VN'),
           });
           return url;
-        } else if (result.cancelled) {
+        } else if (
+          result.cancelled ||
+          result.error === 'Compilation was aborted' ||
+          result.error?.includes('superseded') ||
+          result.error?.includes('aborted')
+        ) {
           // Bỏ qua khi yêu cầu bị hủy hoặc thay thế bởi tác vụ mới (debounce)
           return null;
         } else {

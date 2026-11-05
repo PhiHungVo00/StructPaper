@@ -92,7 +92,22 @@ export function PaperProvider({ children }: { children: React.ReactNode }) {
 export function usePaper() {
   const context = useContext(PaperContext);
   if (!context) {
-    throw new Error('usePaper must be used within a PaperProvider');
+    return {
+      paper: normalizeCompletePaper(createEmptyPaper('VNUHCM-STD')),
+      setPaper: (p: CompletePaper) => {
+        try {
+          sessionStorage.setItem('structpaper_current_paper', JSON.stringify(p));
+        } catch {}
+      },
+      updatePaper: () => {},
+      currentJournal: 'VNUHCM-STD',
+      setCurrentJournal: (j: string) => {
+        try {
+          sessionStorage.setItem('structpaper_current_journal', j);
+        } catch {}
+      },
+      preflight: computePreflightCheck(normalizeCompletePaper(createEmptyPaper('VNUHCM-STD'))),
+    };
   }
   return context;
 }

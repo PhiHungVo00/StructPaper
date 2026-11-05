@@ -167,7 +167,7 @@ export const JournalLayoutTab: React.FC<JournalLayoutTabProps> = ({
               className="p-2 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px]"
             >
               <span className="font-bold text-slate-700 block truncate">{docxStyle}</span>
-              <span className="font-mono text-emerald-700 text-[10px] block truncate">
+              <span className="font-mono text-[#14532D] font-bold text-[10px] block truncate">
                 &rarr; {semanticType}
               </span>
             </div>

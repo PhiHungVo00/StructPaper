@@ -25,20 +25,13 @@ export interface LocalNextCompilerOptions {
 export class LocalNextCompilerAdapter implements CompilerPort {
   private readonly endpoint: string;
   private readonly baseUrl: string;
-  private readonly fetchFn: typeof fetch;
+  private readonly fetchFn?: typeof fetch;
   private readonly fallbackCompiler?: CompilerPort;
 
   constructor(options: LocalNextCompilerOptions = {}) {
     this.endpoint = options.endpoint ?? '/api/compile-latex';
     this.baseUrl = options.baseUrl ?? '';
-    const defaultFetch =
-      typeof window !== 'undefined' && typeof window.fetch === 'function'
-        ? window.fetch.bind(window)
-        : typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
-        ? globalThis.fetch.bind(globalThis)
-        : undefined;
-
-    this.fetchFn = options.fetchFn ? options.fetchFn.bind(globalThis) : defaultFetch as any;
+    this.fetchFn = options.fetchFn;
     this.fallbackCompiler = options.fallbackCompiler;
   }
 
@@ -50,19 +43,20 @@ export class LocalNextCompilerAdapter implements CompilerPort {
     const url = `${this.baseUrl}${this.endpoint}`;
 
     try {
-      const fetchImpl =
-        this.fetchFn ??
-        (typeof window !== 'undefined' && typeof window.fetch === 'function'
-          ? window.fetch.bind(window)
-          : typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function'
-          ? globalThis.fetch.bind(globalThis)
-          : undefined);
-
-      if (!fetchImpl) {
+      const doFetch = (input: RequestInfo | URL, init?: RequestInit) => {
+        if (this.fetchFn) {
+          return this.fetchFn(input, init);
+        }
+        if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+          return window.fetch(input, init);
+        }
+        if (typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function') {
+          return globalThis.fetch(input, init);
+        }
         throw new Error('fetch is not defined in this environment and no custom fetchFn was provided');
-      }
+      };
 
-      const response = await fetchImpl(url, {
+      const response = await doFetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

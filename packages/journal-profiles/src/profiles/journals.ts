@@ -20,7 +20,7 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
       en: 'Science and Technology Development Journal',
       short: 'VNUHCM-STD',
     },
-    color: '#1e3a8a',
+    color: '#000099', // Official Deep Blue RGB(0, 0, 153) - Verified in 4581+PUBLISHED (1).pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-std\\.\\d+$',
     },
@@ -35,7 +35,7 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
       en: 'Science & Technology Development Journal - Health Sciences',
       short: 'VNUHCM-HS',
     },
-    color: '#0f766e',
+    color: '#2B74B7', // Official Journal Blue RGB(43, 116, 183) - Verified in HS 722.pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-hs\\.\\d+$',
     },
@@ -50,7 +50,7 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
       en: 'Science & Technology Development Journal - Social Sciences and Humanities',
       short: 'VNUHCM-SSH',
     },
-    color: '#b45309',
+    color: '#0000FF', // Official Cobalt Royal Blue RGB(0, 0, 255) - Verified in 1102+PDF.pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-ssh\\.\\d+$',
     },
@@ -65,7 +65,7 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
       en: 'Science & Technology Development Journal - Economics, Business and Law',
       short: 'VNUHCM-EBL',
     },
-    color: '#7c2d12',
+    color: '#8F0B97', // Official Magenta/Purple RGB(143, 11, 151) - Verified in EBL ID1750.pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-ebl\\.\\d+$',
     },
@@ -80,7 +80,7 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
       en: 'Science & Technology Development Journal - Engineering and Technology',
       short: 'VNUHCM-ET',
     },
-    color: '#1d4ed8',
+    color: '#0F4761', // Official Steel Blue/Dark Slate RGB(15, 71, 97) - Verified in ET ID1563.pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-et\\.\\d+$',
     },
@@ -91,11 +91,11 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
   ees: {
     id: 'ees',
     names: {
-      vi: 'Tạp chí Phát triển KH&CN - Khoa học Trái đất và Môi trường',
+      vi: 'Tạp chí Phát triển KH&CN - Môi trường & Khoa học Trái đất',
       en: 'Science & Technology Development Journal - Environment and Earth Sciences',
       short: 'VNUHCM-EES',
     },
-    color: '#15803d',
+    color: '#0C712F', // Official Forest Green RGB(12, 113, 47) - Verified in EES+ID850+(1).pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-ees\\.\\d+$',
     },
@@ -110,7 +110,7 @@ export const JOURNAL_DEFINITIONS: Record<JournalId, JournalTierProfile> = {
       en: 'Science & Technology Development Journal - Advanced Research in Natural Sciences',
       short: 'VNUHCM-ARNS',
     },
-    color: '#6b21a8',
+    color: '#FF0000', // Official Natural Sciences Red RGB(255, 0, 0) - Verified in 1421 NS PDF.pdf
     frontMatter: {
       doiPattern: '^10\\.32508/vnuhcm-arns\\.\\d+$',
     },

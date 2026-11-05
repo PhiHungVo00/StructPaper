@@ -14,43 +14,43 @@ describe('Task 2: 3-Tier Journal Profiles Inheritance', () => {
     const expectedJournals = [
       {
         id: 'std',
-        color: '#1e3a8a',
+        color: '#000099',
         short: 'VNUHCM-STD',
         vi: 'Tạp chí Phát triển Khoa học và Công nghệ',
       },
       {
         id: 'hs',
-        color: '#0f766e',
+        color: '#2B74B7',
         short: 'VNUHCM-HS',
         vi: 'Tạp chí Phát triển KH&CN - Khoa học Sức khỏe',
       },
       {
         id: 'ssh',
-        color: '#b45309',
+        color: '#0000FF',
         short: 'VNUHCM-SSH',
         vi: 'Tạp chí Phát triển KH&CN - Khoa học Xã hội và Nhân văn',
       },
       {
         id: 'ebl',
-        color: '#7c2d12',
+        color: '#8F0B97',
         short: 'VNUHCM-EBL',
         vi: 'Tạp chí Phát triển KH&CN - Kinh tế, Luật và Quản lý',
       },
       {
         id: 'et',
-        color: '#1d4ed8',
+        color: '#0F4761',
         short: 'VNUHCM-ET',
         vi: 'Tạp chí Phát triển KH&CN - Kỹ thuật và Công nghệ',
       },
       {
         id: 'ees',
-        color: '#15803d',
+        color: '#0C712F',
         short: 'VNUHCM-EES',
-        vi: 'Tạp chí Phát triển KH&CN - Khoa học Trái đất và Môi trường',
+        vi: 'Tạp chí Phát triển KH&CN - Môi trường & Khoa học Trái đất',
       },
       {
         id: 'arns',
-        color: '#6b21a8',
+        color: '#FF0000',
         short: 'VNUHCM-ARNS',
         vi: 'Tạp chí Phát triển KH&CN - Khoa học Tự nhiên',
       },
@@ -74,7 +74,7 @@ describe('Task 2: 3-Tier Journal Profiles Inheritance', () => {
     it('resolves vnuhcm-hs cleanly as an alias to hs', () => {
       const resolved = resolveProfile('vnuhcm-hs');
       expect(resolved.id).toBe('hs');
-      expect(resolved.color).toBe('#0f766e');
+      expect(resolved.color).toBe('#2B74B7');
       expect(resolved.names.short).toBe('VNUHCM-HS');
     });
 
@@ -242,7 +242,7 @@ describe('Task 2: 3-Tier Journal Profiles Inheritance', () => {
 
       const std = getJournalProfile('std');
       expect(std.id).toBe('std');
-      expect(std.color).toBe('#1e3a8a');
+      expect(std.color).toBe('#000099');
     });
   });
 });

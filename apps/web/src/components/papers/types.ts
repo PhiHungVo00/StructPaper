@@ -43,17 +43,17 @@ export const WORKFLOW_STATUS_CONFIG: Record<WorkflowStatus, WorkflowStatusConfig
   },
   ready: {
     label: 'Sẵn sàng',
-    chipBg: 'bg-emerald-50',
-    chipText: 'text-emerald-800',
-    border: 'border-emerald-200',
-    dotBg: 'bg-emerald-500',
+    chipBg: 'bg-[#D9F99D]/60',
+    chipText: 'text-[#14532D]',
+    border: 'border-[#B4E50D]/40',
+    dotBg: 'bg-[#78C841]',
   },
   published: {
     label: 'Đã xuất bản',
-    chipBg: 'bg-purple-50',
-    chipText: 'text-purple-800',
-    border: 'border-purple-200',
-    dotBg: 'bg-purple-500',
+    chipBg: 'bg-indigo-50',
+    chipText: 'text-indigo-800',
+    border: 'border-indigo-200',
+    dotBg: 'bg-indigo-500',
   },
 };
 
@@ -65,13 +65,13 @@ export function getWorkflowStatusConfig(status?: string): WorkflowStatusConfig {
 }
 
 export const JOURNAL_COLOR_MAP: Record<string, string> = {
-  std: '#1e3a8a',
-  hs: '#0f766e',
-  ssh: '#b45309',
-  ebl: '#7c2d12',
-  et: '#1d4ed8',
-  ees: '#15803d',
-  arns: '#6b21a8',
+  std: '#000099',
+  hs: '#2B74B7',
+  ssh: '#0000FF',
+  ebl: '#8F0B97',
+  et: '#0F4761',
+  ees: '#0C712F',
+  arns: '#FF0000',
 };
 
 export function getJournalColor(journalId?: string): string {

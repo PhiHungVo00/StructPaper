@@ -73,7 +73,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm theo tên bài, mã bài, tác giả, từ khóa..."
-            className="w-full bg-white border border-slate-200/90 rounded-2xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 shadow-2xs transition-all"
+            className="w-full bg-white border border-slate-200/90 rounded-2xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 shadow-2xs transition-all"
           />
           {searchQuery && (
             <button
@@ -99,7 +99,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
           {onCreateFromTemplate ? (
             <button
               onClick={onCreateFromTemplate}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tạo từ mẫu</span>
@@ -107,7 +107,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
           ) : (
             <Link
               href="/templates"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tạo từ mẫu</span>

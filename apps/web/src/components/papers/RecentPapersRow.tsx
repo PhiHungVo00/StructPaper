@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef } from 'react';
-import Link from 'next/link';
 import type { ManuscriptRecord } from '@structpaper/doc-model';
 import {
   Clock,
@@ -9,12 +8,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import {
   getJournalColor,
   getJournalShortName,
   getManuscriptTitle,
+  getManuscriptAuthors,
   getWorkflowStatusConfig,
   formatRelativeTime,
 } from './types';
@@ -52,12 +52,12 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
       {/* Header with Title and Scroll Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-700">
-            <Clock className="w-3.5 h-3.5" />
+          <div className="w-7 h-7 rounded-xl bg-[#D9F99D]/70 border border-[#B4E50D]/40 flex items-center justify-center text-[#14532D]">
+            <Clock className="w-4 h-4 text-[#14532D]" />
           </div>
-          <h2 className="text-sm font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+          <h2 className="text-sm font-extrabold text-[#1A1A1A] tracking-tight flex items-center gap-2">
             <span>Bài chỉnh sửa gần đây</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
               {recentPapers.length}
             </span>
           </h2>
@@ -66,7 +66,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleScroll('left')}
-            className="w-7 h-7 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shadow-2xs"
+            className="w-7 h-7 rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer shadow-2xs"
             title="Cuộn sang trái"
             aria-label="Cuộn sang trái"
           >
@@ -74,7 +74,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
           </button>
           <button
             onClick={() => handleScroll('right')}
-            className="w-7 h-7 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shadow-2xs"
+            className="w-7 h-7 rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer shadow-2xs"
             title="Cuộn sang phải"
             aria-label="Cuộn sang phải"
           >
@@ -87,36 +87,35 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
       <div
         ref={scrollContainerRef}
         data-testid="recent-papers-scroll-container"
-        className="flex items-stretch gap-3.5 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent snap-x snap-mandatory"
+        className="flex items-stretch gap-3.5 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-transparent snap-x snap-mandatory"
         style={{ scrollbarWidth: 'thin' }}
       >
         {/* Quick New Paper Starter Card */}
         <div
           onClick={onCreateNew}
-          className="group cursor-pointer shrink-0 w-36 sm:w-40 snap-start select-none flex flex-col"
+          className="group cursor-pointer shrink-0 w-60 sm:w-64 snap-start select-none bg-white p-4 rounded-3xl border-2 border-dashed border-[#78C841]/40 hover:border-[#78C841] hover:bg-[#D9F99D]/10 flex flex-col justify-between transition-all duration-200 shadow-2xs hover:shadow-md hover:scale-[1.01]"
         >
-          <div className="w-full aspect-[210/297] rounded-2xl bg-white border-2 border-dashed border-emerald-300/80 hover:border-emerald-500 hover:bg-emerald-50/20 flex flex-col items-center justify-center p-3 text-center transition-all duration-200 shadow-2xs group-hover:shadow-md group-hover:scale-[1.02]">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 shadow-2xs">
+          <div>
+            <div className="w-10 h-10 rounded-2xl bg-[#D9F99D] text-[#14532D] flex items-center justify-center mb-3 transition-transform group-hover:scale-110 shadow-2xs">
               <Plus className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-800">
+            <h4 className="font-extrabold text-sm text-[#1A1A1A] group-hover:text-zinc-950 mb-1">
               Tạo bài báo mới
-            </span>
-            <span className="text-[10px] text-slate-400 mt-1 leading-tight">
-              Khởi tạo từ mẫu chuẩn VNUHCM
-            </span>
+            </h4>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Khởi tạo bản thảo trắng theo cấu trúc chuẩn của 7 Tạp chí ĐHQG-HCM.
+            </p>
           </div>
-          <div className="mt-2 text-center">
-            <span className="text-[11px] font-semibold text-emerald-700 flex items-center justify-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Bắt đầu soạn thảo
-            </span>
+          <div className="mt-4 pt-2.5 border-t border-zinc-100 flex items-center justify-between text-xs font-bold text-zinc-800">
+            <span>Bắt đầu</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
           </div>
         </div>
 
         {/* Recent Papers Cards */}
         {recentPapers.map((paper) => {
           const title = getManuscriptTitle(paper);
+          const authors = getManuscriptAuthors(paper);
           const journalColor = getJournalColor(paper.doc.journalId);
           const journalShort = getJournalShortName(paper.doc.journalId);
           const statusConfig = getWorkflowStatusConfig(paper.info.workflowStatus);
@@ -129,79 +128,55 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
               key={paper.info.id}
               data-testid={`recent-paper-${paper.info.id}`}
               onClick={() => onOpenPaper(paper.info.id)}
-              className="group cursor-pointer shrink-0 w-44 sm:w-48 snap-start select-none flex flex-col"
+              className="group cursor-pointer shrink-0 w-64 sm:w-72 snap-start select-none bg-white p-4 rounded-3xl border border-zinc-200/80 hover:border-[#78C841] transition-all duration-200 flex flex-col justify-between shadow-2xs hover:shadow-md hover:scale-[1.01]"
             >
-              {/* Mini A4 Simulation Preview Card */}
-              <div className="w-full aspect-[210/297] rounded-2xl bg-white border border-slate-200/90 group-hover:border-emerald-500 p-3 flex flex-col justify-between shadow-xs transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02] overflow-hidden relative">
-                {/* Journal Identity Color Top Bar */}
-                <div
-                  className="absolute top-0 left-0 right-0 h-1.5"
-                  style={{ backgroundColor: journalColor }}
-                />
-
-                {/* Card Top: Journal short badge & Pinned icon */}
-                <div className="pt-1 flex items-center justify-between">
+              <div>
+                {/* Card Top: Journal code badge & Status pill / Pinned */}
+                <div className="flex items-center justify-between mb-2.5">
                   <span
-                    className="text-[9px] font-extrabold px-1.5 py-0.5 rounded text-white tracking-wide"
+                    className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs"
                     style={{ backgroundColor: journalColor }}
                   >
                     {journalShort}
                   </span>
-
-                  {paper.info.pinned && (
+                  <div className="flex items-center gap-1.5">
+                    {paper.info.pinned && (
+                      <Pin className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
+                    )}
                     <span
-                      className="text-amber-600 flex items-center gap-0.5"
-                      title="Đã ghim"
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${statusConfig.chipBg} ${statusConfig.chipText}`}
                     >
-                      <Pin className="w-3 h-3 fill-amber-500 text-amber-600" />
+                      {statusConfig.label}
                     </span>
-                  )}
-                </div>
-
-                {/* Simulated Article Body Skeleton */}
-                <div className="my-auto py-1 space-y-1.5">
-                  <div className="h-1.5 w-full rounded bg-slate-800/80" />
-                  <div className="h-1.5 w-3/4 rounded bg-slate-600/70" />
-
-                  {/* 2-Column academic layout simulation */}
-                  <div className="grid grid-cols-2 gap-1.5 pt-1.5">
-                    <div className="space-y-1">
-                      <div className="h-1 w-full rounded bg-slate-200" />
-                      <div className="h-1 w-full rounded bg-slate-200" />
-                      <div className="h-1 w-4/5 rounded bg-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="h-1 w-full rounded bg-slate-200" />
-                      <div className="h-1 w-full rounded bg-slate-200" />
-                      <div className="h-1 w-2/3 rounded bg-slate-200" />
-                    </div>
                   </div>
                 </div>
 
-                {/* Card Bottom: Status & Relative Time */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                  <span
-                    className={`font-bold px-1.5 py-0.5 rounded-full text-[9px] ${statusConfig.chipBg} ${statusConfig.chipText}`}
-                  >
-                    {statusConfig.label}
-                  </span>
-                  <span className="text-slate-400 font-medium">{relativeTime}</span>
-                </div>
-              </div>
-
-              {/* Title & Submission Info Below Card */}
-              <div className="mt-2 px-1">
-                <h3
-                  className="text-xs font-bold text-slate-800 group-hover:text-emerald-800 line-clamp-2 leading-snug transition-colors"
+                {/* Title */}
+                <h4
+                  className="font-bold text-xs text-[#1A1A1A] line-clamp-2 mb-1.5 leading-snug group-hover:text-zinc-950 transition-colors"
                   title={title}
                 >
                   {title}
-                </h3>
-                {paper.info.submissionId && (
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
-                    {paper.info.submissionId}
-                  </p>
-                )}
+                </h4>
+
+                {/* Authors */}
+                <p className="text-[11px] text-zinc-500 line-clamp-1 mb-2">
+                  {authors || 'Chưa cập nhật tác giả'}
+                </p>
+
+                {/* Metadata */}
+                <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold">
+                  <span>{relativeTime}</span>
+                  {paper.info.submissionId && (
+                    <span>• {paper.info.submissionId}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Footer: Action */}
+              <div className="mt-3 pt-2.5 border-t border-zinc-100 flex items-center justify-between text-xs font-bold text-zinc-800">
+                <span>Mở soạn thảo</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
               </div>
             </div>
           );
