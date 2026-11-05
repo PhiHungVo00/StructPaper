@@ -49,11 +49,11 @@ export const PaperTable: React.FC<PaperTableProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse" data-testid="papers-table">
           <thead>
-            <tr className="border-b border-slate-200/80 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <tr className="border-b border-slate-200/80 bg-gray-100 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
               <th className="py-3 px-3 w-10 text-center">Ghim</th>
               <th className="py-3 px-4 min-w-[260px]">Tên bài báo & Mã bài</th>
               <th className="py-3 px-4 min-w-[130px]">Tạp chí</th>
@@ -116,30 +116,15 @@ export const PaperTable: React.FC<PaperTableProps> = ({
                           {info.submissionId}
                         </span>
                       )}
-                      {info.tags && info.tags.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          {info.tags.slice(0, 2).map((t, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[9px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded"
-                            >
-                              #{t}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </td>
 
                   {/* Journal */}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1.5">
+                      
                       <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: journalColor }}
-                      />
-                      <span
-                        className="font-bold text-[11px]"
+                        className="font-extrabold text-[11px]"
                         style={{ color: journalColor }}
                       >
                         {journalShort}
@@ -161,7 +146,7 @@ export const PaperTable: React.FC<PaperTableProps> = ({
 
                   {/* Authors */}
                   <td className="py-3 px-4 text-slate-500">
-                    <span className="line-clamp-1 text-[11px]">{authors}</span>
+                    <span className="line-clamp-1 font-normal text-[11px]">{authors}</span>
                   </td>
 
                   {/* Updated Time */}

@@ -98,7 +98,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm theo tên bài, mã bài, tác giả..."
             style={{ boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)' }}
-            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
+            className="w-full bg-slate-50/40 backdrop-blur-sm border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
           />
 
           {searchQuery && (
@@ -224,14 +224,14 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
           </div>
 
           {/* View Mode Toggle: Grid vs Table */}
-          <div className="flex items-center bg-zinc-100 p-0.5 rounded-2xl border border-zinc-200/60">
+          <div className="flex items-center bg-gray-300 p-0.5 rounded-2xl border">
             <button
               data-testid="view-mode-grid"
               onClick={() => onViewModeChange('grid')}
               className={`p-1.5 rounded-xl transition-all cursor-pointer ${
                 viewMode === 'grid'
                   ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-400 hover:text-zinc-700'
+                  : 'text-zinc-700 hover:text-zinc-700'
               }`}
               title="Dạng lưới"
             >
@@ -243,7 +243,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
               className={`p-1.5 rounded-xl transition-all cursor-pointer ${
                 viewMode === 'table'
                   ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-400 hover:text-zinc-700'
+                  : 'text-zinc-700 hover:text-zinc-700'
               }`}
               title="Dạng bảng"
             >
