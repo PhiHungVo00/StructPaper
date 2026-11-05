@@ -88,7 +88,10 @@ export const JournalHubView: React.FC = () => {
       </div>
 
       {/* 2. Top Sticky Filter Toolbar matching Eatzy */}
-      <div className="sticky top-0 z-30 bg-[#F7F7F7]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]">
+      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300">
+        {/* Frosted Glass Backdrop with soft bottom fade mask */}
+        <div className="absolute inset-0 bg-[#F7F7F7]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
+
         <JournalFiltersBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

@@ -356,7 +356,10 @@ export const PaperHubView: React.FC = () => {
       />
 
       {/* 3. Sticky Filter Toolbar matching Eatzy */}
-      <div className="sticky top-0 z-30 bg-[#F7F7F7]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]">
+      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300">
+        {/* Frosted Glass Backdrop with soft bottom fade mask */}
+        <div className="absolute inset-0 bg-[#F7F7F7]/95 backdrop-blur-md pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_85%,transparent)]" />
+
         <PaperFiltersBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -431,7 +434,7 @@ export const PaperHubView: React.FC = () => {
         <div className="py-10 flex items-center justify-center gap-4 opacity-50 select-none">
           <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
           <div className="flex flex-col items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-[#78C841]" />
+            <CheckCircle2 className="w-4 h-4 text-zinc-500" />
             <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-wider">
               Bạn đã xem hết danh sách bài báo
             </span>

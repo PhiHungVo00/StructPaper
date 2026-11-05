@@ -35,7 +35,7 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
       onClick={() => router.push(`/templates/journal/${id}`)}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.15 }}
-      className="bg-gray-200/50 p-5 rounded-3xl transition-shadow duration-300 cursor-pointer flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none"
+      className="bg-gray-200/50 p-5 rounded-3xl transition-all duration-300 cursor-pointer flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none"
     >
       <div>
         {/* Top Badges matching UploadView */}
