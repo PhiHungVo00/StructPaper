@@ -1,0 +1,247 @@
+// @vitest-environment happy-dom
+import 'fake-indexeddb/auto';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
+
+// Mock next/navigation
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/papers',
+}));
+
+// Mock DynamicIslandToast
+vi.mock('@/components/DynamicIslandToast', () => ({
+  toast: {
+    success: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+
+import {
+  RecentPapersRow,
+  PaperFiltersBar,
+  PaperCard,
+  PaperTable,
+  PaperQuickEditModal,
+  type FilterWorkflowStatus,
+} from '@/components/papers';
+import { PaperHubView } from '@/components/authoring/PaperHubView';
+import { SAMPLE_VNUHCM_RECORDS } from '@/lib/authoring/sample-records-seeder';
+import { defaultDatabase } from '@structpaper/storage';
+
+describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
+  beforeEach(async () => {
+    mockPush.mockClear();
+    // Clean indexedDB database between tests
+    await defaultDatabase.manuscripts.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe('RecentPapersRow Component', () => {
+    it('renders recent papers with A4 cards, journal badges and workflow status', () => {
+      const handleOpen = vi.fn();
+      render(
+        <RecentPapersRow
+          papers={SAMPLE_VNUHCM_RECORDS}
+          onOpenPaper={handleOpen}
+          onCreateNew={vi.fn()}
+        />
+      );
+
+      // Verify title & section heading
+      expect(screen.getByText('Bài chỉnh sửa gần đây')).toBeDefined();
+      expect(screen.getByText('Tạo bài báo mới')).toBeDefined();
+
+      // Verify journal badges render
+      expect(screen.getByText('VNUHCM-HS')).toBeDefined();
+      expect(screen.getByText('VNUHCM-STD')).toBeDefined();
+
+      // Verify first paper card can be clicked
+      const firstCard = screen.getByTestId(`recent-paper-${SAMPLE_VNUHCM_RECORDS[0].info.id}`);
+      expect(firstCard).toBeDefined();
+
+      fireEvent.click(firstCard);
+      expect(handleOpen).toHaveBeenCalledWith(SAMPLE_VNUHCM_RECORDS[0].info.id);
+    });
+  });
+
+  describe('PaperFiltersBar Component', () => {
+    it('handles filter status changes, search query and view mode toggle', () => {
+      const handleSearch = vi.fn();
+      const handleStatusChange = vi.fn();
+      const handleJournalChange = vi.fn();
+      const handleSortChange = vi.fn();
+      const handleViewModeChange = vi.fn();
+
+      render(
+        <PaperFiltersBar
+          searchQuery=""
+          onSearchChange={handleSearch}
+          statusFilter="all"
+          onStatusFilterChange={handleStatusChange}
+          journalFilter="all"
+          onJournalFilterChange={handleJournalChange}
+          sortBy="newest"
+          onSortChange={handleSortChange}
+          viewMode="grid"
+          onViewModeChange={handleViewModeChange}
+          countsByStatus={{ all: 5, draft: 1, 'in-review': 1, ready: 1, published: 2 }}
+        />
+      );
+
+      // Status chip buttons
+      const inReviewChip = screen.getByTestId('filter-chip-in-review');
+      expect(inReviewChip).toBeDefined();
+      fireEvent.click(inReviewChip);
+      expect(handleStatusChange).toHaveBeenCalledWith('in-review');
+
+      // Search input
+      const searchInput = screen.getByTestId('paper-search-input');
+      fireEvent.change(searchInput, { target: { value: 'IoT' } });
+      expect(handleSearch).toHaveBeenCalledWith('IoT');
+
+      // Journal select
+      const journalSelect = screen.getByTestId('filter-journal-select');
+      fireEvent.change(journalSelect, { target: { value: 'hs' } });
+      expect(handleJournalChange).toHaveBeenCalledWith('hs');
+
+      // View mode toggle
+      const tableBtn = screen.getByTestId('view-mode-table');
+      fireEvent.click(tableBtn);
+      expect(handleViewModeChange).toHaveBeenCalledWith('table');
+    });
+  });
+
+  describe('PaperQuickEditModal Component', () => {
+    it('edits displayName, submissionId, status and tags, and calls onSave', async () => {
+      const handleSave = vi.fn().mockResolvedValue(undefined);
+      const handleClose = vi.fn();
+      const targetPaper = SAMPLE_VNUHCM_RECORDS[0];
+
+      render(
+        <PaperQuickEditModal
+          paper={targetPaper}
+          isOpen={true}
+          onClose={handleClose}
+          onSave={handleSave}
+        />
+      );
+
+      // Check fields are populated
+      const nameInput = screen.getByTestId('quick-edit-displayname') as HTMLInputElement;
+      expect(nameInput.value).toBe(targetPaper.info.displayName);
+
+      // Change displayName
+      fireEvent.change(nameInput, {
+        target: { value: 'Tiêu đề cập nhật thử nghiệm 2026' },
+      });
+
+      // Change status to in-review
+      const statusSelect = screen.getByTestId('quick-edit-status');
+      fireEvent.change(statusSelect, { target: { value: 'in-review' } });
+
+      // Add tag
+      const tagInput = screen.getByTestId('quick-edit-tags-input');
+      fireEvent.change(tagInput, { target: { value: 'KiemThu' } });
+      fireEvent.keyDown(tagInput, { key: 'Enter', code: 'Enter' });
+
+      // Submit form
+      const submitBtn = screen.getByTestId('quick-edit-submit');
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      expect(handleSave).toHaveBeenCalledWith(
+        targetPaper.info.id,
+        expect.objectContaining({
+          displayName: 'Tiêu đề cập nhật thử nghiệm 2026',
+          workflowStatus: 'in-review',
+        })
+      );
+      expect(handleClose).toHaveBeenCalled();
+    });
+  });
+
+  describe('PaperHubView Full Integration', () => {
+    it('seeds samples on empty database, renders top row, filters, pins, and quick edits', async () => {
+      render(<PaperHubView />);
+
+      // Wait for records to be seeded and loaded from IndexedDB
+      await waitFor(() => {
+        expect(screen.getByTestId('papers-grid')).toBeDefined();
+      }, { timeout: 3000 });
+
+      // Verify ID630_HS card exists
+      expect(screen.getByTestId('paper-card-vnuhcm-hs-id630')).toBeDefined();
+
+      // Test Status Filter: switch to "Đang duyệt" (in-review)
+      const inReviewFilter = screen.getByTestId('filter-chip-in-review');
+      await act(async () => {
+        fireEvent.click(inReviewFilter);
+      });
+
+      // After filtering by "in-review", STDJ IoT paper should be displayed
+      expect(
+        screen.getAllByText(/Phân tích hiệu năng giao thức định tuyến/).length
+      ).toBeGreaterThan(0);
+
+      // Switch back to "Tất cả"
+      const allFilter = screen.getByTestId('filter-chip-all');
+      await act(async () => {
+        fireEvent.click(allFilter);
+      });
+
+      // Test Quick Edit modal open
+      const hsCard = screen.getByTestId('paper-card-vnuhcm-hs-id630');
+      const menuTrigger = screen.getByTestId('menu-trigger-vnuhcm-hs-id630');
+      fireEvent.click(menuTrigger);
+
+      const quickEditBtn = screen.getByTestId('quick-edit-vnuhcm-hs-id630');
+      await act(async () => {
+        fireEvent.click(quickEditBtn);
+      });
+
+      // Verify modal is open
+      const modal = screen.getByTestId('quick-edit-modal');
+      expect(modal).toBeDefined();
+
+      // Change title inside modal and save
+      const nameInput = screen.getByTestId('quick-edit-displayname');
+      fireEvent.change(nameInput, {
+        target: { value: 'Bài báo Y sinh AI Đã sửa nhanh' },
+      });
+
+      const submitBtn = screen.getByTestId('quick-edit-submit');
+      await act(async () => {
+        fireEvent.click(submitBtn);
+      });
+
+      // Verify updated title is reflected in the UI
+      await waitFor(() => {
+        expect(
+          screen.getAllByText('Bài báo Y sinh AI Đã sửa nhanh').length
+        ).toBeGreaterThan(0);
+      });
+
+      // Test Table View Mode
+      const tableModeBtn = screen.getByTestId('view-mode-table');
+      await act(async () => {
+        fireEvent.click(tableModeBtn);
+      });
+
+      expect(screen.getByTestId('papers-table')).toBeDefined();
+    });
+  });
+});

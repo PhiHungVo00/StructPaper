@@ -25,8 +25,8 @@ const NAV_ITEMS = [
   },
   {
     path: '/history',
-    label: 'Kho bài báo',
-    description: 'Lịch sử & lưu trữ bản thảo',
+    label: 'Bài báo',
+    description: 'Quản lý & lưu trữ bản thảo',
     icon: FolderArchive,
   },
   {

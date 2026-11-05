@@ -6,6 +6,7 @@ export default defineWorkspace([
   'apps/*/vitest.config.ts',
   {
     resolve: {
+      preserveSymlinks: true,
       alias: {
         '@structpaper/doc-model': path.resolve(__dirname, 'packages/doc-model/src'),
         '@structpaper/journal-profiles': path.resolve(__dirname, 'packages/journal-profiles/src'),

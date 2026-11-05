@@ -52,7 +52,10 @@ module.exports = {
   ],
   options: {
     doNotFollow: {
-      path: 'node_modules',
+      path: '(node_modules|\\.next)',
+    },
+    exclude: {
+      path: '(node_modules|\\.next|dist)',
     },
     tsPreCompilationDeps: true,
     tsConfig: {
