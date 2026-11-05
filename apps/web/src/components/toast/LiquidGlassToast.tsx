@@ -33,53 +33,53 @@ function getThemeConfig(type: ToastType): ThemeConfig {
   switch (type) {
     case 'success':
       return {
-        accent: '#78C841',
-        containerBg: 'bg-[#EDF8E5]/92 dark:bg-[#14532D]/40',
-        containerBorder: 'border-b-2 border-x-2 border-[#B4E50D]/50 dark:border-lime-500/30',
-        glowShadow: 'shadow-[0_12px_32px_rgba(120,200,65,0.20),0_2px_8px_rgba(120,200,65,0.10)]',
-        badgeBg: 'bg-[#78C841]',
+        accent: '#16A34A',
+        containerBg: 'bg-[#DCFCE7]',
+        containerBorder: 'border-b-2 border-x-2 border-[#86EFAC]',
+        glowShadow: 'shadow-[0_10px_28px_rgba(34,197,94,0.22),0_2px_8px_rgba(34,197,94,0.12)]',
+        badgeBg: 'bg-[#16A34A]',
         badgeText: 'text-white',
         icon: <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.8]" />,
       };
     case 'error':
       return {
-        accent: '#FB4141',
-        containerBg: 'bg-[#FEEBEB]/92 dark:bg-[#7F1D1D]/40',
-        containerBorder: 'border-b-2 border-x-2 border-rose-300/60 dark:border-rose-500/30',
-        glowShadow: 'shadow-[0_12px_32px_rgba(251,65,65,0.20),0_2px_8px_rgba(251,65,65,0.10)]',
-        badgeBg: 'bg-[#FB4141]',
+        accent: '#DC2626',
+        containerBg: 'bg-[#FEE2E2]',
+        containerBorder: 'border-b-2 border-x-2 border-[#FCA5A5]',
+        glowShadow: 'shadow-[0_10px_28px_rgba(239,68,68,0.22),0_2px_8px_rgba(239,68,68,0.12)]',
+        badgeBg: 'bg-[#DC2626]',
         badgeText: 'text-white',
         icon: <AlertCircle className="w-3.5 h-3.5 stroke-[2.8]" />,
       };
     case 'warning':
       return {
-        accent: '#FF9B2F',
-        containerBg: 'bg-[#FFF6DB]/92 dark:bg-[#78350F]/40',
-        containerBorder: 'border-b-2 border-x-2 border-amber-300/60 dark:border-amber-500/30',
-        glowShadow: 'shadow-[0_12px_32px_rgba(255,155,47,0.20),0_2px_8px_rgba(255,155,47,0.10)]',
-        badgeBg: 'bg-[#FF9B2F]',
+        accent: '#D97706',
+        containerBg: 'bg-[#FEF3C7]',
+        containerBorder: 'border-b-2 border-x-2 border-[#FCD34D]',
+        glowShadow: 'shadow-[0_10px_28px_rgba(245,158,11,0.22),0_2px_8px_rgba(245,158,11,0.12)]',
+        badgeBg: 'bg-[#D97706]',
         badgeText: 'text-white',
         icon: <AlertTriangle className="w-3.5 h-3.5 stroke-[2.8]" />,
       };
     case 'loading':
       return {
-        accent: '#78C841',
-        containerBg: 'bg-[#EDF8E5]/92 dark:bg-[#14532D]/40',
-        containerBorder: 'border-b-2 border-x-2 border-[#B4E50D]/50 dark:border-lime-500/30',
-        glowShadow: 'shadow-[0_12px_32px_rgba(120,200,65,0.18),0_2px_8px_rgba(120,200,65,0.08)]',
-        badgeBg: 'bg-white/80 dark:bg-zinc-800',
-        badgeText: 'text-[#78C841]',
-        icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-[#78C841]" />,
+        accent: '#16A34A',
+        containerBg: 'bg-[#DCFCE7]',
+        containerBorder: 'border-b-2 border-x-2 border-[#86EFAC]',
+        glowShadow: 'shadow-[0_10px_28px_rgba(34,197,94,0.18),0_2px_8px_rgba(34,197,94,0.08)]',
+        badgeBg: 'bg-[#16A34A]',
+        badgeText: 'text-white',
+        icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />,
       };
     case 'info':
     case 'default':
     default:
       return {
         accent: '#1A1A1A',
-        containerBg: 'bg-[#ECEEF2]/92 dark:bg-zinc-800/90',
-        containerBorder: 'border-b-2 border-x-2 border-zinc-300/70 dark:border-zinc-700/60',
-        glowShadow: 'shadow-[0_12px_32px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)]',
-        badgeBg: 'bg-zinc-900',
+        containerBg: 'bg-gray-200/50',
+        containerBorder: 'border-b-2 border-x-2 border-gray-300/80',
+        glowShadow: 'shadow-[0_10px_28px_rgba(0,0,0,0.08),0_2px_6px_rgba(0,0,0,0.04)]',
+        badgeBg: 'bg-zinc-800',
         badgeText: 'text-white',
         icon: <Sparkles className="w-3.5 h-3.5 stroke-[2.4]" />,
       };
@@ -144,7 +144,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-xl ${theme.containerBg} ${theme.containerBorder} rounded-b-2xl sm:rounded-b-[26px] rounded-t-none transition-[background-color,border-color,box-shadow] duration-300 ${theme.glowShadow} w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)]`}
+        className={`pointer-events-auto select-none relative overflow-hidden backdrop-blur-md ${theme.containerBg} ${theme.containerBorder} rounded-b-2xl sm:rounded-b-[26px] rounded-t-none transition-[background-color,border-color,box-shadow] duration-300 ${theme.glowShadow} w-auto min-w-[280px] max-w-[92vw] sm:max-w-lg shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)]`}
       >
         {/* Specular glass highlight reflection at top edge */}
         <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
@@ -167,14 +167,14 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
             <div className="flex flex-col justify-center min-w-0 flex-1 text-left">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span
-                  className="font-extrabold text-xs sm:text-[13px] text-zinc-950 dark:text-zinc-100 truncate tracking-tight leading-tight"
+                  className="font-extrabold text-xs sm:text-[13px] text-zinc-950 truncate tracking-tight leading-tight"
                 >
                   {title}
                 </span>
               </div>
 
               {isTwoLine && (
-                <p className="text-[11px] sm:text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-snug mt-0.5 font-medium">
+                <p className="text-[11px] sm:text-xs text-zinc-600 line-clamp-2 leading-snug mt-0.5 font-medium">
                   {description}
                 </p>
               )}
@@ -201,7 +201,7 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
                 type="button"
                 data-testid="toast-dismiss-button"
                 onClick={() => onDismiss(id)}
-                className="w-6 h-6 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 flex items-center justify-center transition-all cursor-pointer"
+                className="w-6 h-6 rounded-full bg-black/5 hover:bg-black/10 text-zinc-500 hover:text-zinc-950 flex items-center justify-center transition-all cursor-pointer"
                 title="Đóng thông báo"
                 aria-label="Đóng thông báo"
               >
