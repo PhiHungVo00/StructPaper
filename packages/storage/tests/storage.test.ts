@@ -88,7 +88,7 @@ describe('packages/storage - Dexie Storage & Repositories', () => {
   });
 
   describe('StructPaperDatabase schema', () => {
-    it('defines all 8 required tables', () => {
+    it('defines all 10 required tables', () => {
       expect(db.tables.map((t) => t.name).sort()).toEqual([
         'assetRefs',
         'assets',
@@ -96,6 +96,8 @@ describe('packages/storage - Dexie Storage & Repositories', () => {
         'ingestSources',
         'manuscripts',
         'outbox',
+        'profileIndex',
+        'profiles',
         'revisions',
         'settings',
       ]);

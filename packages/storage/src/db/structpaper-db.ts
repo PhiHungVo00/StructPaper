@@ -8,12 +8,13 @@ import type {
   StoredOutboxItem,
   StoredCompileCache,
   StoredSetting,
+  StoredProfile,
+  StoredProfileIndex,
 } from './types';
 
 /**
  * StructPaperDatabase provides client-side offline-first persistence via Dexie IndexedDB.
- * Manages 8 indexed tables: manuscripts, revisions, assets, assetRefs, ingestSources,
- * outbox, compileCache, and settings.
+ * Manages 10 indexed tables in v2 schema (PDF Spec 3.6, 5.1d, 9.2).
  */
 export class StructPaperDatabase extends Dexie {
   manuscripts!: Table<StoredManuscript, string>;
@@ -24,6 +25,8 @@ export class StructPaperDatabase extends Dexie {
   outbox!: Table<StoredOutboxItem, number>;
   compileCache!: Table<StoredCompileCache, string>;
   settings!: Table<StoredSetting, string>;
+  profiles!: Table<StoredProfile, [string, string, number]>;
+  profileIndex!: Table<StoredProfileIndex, [string, string]>;
 
   constructor(dbName = 'StructPaperDB') {
     super(dbName);
@@ -39,6 +42,43 @@ export class StructPaperDatabase extends Dexie {
       compileCache: 'hash, cachedAt',
       settings: 'key',
     });
+
+    this.version(2)
+      .stores({
+        manuscripts:
+          'id, [journalId+updatedAt], workflowStatus, displayName, *tags, pinned, archived, syncState, updatedAt',
+        profiles: '[scopeType+scopeId+version], scopeType, scopeId, version, state, fetchedAt',
+        profileIndex: '[scopeType+scopeId], scopeType, scopeId, checkedAt',
+      })
+      .upgrade((tx) => {
+        return tx
+          .table('manuscripts')
+          .toCollection()
+          .modify((manuscript: any) => {
+            const now = new Date().toISOString();
+            if (!manuscript.displayName) {
+              manuscript.displayName = manuscript.title || 'Untitled Document';
+            }
+            if (!manuscript.workflowStatus) {
+              manuscript.workflowStatus = 'draft';
+            }
+            if (typeof manuscript.pinned !== 'boolean') {
+              manuscript.pinned = false;
+            }
+            if (typeof manuscript.archived !== 'boolean') {
+              manuscript.archived = false;
+            }
+            if (!Array.isArray(manuscript.tags)) {
+              manuscript.tags = [];
+            }
+            if (!manuscript.createdAt) {
+              manuscript.createdAt = manuscript.updatedAt || now;
+            }
+            if (!manuscript.updatedAt) {
+              manuscript.updatedAt = now;
+            }
+          });
+      });
   }
 }
 
