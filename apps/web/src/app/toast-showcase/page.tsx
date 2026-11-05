@@ -194,17 +194,17 @@ export default function ToastShowcasePage() {
             </div>
           </div>
 
-          {/* White - Normal / Info */}
+          {/* White-Gray - Normal / Info */}
           <div className="p-4 sm:p-5 rounded-3xl bg-white border border-zinc-200/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-zinc-100 text-zinc-800 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center">
                   <Sparkles className="w-3.5 h-3.5 stroke-[2.4]" />
                 </div>
-                <h3 className="font-extrabold text-sm text-zinc-900">Theme Trắng (Normal / Info)</h3>
+                <h3 className="font-extrabold text-sm text-zinc-900">Theme Trắng Xám (Normal / Info)</h3>
               </div>
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-800">
-                Liquid Glass
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-800">
+                Trắng Xám
               </span>
             </div>
             <div className="flex items-center gap-2 pt-1 flex-wrap">
@@ -221,7 +221,7 @@ export default function ToastShowcasePage() {
                     'Tất cả 7 tạp chí ĐHQG-HCM áp dụng trích dẫn số thứ tự theo định dạng Vancouver.'
                   )
                 }
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-100 text-zinc-900 hover:bg-zinc-200 transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-200 text-zinc-900 hover:bg-zinc-300 transition-all cursor-pointer"
               >
                 2 Dòng: Hướng dẫn trích dẫn
               </button>
