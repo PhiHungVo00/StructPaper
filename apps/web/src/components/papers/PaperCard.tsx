@@ -142,8 +142,8 @@ export const PaperCard: React.FC<PaperCardProps> = ({
                         ? { duration: 0 }
                         : {
                             type: 'spring',
-                            stiffness: 420,
-                            damping: 28,
+                            stiffness: 150,
+                            damping: 18,
                             mass: 0.8,
                           }
                     }
