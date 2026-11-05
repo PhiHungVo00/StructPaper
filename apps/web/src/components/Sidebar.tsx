@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   ChevronLeft,
+  BookOpen,
   Menu,
   X,
 } from 'lucide-react';
@@ -24,10 +25,16 @@ const NAV_ITEMS = [
     icon: FileText,
   },
   {
-    path: '/history',
-    label: 'Bài báo',
+    path: '/papers',
+    label: 'Quản lý Bài báo',
     description: 'Quản lý & lưu trữ bản thảo',
     icon: FolderArchive,
+  },
+  {
+    path: '/templates',
+    label: 'Quản lý Mẫu & Tạp chí',
+    description: '7 Tạp chí ĐHQG & Quy định',
+    icon: BookOpen,
   },
   {
     path: '/account',
@@ -182,6 +189,10 @@ export const Sidebar: React.FC = () => {
 
   const isNavActive = (path: string) => {
     if (path === '/upload' && (pathname === '/' || pathname === '/upload')) return true;
+    if (path === '/papers' && (pathname.startsWith('/papers') || pathname === '/history')) return true;
+    if (path === '/templates' && pathname.startsWith('/templates')) return true;
+    if (path === '/account' && pathname.startsWith('/account')) return true;
+    if (path === '/settings' && pathname.startsWith('/settings')) return true;
     return pathname === path;
   };
 
