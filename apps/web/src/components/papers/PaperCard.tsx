@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import type { ManuscriptRecord } from '@structpaper/doc-model';
 import {
   Pin,
@@ -56,10 +57,12 @@ export const PaperCard: React.FC<PaperCardProps> = ({
   const relativeTime = formatRelativeTime(info.lastOpenedAt || info.updatedAt);
 
   return (
-    <div
+    <motion.div
       data-testid={`paper-card-${info.id}`}
       onClick={() => onOpenEditor(info.id)}
-      className="bg-gray-200/50 p-4 rounded-3xl transition-all cursor-pointer flex flex-col justify-between hover:shadow-md hover:bg-white hover:ring-2 hover:ring-[#78C841]/20 group relative"
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.15 }}
+      className="bg-gray-200/50 p-4 rounded-3xl transition-shadow duration-300 cursor-pointer flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group relative select-none"
     >
       <div>
         {/* Top Badges & Actions matching UploadView */}
@@ -83,7 +86,9 @@ export const PaperCard: React.FC<PaperCardProps> = ({
               </span>
             )}
 
-            <span className="text-[10px] font-extrabold text-[#14532D] bg-[#D9F99D] px-2 py-0.5 rounded-full">
+            <span
+              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${statusConfig.chipBg} ${statusConfig.chipText}`}
+            >
               {statusConfig.label}
             </span>
 
@@ -202,13 +207,10 @@ export const PaperCard: React.FC<PaperCardProps> = ({
           {authors || 'Tác giả bài báo'}
         </p>
 
-        {/* Metadata stats row matching UploadView */}
+        {/* Metadata stats row matching UploadView (no hashtags) */}
         <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2 flex-wrap">
           <span>{relativeTime}</span>
           {info.submissionId && <span>• {info.submissionId}</span>}
-          {info.tags && info.tags.length > 0 && (
-            <span>• #{info.tags[0]}</span>
-          )}
         </div>
       </div>
 
@@ -217,6 +219,6 @@ export const PaperCard: React.FC<PaperCardProps> = ({
         <span>Mở soạn thảo</span>
         <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
       </div>
-    </div>
+    </motion.div>
   );
 };

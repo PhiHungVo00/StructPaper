@@ -14,6 +14,7 @@ import {
 } from '@structpaper/storage';
 import { normalizeJournalId } from '@structpaper/journal-profiles';
 import { toast } from '@/components/DynamicIslandToast';
+import { CheckCircle2 } from 'lucide-react';
 import {
   RecentPapersRow,
   PaperFiltersBar,
@@ -344,19 +345,8 @@ export const PaperHubView: React.FC = () => {
   }, [records, searchQuery, statusFilter, journalFilter, sortBy]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-7 pb-16 px-4 sm:px-6">
+    <div className="max-w-7xl mx-auto space-y-7 pb-16 pt-4 px-4 sm:px-6">
       {/* 1. Header Banner */}
-      <div className="pt-2">
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-          <span>Quản lý Bài báo Khoa học</span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-extrabold bg-emerald-500/15 text-emerald-800">
-            VNUHCM Academic Hub
-          </span>
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Theo dõi tiến độ, phân loại bản thảo theo quy chuẩn 7 tạp chí ĐHQG-HCM và xuất bản sao lưu an toàn.
-        </p>
-      </div>
 
       {/* 2. Top Horizontal Recent Papers Row */}
       <RecentPapersRow
@@ -365,21 +355,23 @@ export const PaperHubView: React.FC = () => {
         onCreateNew={() => router.push('/templates')}
       />
 
-      {/* 3. Filter Bar */}
-      <PaperFiltersBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        journalFilter={journalFilter}
-        onJournalFilterChange={setJournalFilter}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        countsByStatus={countsByStatus}
-        onCreateFromTemplate={() => router.push('/templates')}
-      />
+      {/* 3. Sticky Filter Toolbar matching Eatzy */}
+      <div className="sticky top-0 z-30 bg-[#F7F7F7]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]">
+        <PaperFiltersBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          journalFilter={journalFilter}
+          onJournalFilterChange={setJournalFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          countsByStatus={countsByStatus}
+          onCreateFromTemplate={() => router.push('/templates')}
+        />
+      </div>
 
       {/* 4. Papers List (Grid vs Table vs Empty) */}
       {filteredPapers.length === 0 ? (
@@ -432,6 +424,20 @@ export const PaperHubView: React.FC = () => {
           onExportBackup={handleExportBackup}
           onDelete={handleDelete}
         />
+      )}
+
+      {/* 5. End of list indicator matching Eatzy */}
+      {filteredPapers.length > 0 && (
+        <div className="py-10 flex items-center justify-center gap-4 opacity-50 select-none">
+          <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
+          <div className="flex flex-col items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#78C841]" />
+            <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-wider">
+              Bạn đã xem hết danh sách bài báo
+            </span>
+          </div>
+          <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
+        </div>
       )}
 
       {/* 5. Quick Edit Modal */}

@@ -12,7 +12,7 @@ import {
 import { JournalFiltersBar } from './JournalFiltersBar';
 import { JournalProfilesList } from './JournalProfilesList';
 import { toast } from '@/components/DynamicIslandToast';
-import { BookOpen, Layers, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { BookOpen, CheckCircle2 } from 'lucide-react';
 
 export const JournalHubView: React.FC = () => {
   const router = useRouter();
@@ -77,49 +77,27 @@ export const JournalHubView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-[#78C841]" />
+              <BookOpen className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
               <span>Quản Lý Mẫu &amp; Tạp Chí Khoa Học</span>
             </h1>
             <span className="text-[11px] px-2.5 py-0.5 rounded-full font-black bg-blue-50 text-blue-700 border border-blue-200/80">
               7 Tạp chí ĐHQG-HCM
             </span>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-[#D9F99D] text-[#14532D] border border-[#B4E50D]/40">
-              Quy chuẩn 3-Tier
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Tùy biến cấu hình quy định học thuật, tóm tắt, từ khóa, trích dẫn Vancouver và dàn trang Typst/LaTeX cho 7 Tạp chí Phát triển KH&amp;CN thuộc ĐHQG TP.HCM.
-          </p>
-        </div>
-
-        {/* Highlight Stats Badges */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-2 text-xs">
-            <ShieldCheck className="w-4 h-4 text-[#78C841]" />
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold leading-tight">Quy chuẩn</div>
-              <div className="font-extrabold text-slate-800">Chuẩn IMRaD</div>
-            </div>
-          </div>
-          <div className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-2 text-xs">
-            <Layers className="w-4 h-4 text-blue-600" />
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold leading-tight">Chuyên mục</div>
-              <div className="font-extrabold text-slate-800">8 Loại bài</div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Top Filter and Action Bar */}
-      <JournalFiltersBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        totalCount={journals.length}
-        filteredCount={filteredJournals.length}
-      />
+      {/* 2. Top Sticky Filter Toolbar matching Eatzy */}
+      <div className="sticky top-0 z-30 bg-[#F7F7F7]/95 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 transition-all duration-300 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]">
+        <JournalFiltersBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          totalCount={journals.length}
+          filteredCount={filteredJournals.length}
+        />
+      </div>
 
       {/* 3. Journal Profiles Grid */}
       {isLoading ? (
@@ -136,6 +114,22 @@ export const JournalHubView: React.FC = () => {
           }}
         />
       )}
+
+      {/* 4. End of list indicator matching Eatzy */}
+      {!isLoading && filteredJournals.length > 0 && (
+        <div className="py-10 flex items-center justify-center gap-4 opacity-50 select-none">
+          <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
+          <div className="flex flex-col items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#78C841]" />
+            <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-wider">
+              Bạn đã xem hết danh sách mẫu tạp chí
+            </span>
+          </div>
+          <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
+        </div>
+      )}
     </div>
   );
 };
+
+export default JournalHubView;

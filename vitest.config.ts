@@ -30,6 +30,12 @@ export default defineConfig({
       '**/e2e/**',
       '**/*.e2e.{test,spec}.{ts,tsx}',
     ],
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        execArgv: ['--max-old-space-size=4096'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

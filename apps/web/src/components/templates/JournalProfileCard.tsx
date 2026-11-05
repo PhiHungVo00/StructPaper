@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Sliders, ArrowRight } from 'lucide-react';
 import { ManagedJournalProfile } from '@/lib/templates/journal-storage';
 
@@ -30,9 +31,11 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
   const isPublished = status === 'published';
 
   return (
-    <div
+    <motion.div
       onClick={() => router.push(`/templates/journal/${id}`)}
-      className="bg-gray-200/50 p-5 rounded-3xl transition-all cursor-pointer flex flex-col justify-between hover:shadow-md hover:bg-white hover:ring-2 hover:ring-[#78C841]/20 group"
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.15 }}
+      className="bg-gray-200/50 p-5 rounded-3xl transition-shadow duration-300 cursor-pointer flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none"
     >
       <div>
         {/* Top Badges matching UploadView */}
@@ -88,6 +91,6 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
           <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };

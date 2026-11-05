@@ -2,18 +2,20 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
   Search,
   LayoutGrid,
   List,
   UploadCloud,
   Sparkles,
-  Filter,
+  X,
 } from 'lucide-react';
 import {
   ALL_JOURNAL_IDS,
   JOURNAL_DEFINITIONS,
 } from '@structpaper/journal-profiles';
+import { Select, SelectOption } from '@/components/ui/Select';
 import {
   type FilterWorkflowStatus,
   type FilterJournal,
@@ -57,49 +59,72 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
   onSortChange,
   viewMode,
   onViewModeChange,
-  countsByStatus,
   onCreateFromTemplate,
 }) => {
+  // Journal select options
+  const journalOptions: SelectOption<string>[] = [
+    { value: 'all', label: 'Tất cả tạp chí' },
+    ...ALL_JOURNAL_IDS.map((jid) => ({
+      value: jid,
+      label: JOURNAL_DEFINITIONS[jid]?.names?.short || jid.toUpperCase(),
+      color: JOURNAL_DEFINITIONS[jid]?.color,
+      badge: jid.toUpperCase(),
+    })),
+  ];
+
+  // Sort select options
+  const sortOptions: SelectOption<SortOption>[] = [
+    { value: 'newest', label: 'Sắp xếp: Mới nhất' },
+    { value: 'title', label: 'Sắp xếp: Tên A-Z' },
+    { value: 'status', label: 'Sắp xếp: Trạng thái' },
+  ];
+
   return (
-    <div className="space-y-3.5">
-      {/* Row 1: Search, Action Buttons */}
+    <div className="space-y-3">
+      {/* Row 1: Eatzy-style Search & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Search Input Box */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        {/* Eatzy Search Input Box */}
+        <div className="flex-1 max-w-lg relative group">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2.5 z-10 pointer-events-none">
+            <Search className="w-4 h-4 text-zinc-400 group-focus-within:text-[#78C841] transition-colors" />
+            <div className="w-px h-3.5 bg-zinc-300" />
+          </div>
+
           <input
             type="text"
+            role="searchbox"
             data-testid="paper-search-input"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm theo tên bài, mã bài, tác giả, từ khóa..."
-            className="w-full bg-white border border-slate-200/90 rounded-2xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 shadow-2xs transition-all"
+            placeholder="Tìm theo tên bài, mã bài, tác giả..."
+            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/30 rounded-2xl sm:rounded-3xl py-2.5 pl-12 pr-10 text-xs sm:text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/10 transition-all shadow-[inset_0_0_15px_rgba(0,0,0,0.06)]"
           />
+
           {searchQuery && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg bg-zinc-200 hover:bg-zinc-300 flex items-center justify-center transition-all group/close cursor-pointer"
               title="Xóa tìm kiếm"
             >
-              ✕
+              <X className="w-3.5 h-3.5 text-zinc-600 group-hover/close:rotate-90 transition-transform duration-300" />
             </button>
           )}
         </div>
 
         {/* Action CTAs: Upload DOCX & Create from Template */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/upload"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 hover:text-slate-900 shadow-2xs transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-semibold bg-white border border-zinc-200/90 hover:border-zinc-300 text-zinc-700 hover:text-zinc-900 shadow-2xs transition-all"
           >
             <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
-            <span>Tải file DOCX mới</span>
+            <span>Tải file DOCX</span>
           </Link>
 
           {onCreateFromTemplate ? (
             <button
               onClick={onCreateFromTemplate}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tạo từ mẫu</span>
@@ -107,7 +132,7 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
           ) : (
             <Link
               href="/templates"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tạo từ mẫu</span>
@@ -118,50 +143,50 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
 
       {/* Row 2: Status Filter Chips & Right Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
-        {/* Status Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        {/* Status Filter Chips (Eatzy style without counts) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {STATUS_TABS.map((tab) => {
             const isActive = statusFilter === tab.id;
-            const count = countsByStatus?.[tab.id];
 
             return (
-              <button
+              <motion.button
                 key={tab.id}
                 data-testid={`filter-chip-${tab.id}`}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => onStatusFilterChange(tab.id)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-[#1A1A1A] text-white shadow-md shadow-black/10'
+                    : 'bg-gray-100 text-zinc-600 hover:text-zinc-900 hover:bg-gray-200/70'
                 }`}
               >
-                <span>{tab.label}</span>
-                {typeof count === 'number' && (
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
+                {tab.label}
+              </motion.button>
             );
           })}
         </div>
 
-        {/* Right side: Journal Filter, Sort Dropdown, View Toggle */}
+        {/* Right side: Custom Selects & View Toggle */}
         <div className="flex items-center gap-2 flex-wrap shrink-0">
-          {/* Journal Dropdown */}
-          <div className="flex items-center gap-1 bg-white border border-slate-200/80 rounded-xl px-2.5 py-1 text-xs shadow-2xs">
-            <Filter className="w-3 h-3 text-slate-400" />
+          {/* Custom Select for Journal */}
+          <div className="w-44">
+            <Select
+              options={journalOptions}
+              value={journalFilter}
+              onChange={(val) => onJournalFilterChange(val as FilterJournal)}
+              size="sm"
+              variant="clean"
+              fullWidth
+            />
+            {/* Hidden native select for test & accessibility integration */}
             <select
               data-testid="filter-journal-select"
               value={journalFilter}
               onChange={(e) => onJournalFilterChange(e.target.value as FilterJournal)}
-              className="bg-transparent text-slate-700 font-medium outline-none cursor-pointer text-xs"
+              className="sr-only"
+              aria-hidden="true"
+              tabIndex={-1}
             >
               <option value="all">Tất cả tạp chí</option>
               {ALL_JOURNAL_IDS.map((jid) => (
@@ -172,27 +197,40 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             </select>
           </div>
 
-          {/* Sort Dropdown */}
-          <select
-            data-testid="sort-by-select"
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as SortOption)}
-            className="bg-white border border-slate-200/80 text-slate-700 text-xs font-medium rounded-xl px-2.5 py-1.5 outline-none cursor-pointer shadow-2xs"
-          >
-            <option value="newest">Sắp xếp: Mới nhất</option>
-            <option value="title">Sắp xếp: Tên A-Z</option>
-            <option value="status">Sắp xếp: Trạng thái</option>
-          </select>
+          {/* Custom Select for Sort */}
+          <div className="w-40">
+            <Select
+              options={sortOptions}
+              value={sortBy}
+              onChange={(val) => onSortChange(val as SortOption)}
+              size="sm"
+              variant="clean"
+              fullWidth
+            />
+            {/* Hidden native select for test & accessibility integration */}
+            <select
+              data-testid="sort-by-select"
+              value={sortBy}
+              onChange={(e) => onSortChange(e.target.value as SortOption)}
+              className="sr-only"
+              aria-hidden="true"
+              tabIndex={-1}
+            >
+              <option value="newest">Sắp xếp: Mới nhất</option>
+              <option value="title">Sắp xếp: Tên A-Z</option>
+              <option value="status">Sắp xếp: Trạng thái</option>
+            </select>
+          </div>
 
           {/* View Mode Toggle: Grid vs Table */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/60">
+          <div className="flex items-center bg-zinc-100 p-0.5 rounded-2xl border border-zinc-200/60">
             <button
               data-testid="view-mode-grid"
               onClick={() => onViewModeChange('grid')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-400 hover:text-slate-700'
+                  ? 'bg-white text-zinc-900 shadow-2xs'
+                  : 'text-zinc-400 hover:text-zinc-700'
               }`}
               title="Dạng lưới"
             >
@@ -201,10 +239,10 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             <button
               data-testid="view-mode-table"
               onClick={() => onViewModeChange('table')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-400 hover:text-slate-700'
+                  ? 'bg-white text-zinc-900 shadow-2xs'
+                  : 'text-zinc-400 hover:text-zinc-700'
               }`}
               title="Dạng bảng"
             >

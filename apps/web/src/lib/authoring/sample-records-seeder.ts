@@ -10,9 +10,10 @@ export function createSampleVnuManuscript(
   workflowStatus: WorkflowStatus,
   tags: string[],
   note?: string,
-  pinned = false
+  pinned = false,
+  offsetMinutes = 0
 ): ManuscriptRecord {
-  const now = new Date();
+  const now = new Date(Date.now() - offsetMinutes * 60000);
   const updatedAt = now.toISOString();
 
   const doc: Manuscript = {
@@ -131,7 +132,8 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'published',
     ['AI', 'Khoa học Sức khỏe', 'Xử lý ảnh', 'VNUHCM-HS'],
     'Bài báo nghiên cứu ứng dụng mô hình AI và thị giác máy tính.',
-    true
+    true,
+    5
   ),
   createSampleVnuManuscript(
     'vnuhcm-std-412',
@@ -142,7 +144,8 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'in-review',
     ['IoT', 'Mạng cảm biến', 'WSN', 'STDJ'],
     'Đang trong vòng phản biện thứ hai với 2 chuyên gia độc lập.',
-    true
+    true,
+    15
   ),
   createSampleVnuManuscript(
     'vnuhcm-ssh-185',
@@ -153,7 +156,8 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'draft',
     ['Xã hội học', 'Kinh tế số', 'VNUHCM-SSH'],
     'Bản phác thảo sơ bộ, tiếp tục mở rộng mẫu khảo sát.',
-    false
+    false,
+    45
   ),
   createSampleVnuManuscript(
     'vnuhcm-ees-220',
@@ -164,7 +168,8 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'proofing',
     ['Môi trường', 'Nguồn nước', 'VNUHCM-EES'],
     'Đang hiệu đính bản in và rà soát tài liệu trích dẫn.',
-    false
+    false,
+    120
   ),
   createSampleVnuManuscript(
     'vnuhcm-et-305',
@@ -175,7 +180,8 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'ready',
     ['Năng lượng sạch', 'Smart Grid', 'Kỹ thuật'],
     'Đã thông qua phản biện, sẵn sàng chuyển bộ phận chế bản.',
-    false
+    false,
+    240
   ),
   createSampleVnuManuscript(
     'vnuhcm-ebl-140',
@@ -186,7 +192,8 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'draft',
     ['Luật học', 'Fintech', 'Tài chính'],
     'Bản nháp thảo luận tại hội thảo chuyên đề.',
-    false
+    false,
+    360
   ),
   createSampleVnuManuscript(
     'vnuhcm-arns-512',
@@ -197,6 +204,7 @@ export const SAMPLE_VNUHCM_RECORDS: ManuscriptRecord[] = [
     'published',
     ['Vật liệu nano', 'Hóa học', 'Xúc tác'],
     'Công bố chính thức trên Tạp chí Khoa học Tự nhiên.',
-    false
+    false,
+    480
   ),
 ];
