@@ -69,7 +69,7 @@ export const JournalFiltersBar: React.FC<JournalFiltersBarProps> = ({
             onKeyDown={handleSearchKeyDown}
             placeholder="Tìm theo mã STDJ-*, tên tiếng Việt hoặc tiếng Anh... (nhấn Enter để tìm)"
             style={{ boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.09)' }}
-            className="w-full bg-slate-50 border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
+            className="w-full bg-slate-50/60 backdrop-blur-sm border-2 border-white focus:border-[#78C841]/20 rounded-3xl py-3.5 sm:py-4 pl-14 pr-12 text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#78C841]/5 transition-all shadow-eatzy-inner hover:shadow-eatzy-inner-hover"
           />
 
           {searchInputValue && (

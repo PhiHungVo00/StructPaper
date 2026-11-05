@@ -46,11 +46,11 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
             delay: index * 0.04,
             duration: 0.35,
           }}
-          className="bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] flex flex-col justify-between select-none relative overflow-hidden min-h-[200px]"
+          className="bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] flex flex-col justify-between select-none relative overflow-hidden min-h-[252px]"
         >
           <div>
             {/* Top row badges */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2.5">
               <motion.div
                 variants={isTest ? undefined : shimmerVariants}
                 initial={isTest ? undefined : "initial"}
@@ -67,32 +67,48 @@ export const JournalProfileCardShimmer: React.FC<JournalProfileCardShimmerProps>
               />
             </div>
 
-            {/* Bilingual Journal Names */}
-            <div className="space-y-1.5 mb-3">
+            {/* Bilingual Journal Names matching 2-line Vi and 1-line En */}
+            <div className="space-y-1.5 mb-2.5">
               <motion.div
                 variants={isTest ? undefined : shimmerVariants}
                 initial={isTest ? undefined : "initial"}
                 animate={isTest ? undefined : "animate"}
                 style={shimmerStyle}
-                className="h-4 w-3/4 rounded-md"
+                className="h-4 w-4/5 rounded-md"
               />
               <motion.div
                 variants={isTest ? undefined : shimmerVariants}
                 initial={isTest ? undefined : "initial"}
                 animate={isTest ? undefined : "animate"}
                 style={shimmerStyle}
-                className="h-3.5 w-1/2 rounded-md"
+                className="h-3.5 w-3/5 rounded-md"
+              />
+              <motion.div
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
+                style={shimmerStyle}
+                className="h-3 w-1/2 rounded-md italic"
               />
             </div>
 
-            {/* Specification stats row */}
-            <motion.div
-              variants={isTest ? undefined : shimmerVariants}
-              initial={isTest ? undefined : "initial"}
-              animate={isTest ? undefined : "animate"}
-              style={shimmerStyle}
-              className="h-3 w-4/5 rounded-md mb-2"
-            />
+            {/* Specification stats row matching wrapped 2 lines */}
+            <div className="space-y-1.5 mb-2">
+              <motion.div
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
+                style={shimmerStyle}
+                className="h-3 w-5/6 rounded-md"
+              />
+              <motion.div
+                variants={isTest ? undefined : shimmerVariants}
+                initial={isTest ? undefined : "initial"}
+                animate={isTest ? undefined : "animate"}
+                style={shimmerStyle}
+                className="h-3 w-2/3 rounded-md"
+              />
+            </div>
           </div>
 
           {/* Action Footer */}

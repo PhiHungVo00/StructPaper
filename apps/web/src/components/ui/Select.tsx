@@ -287,7 +287,7 @@ export function Select<T extends string | number = string>({
     'flat-white': 'bg-white hover:bg-slate-50/70 border-0 shadow-none focus:ring-2 focus:ring-[#78C841]/30 rounded-xl text-slate-800',
     'white-shadow-4': 'bg-white hover:bg-slate-50/70 border-0 shadow-[0_0_12px_rgba(0,0,0,0.08),0_0_3px_rgba(0,0,0,0.04)] hover:shadow-[0_0_16px_rgba(0,0,0,0.12),0_0_4px_rgba(0,0,0,0.06)] focus:ring-2 focus:ring-[#78C841]/30 rounded-xl text-slate-800',
     'liquid-glass': 'bg-white/45 hover:bg-white/75 backdrop-blur-md border border-white/60 shadow-[inset_0_0_14px_8px_rgba(255,255,255,0.85)] text-[#1A1A1A] rounded-2xl focus:border-[#78C841]/50 focus:ring-2 focus:ring-[#78C841]/20',
-    'eatzy-inner': 'bg-slate-50 border-2 border-white hover:border-zinc-200/80 focus:border-[#78C841]/20 rounded-2xl shadow-eatzy-inner hover:shadow-eatzy-inner-hover text-zinc-900',
+    'eatzy-inner': 'bg-slate-50/50 backdrop-blur-sm border-2 border-white hover:border-zinc-200/80 focus:border-[#78C841]/20 rounded-2xl shadow-eatzy-inner hover:shadow-eatzy-inner-hover text-zinc-900',
     custom: '',
   }[variant];
 

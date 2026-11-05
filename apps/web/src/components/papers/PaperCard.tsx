@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ManuscriptRecord } from '@structpaper/doc-model';
 import {
@@ -59,221 +60,300 @@ export const PaperCard: React.FC<PaperCardProps> = ({
   const statusConfig = getWorkflowStatusConfig(info.workflowStatus);
   const relativeTime = formatRelativeTime(info.lastOpenedAt || info.updatedAt);
 
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      setMenuPos(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const menuWidth = 208;
+      const menuHeight = 290;
+
+      let top = rect.bottom + 6;
+      if (typeof window !== 'undefined' && top + menuHeight > window.innerHeight && rect.top - menuHeight > 8) {
+        top = rect.top - menuHeight - 6;
+      }
+
+      let left = rect.right - menuWidth;
+      if (left < 12) left = 12;
+      if (typeof window !== 'undefined' && left + menuWidth > window.innerWidth - 12) {
+        left = window.innerWidth - menuWidth - 12;
+      }
+
+      setMenuPos({
+        top: Math.max(8, top),
+        left: Math.max(8, left),
+      });
+    };
+
+    updatePosition();
+
+    const handleDismiss = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+        return;
+      }
+      if (triggerRef.current && triggerRef.current.contains(e.target as Node)) {
+        return;
+      }
+      onCloseMenu();
+    };
+
+    const handleDismissOnScroll = () => {
+      onCloseMenu();
+    };
+
+    window.addEventListener('mousedown', handleDismiss, true);
+    window.addEventListener('touchstart', handleDismiss, true);
+    window.addEventListener('scroll', handleDismissOnScroll, true);
+    window.addEventListener('resize', handleDismissOnScroll, true);
+
+    return () => {
+      window.removeEventListener('mousedown', handleDismiss, true);
+      window.removeEventListener('touchstart', handleDismiss, true);
+      window.removeEventListener('scroll', handleDismissOnScroll, true);
+      window.removeEventListener('resize', handleDismissOnScroll, true);
+    };
+  }, [isMenuOpen, onCloseMenu]);
+
   return (
-    <motion.div
-      data-testid={`paper-card-${info.id}`}
-      onClick={() => onOpenEditor(info.id)}
-      whileHover={isTest ? undefined : { scale: 1.02 }}
-      whileTap={isTest ? undefined : { scale: 0.98 }}
-      transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
-      className="bg-gray-200/50 p-4 rounded-3xl transition-all duration-300 cursor-pointer flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group relative select-none"
-    >
-      <div>
-        {/* Top Badges & Actions matching UploadView */}
-        <div className="flex items-center justify-between mb-2">
-          {/* Journal Badge */}
-          <span
-            className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs"
-            style={{ backgroundColor: journalColor }}
-          >
-            {journalShort}
-          </span>
-
-          {/* Right Badges & Context Menu */}
-          <div
-            className="flex items-center gap-1.5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {info.pinned && (
-              <span title="Đã ghim" className="text-amber-500">
-                <Pin className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-              </span>
-            )}
-
+    <>
+      <motion.div
+        data-testid={`paper-card-${info.id}`}
+        onClick={() => onOpenEditor(info.id)}
+        whileHover={isTest || isMenuOpen ? undefined : { scale: 1.02 }}
+        whileTap={isTest || isMenuOpen ? undefined : { scale: 0.98 }}
+        transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+        className="bg-gray-200/50 p-4 rounded-3xl transition-all duration-300 cursor-pointer flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group relative select-none min-h-[178px]"
+      >
+        <div>
+          {/* Top Badges & Actions matching UploadView */}
+          <div className="flex items-center justify-between mb-2">
+            {/* Journal Badge */}
             <span
-              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${statusConfig.chipBg} ${statusConfig.chipText}`}
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs"
+              style={{ backgroundColor: journalColor }}
             >
-              {statusConfig.label}
+              {journalShort}
             </span>
 
-            {/* Subtle Menu Button with Spring Morph Transition */}
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              <AnimatePresence>
-                {!isMenuOpen ? (
-                  <motion.button
-                    key="menu-trigger-btn"
-                    layoutId={`paper-menu-card-${info.id}`}
-                    data-testid={`menu-trigger-${info.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleMenu(e);
-                    }}
-                    className="w-7 h-7 rounded-full bg-white/70 hover:bg-white text-zinc-600 hover:text-zinc-950 flex items-center justify-center shadow-xs border border-zinc-200/60 transition-colors cursor-pointer"
-                    title="Thao tác khác"
-                  >
-                    <MoreVertical className="w-3.5 h-3.5" />
-                  </motion.button>
-                ) : (
-                  <motion.div
-                    key="menu-dropdown-popup"
-                    layoutId={`paper-menu-card-${info.id}`}
-                    data-testid={`paper-menu-${info.id}`}
-                    initial={isTest ? false : undefined}
-                    transition={
-                      isTest
-                        ? { duration: 0 }
-                        : {
-                            type: 'spring',
-                            stiffness: 400,
-                            damping: 28,
-                            mass: 0.8,
-                          }
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-0 z-50 w-52 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
-                  >
-                    <div className="flex items-center justify-between px-2 py-1 select-none">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                        Thao tác bài báo
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCloseMenu();
-                        }}
-                        className="w-5 h-5 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-700 cursor-pointer"
-                        title="Đóng menu"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
+            {/* Right Badges & Context Menu */}
+            <div
+              className="flex items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {info.pinned && (
+                <span title="Đã ghim" className="text-amber-500">
+                  <Pin className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                </span>
+              )}
 
-                    <div className="border-t border-zinc-200/80 my-0.5" />
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${statusConfig.chipBg} ${statusConfig.chipText}`}
+              >
+                {statusConfig.label}
+              </span>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenEditor(info.id);
-                        onCloseMenu();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-left font-medium cursor-pointer transition-colors"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Mở soạn thảo</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      data-testid={`quick-edit-${info.id}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onQuickEdit(paper);
-                        onCloseMenu();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                    >
-                      <Sliders className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Sửa thông tin nhanh</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      data-testid={`pin-toggle-${info.id}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTogglePin(info.id, info.pinned);
-                        onCloseMenu();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                    >
-                      {info.pinned ? (
-                        <>
-                          <PinOff className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Bỏ ghim</span>
-                        </>
-                      ) : (
-                        <>
-                          <Pin className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Ghim lên đầu</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicate(paper);
-                        onCloseMenu();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                    >
-                      <Copy className="w-3.5 h-3.5 text-zinc-600" />
-                      <span>Nhân bản bài báo</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onExportBackup(paper);
-                        onCloseMenu();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5 text-[#14532D]" />
-                      <span>Xuất file .structpaper</span>
-                    </button>
-
-                    <div className="border-t border-zinc-200/80 my-0.5" />
-
-                    <button
-                      type="button"
-                      data-testid={`delete-paper-${info.id}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(info.id);
-                        onCloseMenu();
-                      }}
-                      className="w-full px-2.5 py-1.5 rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Xóa bài báo</span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Fixed-size 3-dots Trigger Slot (maintains constant vertical height) */}
+              <div className="w-7 h-7 shrink-0 relative flex items-center justify-center">
+                <button
+                  ref={triggerRef}
+                  type="button"
+                  data-testid={`menu-trigger-${info.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleMenu(e);
+                  }}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shadow-xs border transition-colors cursor-pointer ${
+                    isMenuOpen
+                      ? 'bg-zinc-200 text-zinc-950 border-zinc-300 ring-2 ring-zinc-300/60'
+                      : 'bg-white/70 hover:bg-white text-zinc-600 hover:text-zinc-950 border-zinc-200/60'
+                  }`}
+                  title="Thao tác khác"
+                >
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Paper Display Title */}
+          <h4
+            className="font-bold text-xs text-[#1A1A1A] line-clamp-2 mb-1.5 leading-snug"
+            title={title}
+          >
+            {title}
+          </h4>
+
+          {/* Authors */}
+          <p className="text-[11px] text-zinc-500 line-clamp-2 mb-2">
+            {authors || 'Tác giả bài báo'}
+          </p>
+
+          {/* Metadata stats row matching UploadView (no hashtags) */}
+          <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2 flex-wrap">
+            <span>{relativeTime}</span>
+            {info.submissionId && <span>• {info.submissionId}</span>}
           </div>
         </div>
 
-        {/* Paper Display Title */}
-        <h4
-          className="font-bold text-xs text-[#1A1A1A] line-clamp-2 mb-1.5 leading-snug"
-          title={title}
-        >
-          {title}
-        </h4>
-
-        {/* Authors */}
-        <p className="text-[11px] text-zinc-500 line-clamp-2 mb-2">
-          {authors || 'Tác giả bài báo'}
-        </p>
-
-        {/* Metadata stats row matching UploadView (no hashtags) */}
-        <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2 flex-wrap">
-          <span>{relativeTime}</span>
-          {info.submissionId && <span>• {info.submissionId}</span>}
+        {/* Action Footer matching UploadView exactly */}
+        <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800">
+          <span>Mở soạn thảo</span>
+          <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
         </div>
-      </div>
+      </motion.div>
 
-      {/* Action Footer matching UploadView exactly */}
-      <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800">
-        <span>Mở soạn thảo</span>
-        <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
-      </div>
-    </motion.div>
+      {/* Independent Context Menu portaled directly to document.body (unaffected by card hover scale) */}
+      {mounted && isMenuOpen && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          <motion.div
+            ref={menuRef}
+            key={`paper-menu-${info.id}`}
+            data-testid={`paper-menu-${info.id}`}
+            initial={isTest ? false : { opacity: 0, scale: 0.94, y: -6 }}
+            animate={isTest ? false : { opacity: 1, scale: 1, y: 0 }}
+            exit={isTest ? false : { opacity: 0, scale: 0.94, y: -6 }}
+            transition={
+              isTest
+                ? { duration: 0 }
+                : { type: 'spring', stiffness: 420, damping: 28, mass: 0.8 }
+            }
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              top: menuPos?.top ?? 80,
+              left: menuPos?.left ?? 80,
+              zIndex: 99999,
+              transformOrigin: 'top right',
+            }}
+            className="w-52 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
+          >
+            <div className="flex items-center justify-between px-2 py-1 select-none">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Thao tác bài báo
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCloseMenu();
+                }}
+                className="w-5 h-5 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-700 cursor-pointer"
+                title="Đóng menu"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="border-t border-zinc-200/80 my-0.5" />
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEditor(info.id);
+                onCloseMenu();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-left font-medium cursor-pointer transition-colors"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+              <span>Mở soạn thảo</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid={`quick-edit-${info.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickEdit(paper);
+                onCloseMenu();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+            >
+              <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Sửa thông tin nhanh</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid={`pin-toggle-${info.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin(info.id, info.pinned);
+                onCloseMenu();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+            >
+              {info.pinned ? (
+                <>
+                  <PinOff className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Bỏ ghim</span>
+                </>
+              ) : (
+                <>
+                  <Pin className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Ghim lên đầu</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate(paper);
+                onCloseMenu();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5 text-zinc-600" />
+              <span>Nhân bản bài báo</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExportBackup(paper);
+                onCloseMenu();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-[#14532D]" />
+              <span>Xuất file .structpaper</span>
+            </button>
+
+            <div className="border-t border-zinc-200/80 my-0.5" />
+
+            <button
+              type="button"
+              data-testid={`delete-paper-${info.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(info.id);
+                onCloseMenu();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa bài báo</span>
+            </button>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
   );
 };
