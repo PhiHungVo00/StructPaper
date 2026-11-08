@@ -225,3 +225,44 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running StructPaper application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_tectonic_binary() {
+        let bin = resolve_tectonic_binary().expect("Tectonic binary should be resolved");
+        println!("Resolved tectonic at: {}", bin.display());
+        assert!(bin.is_file(), "Resolved path must be a file");
+    }
+
+    #[tokio::test]
+    async fn test_tectonic_execution() {
+        let bin = resolve_tectonic_binary().expect("Tectonic binary should be resolved");
+        let temp_dir = std::env::temp_dir().join(format!("sp-test-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let tex_content = r#"\documentclass{article}
+\begin{document}
+Hello StructPaper!
+\end{document}"#;
+        fs::write(temp_dir.join("article.tex"), tex_content).unwrap();
+
+        let mut cmd = tokio::process::Command::new(&bin);
+        cmd.current_dir(&temp_dir).arg("article.tex");
+        #[cfg(windows)]
+        cmd.creation_flags(0x08000000);
+
+        let output = cmd.output().await.expect("Failed to execute tectonic");
+        println!("Tectonic status: {:?}", output.status);
+        println!("Stdout: {}", String::from_utf8_lossy(&output.stdout));
+        println!("Stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+        let pdf = temp_dir.join("article.pdf");
+        assert!(pdf.exists(), "article.pdf should be generated");
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+}
+
+
