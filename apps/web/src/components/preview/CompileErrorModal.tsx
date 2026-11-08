@@ -34,10 +34,10 @@ export const CompileErrorModal: React.FC<CompileErrorModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm text-red-900">
-                Báo Cáo Lỗi Biên Dịch Backend XeLaTeX
+                Báo Cáo Lỗi Biên Dịch {errorInfo.engine && errorInfo.engine !== 'None' ? errorInfo.engine : 'LaTeX'}
               </h3>
               <p className="text-[11px] text-red-700">
-                Hệ thống báo lỗi trung thực theo lệnh CLI, không sử dụng cơ chế nạp sẵn (no fallback)
+                Hệ thống báo lỗi trung thực theo lệnh biên dịch, không sử dụng cơ chế nạp sẵn (no fallback)
               </p>
             </div>
           </div>

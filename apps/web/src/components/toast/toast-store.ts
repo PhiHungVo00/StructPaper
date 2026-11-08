@@ -1,6 +1,7 @@
 'use client';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'default' | 'loading';
+export type ToastVariant = 'island' | 'full-width-sticky';
 
 export interface ToastAction {
   label: string;
@@ -16,17 +17,22 @@ export interface ToastItem {
   action?: ToastAction;
   dismissible?: boolean;
   inline?: boolean;
+  sticky?: boolean;
+  variant?: ToastVariant;
   createdAt: number;
 }
 
 export interface ToastOptions {
   id?: string;
+  type?: ToastType;
   title?: string;
   description?: string;
   duration?: number;
   action?: ToastAction;
   dismissible?: boolean;
   inline?: boolean;
+  sticky?: boolean;
+  variant?: ToastVariant;
   mode?: 'auto' | 'single-line' | 'two-line' | 'inline';
   theme?: 'success' | 'error' | 'warning' | 'white' | 'default' | 'sky';
 }
@@ -63,13 +69,20 @@ class ToastStore {
       createdAt: Date.now(),
     };
 
-    // Keep active toasts (can replace or keep latest 3, for top notch liquid glass 1-2 active is ideal)
+    // Keep active toasts (can replace or keep latest 3 normal toasts, sticky toasts never evicted)
     const existingIndex = this.toasts.findIndex((t) => t.id === id);
     if (existingIndex >= 0) {
       this.toasts[existingIndex] = newToast;
+    } else if (newToast.sticky) {
+      // Sticky toasts are never evicted by new toasts
+      const stickyToasts = this.toasts.filter((t) => t.sticky);
+      const normalToasts = this.toasts.filter((t) => !t.sticky);
+      this.toasts = [newToast, ...stickyToasts, ...normalToasts];
     } else {
-      // Keep last 3 toasts max
-      this.toasts = [newToast, ...this.toasts.slice(0, 2)];
+      // Keep last 3 normal toasts max, preserve all sticky toasts
+      const stickyToasts = this.toasts.filter((t) => t.sticky);
+      const normalToasts = this.toasts.filter((t) => !t.sticky);
+      this.toasts = [...stickyToasts, newToast, ...normalToasts.slice(0, 2)];
     }
 
     this.notify();
@@ -229,6 +242,32 @@ export const toast = {
       inline: options.inline ?? (options.mode === 'inline'),
     });
   },
+  sticky: (
+    title: string | ToastOptions,
+    description?: string | ToastOptions,
+    opts?: ToastOptions
+  ): string => {
+    const parsed = parseArgs(title, description, 'info');
+    const options = { ...parsed.options, ...(opts || {}) };
+    const effectiveType =
+      options.type ??
+      (options.theme && ['success', 'error', 'warning', 'info', 'default', 'loading'].includes(options.theme)
+        ? (options.theme as ToastType)
+        : undefined) ??
+      (parsed.options.type ?? 'info');
+    return toastStore.addToast({
+      id: options.id,
+      type: effectiveType,
+      title: parsed.title,
+      description: parsed.description,
+      duration: options.duration ?? Infinity,
+      action: options.action,
+      dismissible: options.dismissible !== false,
+      inline: options.inline ?? (options.mode === 'inline'),
+      sticky: true,
+      variant: options.variant ?? 'full-width-sticky',
+    });
+  },
   promise: <T>(
     promise: Promise<T> | (() => Promise<T>),
     messages: {
@@ -302,6 +341,10 @@ export const sileo = {
   info: (opts: any) => {
     if (typeof opts === 'string') return toast.info(opts);
     return toast.info(opts.title || '', opts.description, opts);
+  },
+  sticky: (opts: any, desc?: any, extraOpts?: any) => {
+    if (typeof opts === 'string') return toast.sticky(opts, desc, extraOpts);
+    return toast.sticky(opts.title || '', opts.description, opts);
   },
   promise: <T>(promise: Promise<T> | (() => Promise<T>), messages: any, opts?: any) => {
     return toast.promise(promise, messages, opts);

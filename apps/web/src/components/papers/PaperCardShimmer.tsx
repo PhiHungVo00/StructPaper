@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
 interface PaperCardShimmerProps {
   cardCount?: number;
@@ -9,7 +9,7 @@ interface PaperCardShimmerProps {
 
 const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
-const shimmerVariants = {
+const shimmerVariants: Variants = {
   initial: { backgroundPosition: '-200% 0' },
   animate: {
     backgroundPosition: '200% 0',
@@ -21,9 +21,9 @@ const shimmerVariants = {
   },
 };
 
-const cardVariants = {
-  initial: isTest ? false : { opacity: 1 },
-  animate: isTest ? false : { opacity: 1 },
+const cardVariants: Variants = {
+  initial: { opacity: 1 },
+  animate: { opacity: 1 },
 };
 
 const shimmerStyle: React.CSSProperties = {

@@ -1,0 +1,94 @@
+name: Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: ''
+            target: 'x86_64-pc-windows-msvc'
+          - platform: 'macos-latest'
+            args: ''
+            target: 'aarch64-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Prepare Tectonic sidecar binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "apps/web/src-tauri/bin"
+          if (Test-Path "bin/tectonic.exe") {
+            Copy-Item "bin/tectonic.exe" "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
+          } else {
+            Invoke-WebRequest -Uri "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-pc-windows-msvc.zip" -OutFile "tectonic.zip"
+            Expand-Archive -Path "tectonic.zip" -DestinationPath "temp_tectonic" -Force
+            Copy-Item "temp_tectonic/tectonic.exe" "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
+          }
+
+      - name: Prepare Tectonic sidecar binary (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p apps/web/src-tauri/bin
+          curl -L "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-aarch64-apple-darwin.tar.gz" | tar -xz
+          mv tectonic apps/web/src-tauri/bin/tectonic-aarch64-apple-darwin
+          chmod +x apps/web/src-tauri/bin/tectonic-aarch64-apple-darwin
+
+      - name: Build Next.js Web App for Desktop
+        run: pnpm --filter @structpaper/web build:desktop
+
+      - name: Build Desktop Application with Tauri
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: './apps/web'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'StructPaper ${{ github.ref_name }}'
+          releaseBody: |
+            ## StructPaper Desktop Release ${{ github.ref_name }}
+            
+            Ứng dụng soạn thảo và định dạng bài báo khoa học chuẩn tạp chí, tích hợp sẵn động cơ Tectonic XeTeX chạy ngoại tuyến tốc độ cao.
+            
+            ### Hướng dẫn cài đặt:
+            - **Windows**: Tải file `.exe` hoặc `.msi`. Nếu Windows SmartScreen hiển thị cảnh báo, chọn **More info** -> **Run anyway**.
+            - **macOS**: Tải file `.dmg`, mở file và kéo StructPaper vào thư mục Applications. Nếu macOS chặn mở, nhấp chuột phải vào ứng dụng chọn **Open**.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

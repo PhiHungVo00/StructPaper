@@ -220,13 +220,13 @@ export const LiquidGlassToast = React.forwardRef<HTMLDivElement, LiquidGlassToas
         initial={isTest ? false : { y: -64, opacity: 0 }}
         animate={
           isTest
-            ? false
+            ? undefined
             : {
                 y: targetY,
                 opacity: targetOpacity,
               }
         }
-        exit={isTest ? false : { y: -64, opacity: 0 }}
+        exit={isTest ? undefined : { y: -64, opacity: 0 }}
         transition={springConfig}
         onMouseEnter={() => {
           setIsHovered(true);

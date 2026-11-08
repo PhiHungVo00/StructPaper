@@ -214,13 +214,16 @@ export async function POST(req: NextRequest) {
 
     // 4. Check if XeLaTeX or Tectonic engine is available
     const hasXeLatex = await isCommandAvailable('xelatex');
-    const localTectonicPath = path.join(process.cwd(), 'bin', 'tectonic.exe');
-    const rootTectonicPath = path.join(process.cwd(), '..', 'bin', 'tectonic.exe');
-    const hasLocalTectonic = fs.existsSync(localTectonicPath);
-    const hasRootTectonic = fs.existsSync(rootTectonicPath);
+    const exeName = process.platform === 'win32' ? 'tectonic.exe' : 'tectonic';
+    const possibleTectonicPaths = [
+      path.join(process.cwd(), 'bin', exeName),
+      path.join(process.cwd(), '..', 'bin', exeName),
+      path.join(process.cwd(), '..', '..', 'bin', exeName),
+    ];
+    const resolvedTectonicPath = possibleTectonicPaths.find((p) => fs.existsSync(p));
     const hasGlobalTectonic = await isCommandAvailable('tectonic');
 
-    if (!hasXeLatex && !hasLocalTectonic && !hasRootTectonic && !hasGlobalTectonic) {
+    if (!hasXeLatex && !resolvedTectonicPath && !hasGlobalTectonic) {
       return NextResponse.json(
         {
           error: 'Chưa cài đặt trình biên dịch XeLaTeX trên máy tính',
@@ -249,11 +252,7 @@ export async function POST(req: NextRequest) {
           timeout: 60000,
         });
       } else {
-        const tectonicBin = hasLocalTectonic
-          ? `"${localTectonicPath}"`
-          : hasRootTectonic
-            ? `"${rootTectonicPath}"`
-            : 'tectonic';
+        const tectonicBin = resolvedTectonicPath ? `"${resolvedTectonicPath}"` : 'tectonic';
         await execAsync(`${tectonicBin} article.tex`, {
           cwd: jobDir,
           timeout: 60000,

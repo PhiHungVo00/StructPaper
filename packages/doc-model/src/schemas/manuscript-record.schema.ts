@@ -23,7 +23,7 @@ export const ManuscriptSourceInfoSchema: z.ZodType<ManuscriptSourceInfo> = z.obj
   sha256: z.string().min(1),
 });
 
-export const ManuscriptInfoSchema: z.ZodType<ManuscriptInfo> = z.object({
+export const ManuscriptInfoSchema = z.object({
   id: z.string().min(1),
   displayName: z.string().min(1),
   submissionId: z.string().optional(),
@@ -40,7 +40,7 @@ export const ManuscriptInfoSchema: z.ZodType<ManuscriptInfo> = z.object({
   lastOpenedAt: z.string().optional(),
 });
 
-export const ManuscriptRecordSchema: z.ZodType<ManuscriptRecord> = z.object({
+export const ManuscriptRecordSchema = z.object({
   info: ManuscriptInfoSchema,
   doc: ManuscriptSchema,
   revision: z.number().int().nonnegative().optional(),

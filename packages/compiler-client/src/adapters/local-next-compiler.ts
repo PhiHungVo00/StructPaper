@@ -107,7 +107,7 @@ export class LocalNextCompilerAdapter implements CompilerPort {
       let pdfUrl: string | undefined;
 
       if (typeof Blob !== 'undefined') {
-        pdfBlob = new Blob([pdfBuffer], { type: 'application/pdf' });
+        pdfBlob = new Blob([pdfBuffer as unknown as BlobPart], { type: 'application/pdf' });
         if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
           try {
             pdfUrl = URL.createObjectURL(pdfBlob);

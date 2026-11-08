@@ -19,11 +19,24 @@ import {
 } from 'lucide-react';
 import { CompileErrorModal } from './CompileErrorModal';
 
-interface PublicationPreviewProps {
+export interface PublicationPreviewProps {
   paper: CompletePaper;
+  engineKind?: 'browser-wasm' | 'server-native' | string;
+  compilerEngine?: string;
+  compileStats?: {
+    durationMs: number;
+    sizeKb: number;
+    timestamp: string;
+    engineKind?: string;
+    producedBy?: { kind: string; environmentId?: string };
+  } | null;
 }
 
-export const PublicationPreview: React.FC<PublicationPreviewProps> = ({ paper }) => {
+export const PublicationPreview: React.FC<PublicationPreviewProps> = ({
+  paper,
+  engineKind: propEngineKind,
+  compileStats: propCompileStats,
+}) => {
   const { metadata } = paper;
 
   // Initialize with official pre-compiled sample PDF only if on default HS630 paper
@@ -36,6 +49,15 @@ export const PublicationPreview: React.FC<PublicationPreviewProps> = ({ paper })
   const [isCompilingPdf, setIsCompilingPdf] = useState<boolean>(false);
   const [isOverlayActive, setIsOverlayActive] = useState<boolean>(false);
   const [justFinished, setJustFinished] = useState<boolean>(false);
+  const [engineKindState, setEngineKindState] = useState<string>(
+    propEngineKind || propCompileStats?.engineKind || 'server-native'
+  );
+
+  const effectiveEngineKind =
+    propEngineKind ||
+    propCompileStats?.producedBy?.kind ||
+    propCompileStats?.engineKind ||
+    engineKindState;
 
   useEffect(() => {
     if (isCompilingPdf) {
@@ -224,10 +246,28 @@ export const PublicationPreview: React.FC<PublicationPreviewProps> = ({ paper })
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Title & Engine Status */}
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-extrabold text-base text-zinc-900 tracking-tight">
                 Dàn Trang & Xuất Bản
               </span>
+              {/* Engine Provenance Badge (Section 9.4 Spec) */}
+              {effectiveEngineKind === 'browser-wasm' ? (
+                <span
+                  data-testid="engine-provenance-badge"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Bản nháp · Trình duyệt
+                </span>
+              ) : (
+                <span
+                  data-testid="engine-provenance-badge"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Chính thức · Máy chủ
+                </span>
+              )}
             </div>
           </div>
 

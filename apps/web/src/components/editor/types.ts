@@ -15,6 +15,12 @@ export interface CompileStats {
   durationMs: number;
   sizeKb: number;
   timestamp: string;
+  engineKind?: 'browser-wasm' | 'server-native' | 'local-cli' | string;
+  engine?: string;
+  producedBy?: {
+    kind: 'browser-wasm' | 'server-native' | 'local-cli' | string;
+    environmentId?: string;
+  };
 }
 
 export interface CompileErrorInfo {

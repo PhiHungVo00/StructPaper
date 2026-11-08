@@ -5,8 +5,14 @@ import { CompletePaper, DEFAULT_LAYOUT_SETTINGS } from '@/types/paper';
 import { exportToLatex } from '@/lib/exporters';
 import {
   CompileScheduler,
-  LocalNextCompilerAdapter,
+  CompilerRouter,
+  NetworkMonitor,
+  RemoteCompiler,
+  WasmCompiler,
+  TauriDesktopCompiler,
+  isTauriEnvironment,
 } from '@structpaper/compiler-client';
+import { toast } from '@/components/DynamicIslandToast';
 import { CompileStats, CompileErrorInfo } from '../types';
 
 function extractPaperImages(paper: CompletePaper): Record<string, string> {
@@ -43,6 +49,9 @@ export interface UseEditorCompilationOptions {
   formData: CompletePaper;
   onUpdatePaper: (updated: CompletePaper) => void;
   setIsDirty?: (dirty: boolean) => void;
+  router?: CompilerRouter;
+  networkMonitor?: NetworkMonitor;
+  debounceMs?: number;
 }
 
 export function useEditorCompilation({
@@ -50,6 +59,9 @@ export function useEditorCompilation({
   formData,
   onUpdatePaper,
   setIsDirty,
+  router: customRouter,
+  networkMonitor: customNetworkMonitor,
+  debounceMs = 500,
 }: UseEditorCompilationOptions) {
   const isDefaultHs630 =
     formData.id === 'hs630' || formData.metadata?.doi?.includes('630');
@@ -65,36 +77,121 @@ export function useEditorCompilation({
           durationMs: 1845,
           sizeKb: 1447,
           timestamp: 'Sẵn sàng',
+          engineKind: 'server-native',
+          engine: 'Server XeLaTeX',
+          producedBy: {
+            kind: 'server-native',
+            environmentId: 'tl2026-server',
+          },
         }
       : null
   );
   const [compileErrorInfo, setCompileErrorInfo] = useState<CompileErrorInfo | null>(null);
 
-  const schedulerRef = useRef<CompileScheduler | null>(null);
-  const isCompilingRef = useRef(false);
-
-  // Initialize scheduler with LocalNextCompilerAdapter
-  if (!schedulerRef.current) {
-    const adapter = new LocalNextCompilerAdapter({
-      endpoint: '/api/compile-latex',
-    });
-    schedulerRef.current = new CompileScheduler({
-      compiler: adapter,
-      debounceMs: 500,
+  const monitorRef = useRef<NetworkMonitor | null>(customNetworkMonitor ?? null);
+  if (!monitorRef.current) {
+    monitorRef.current = new NetworkMonitor({
+      serverEndpoint: '/api/health',
+      timeoutMs: 3000,
     });
   }
 
+  const routerRef = useRef<CompilerRouter | null>(customRouter ?? null);
+  if (!routerRef.current) {
+    const monitor = monitorRef.current;
+    const remoteCompiler = new RemoteCompiler({
+      endpoint: '/api/compile-latex',
+    });
+    const wasmCompiler = new WasmCompiler();
+    const isDesktop = isTauriEnvironment();
+    const localCompiler = isDesktop ? new TauriDesktopCompiler() : wasmCompiler;
+
+    routerRef.current = new CompilerRouter({
+      local: localCompiler,
+      server: remoteCompiler,
+      getContext: () => ({
+        online: monitor.isOnline(),
+        serverReachable: monitor.isServerReachable(),
+        localEnv: isDesktop ? 'ready' : typeof Worker !== 'undefined' ? 'ready' : 'missing',
+        localEnvMatches: true,
+        deviceScore: typeof Worker !== 'undefined' || isDesktop ? 100 : 'unsupported',
+        pageEstimate: 5,
+        assetBytes: 1024 * 1024,
+        recentLocalFailures: [],
+        userPreference: isDesktop ? 'local' : 'server',
+        parity: 'same',
+        localDisabledByFlag: false,
+        saveData: false,
+      }),
+    });
+  }
+
+  const schedulerRef = useRef<CompileScheduler | null>(null);
+  if (!schedulerRef.current) {
+    schedulerRef.current = new CompileScheduler({
+      compiler: routerRef.current,
+      debounceMs,
+    });
+  }
+
+  // NetworkMonitor subscription and Sticky Toast management
+  useEffect(() => {
+    const monitor = monitorRef.current;
+    if (!monitor) return;
+
+    let wasOfflineOrUnreachable = !monitor.isOnline() || !monitor.isServerReachable();
+
+    if (wasOfflineOrUnreachable) {
+      toast.sticky(
+        'Đang ngoại tuyến',
+        'Hệ thống tự động chuyển sang chế độ biên dịch trực tiếp trên trình duyệt (WASM)',
+        { theme: 'warning', id: 'offline-compile-toast' }
+      );
+    }
+
+    const unsubscribe = monitor.subscribe((state) => {
+      const isOfflineOrUnreachable = !state.online || !state.serverReachable;
+
+      if (isOfflineOrUnreachable) {
+        wasOfflineOrUnreachable = true;
+        toast.sticky(
+          'Đang ngoại tuyến',
+          'Hệ thống tự động chuyển sang chế độ biên dịch trực tiếp trên trình duyệt (WASM)',
+          { theme: 'warning', id: 'offline-compile-toast' }
+        );
+      } else {
+        toast.dismiss('offline-compile-toast');
+        if (wasOfflineOrUnreachable) {
+          toast.info(
+            'Đã kết nối lại máy chủ',
+            'Hệ thống đã sẵn sàng biên dịch chuẩn xuất bản trên máy chủ',
+            { duration: 3000 }
+          );
+          wasOfflineOrUnreachable = false;
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (!customNetworkMonitor) {
+        monitor.dispose();
+      }
+    };
+  }, [customNetworkMonitor]);
+
+  // Clean up scheduler & router
   useEffect(() => {
     return () => {
       schedulerRef.current?.dispose();
+      if (!customRouter) {
+        routerRef.current?.dispose();
+      }
     };
-  }, []);
+  }, [customRouter]);
 
   const compileLatexToPdf = useCallback(
     async (customPaperData?: CompletePaper): Promise<string | null> => {
-      if (isCompilingRef.current) return null;
-      isCompilingRef.current = true;
-
       const paperToCompile = customPaperData || formData;
       const settings = paperToCompile.layoutSettings || DEFAULT_LAYOUT_SETTINGS;
 
@@ -111,6 +208,7 @@ export function useEditorCompilation({
           tex: texContent,
           paperId: paperToCompile.id,
           images,
+          mode: 'draft',
         });
 
         if (result.status === 'success') {
@@ -120,12 +218,20 @@ export function useEditorCompilation({
           if (url) {
             setCompiledPdfUrl(url);
           }
+          const engineKind = result.producedBy?.kind;
+          const engineName =
+            result.engine ||
+            (engineKind === 'browser-wasm' ? 'XeLaTeX WASM' : 'Server XeLaTeX');
+
           setCompileStats({
             durationMs: result.durationMs,
             sizeKb: Math.round(
               (result.pdfBlob?.size ?? result.pdfBuffer?.length ?? 0) / 1024
             ),
             timestamp: new Date().toLocaleTimeString('vi-VN'),
+            engineKind,
+            engine: engineName,
+            producedBy: result.producedBy,
           });
           return url;
         } else if (
@@ -140,7 +246,9 @@ export function useEditorCompilation({
           setCompileErrorInfo({
             error: result.error || 'Biên dịch thất bại',
             details: result.details,
-            engine: result.engine || 'Tectonic',
+            engine:
+              result.engine ||
+              (result.producedBy?.kind === 'browser-wasm' ? 'XeLaTeX WASM' : 'Tectonic'),
             rawLog: result.logs?.join('\n'),
           });
           return null;
@@ -162,7 +270,6 @@ export function useEditorCompilation({
         return null;
       } finally {
         setIsCompilingPdf(false);
-        isCompilingRef.current = false;
       }
     },
     [formData]
@@ -199,5 +306,7 @@ export function useEditorCompilation({
     setCompileErrorInfo,
     compileLatexToPdf,
     handleRecompile,
+    networkMonitor: monitorRef.current,
+    compilerRouter: routerRef.current,
   };
 }

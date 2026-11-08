@@ -9,9 +9,18 @@
     "./interfaces": "./src/interfaces/index.ts",
     "./scheduler": "./src/scheduler/index.ts",
     "./adapters": "./src/adapters/index.ts",
-    "./utils": "./src/utils/index.ts"
+    "./router": "./src/router/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./monitor": "./src/monitor/index.ts",
+    "./wasm": "./src/wasm/index.ts",
+    "./remote": "./src/remote/index.ts",
+    "./cache": "./src/cache/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "dependencies": {
-    "@structpaper/doc-model": "workspace:*"
+    "@structpaper/doc-model": "workspace:*",
+    "jspdf": "^4.2.1"
   }
 }

@@ -5,7 +5,7 @@ import {
   JournalId,
   JOURNAL_DEFINITIONS,
 } from '@structpaper/journal-profiles';
-import { CompletePaper } from '@/lib/authoring/paper-storage';
+import { CompletePaper } from '@/types/paper';
 import { saveAuthoringPaper } from '@/lib/authoring/paper-storage';
 
 export type JournalStatus = 'published' | 'draft' | 'validated' | 'archived';

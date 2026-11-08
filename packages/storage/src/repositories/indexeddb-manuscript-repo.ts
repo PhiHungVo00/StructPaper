@@ -171,7 +171,7 @@ export class IndexedDbManuscriptRepo implements ManuscriptRepository {
       updates.sourceSha256 = (patch as any).sourceSha256;
     }
 
-    await this.db.manuscripts.update(id, updates);
+    await (this.db.manuscripts as any).update(id, updates);
   }
 
   async save(doc: Manuscript, info?: Partial<ManuscriptInfo>): Promise<void> {

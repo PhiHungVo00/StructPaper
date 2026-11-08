@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:desktop": "node scripts/export-desktop.mjs",
     "start": "next start",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "test": "vitest run",
     "lint": "next lint",
     "codegen:api": "openapi-typescript ../../contracts/openapi.yaml -o ./src/lib/api/schema.d.ts"
   },
@@ -39,6 +43,7 @@
     "sileo": "^0.1.6"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.2.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

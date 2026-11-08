@@ -28,12 +28,30 @@ export const PreviewActionsToolbar: React.FC<PreviewActionsToolbarProps> = ({
   return (
     <div className="p-2.5 sm:p-3 bg-white border border-[#E8E8EE] rounded-2xl flex flex-wrap items-center justify-between gap-2.5 shadow-2xs">
       {/* Left: Compile status & stats */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
         <span className="font-extrabold text-xs text-zinc-900">Bản In XeLaTeX 2 Cột</span>
         {compileStats && (
           <span className="text-[11px] text-zinc-400 hidden sm:inline">
             • {compileStats.sizeKb} KB ({compileStats.durationMs}ms)
+          </span>
+        )}
+        {/* Engine provenance badge (Section 9.4 Spec) */}
+        {compileStats?.producedBy?.kind === 'browser-wasm' || compileStats?.engineKind === 'browser-wasm' ? (
+          <span
+            data-testid="engine-provenance-badge"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Bản nháp · Trình duyệt
+          </span>
+        ) : (
+          <span
+            data-testid="engine-provenance-badge"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Chính thức · Máy chủ
           </span>
         )}
       </div>

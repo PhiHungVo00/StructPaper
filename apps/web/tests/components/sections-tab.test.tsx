@@ -58,7 +58,7 @@ const createMockPaper = (): CompletePaper => ({
     affiliations: [],
     abstract: 'Tóm tắt bài báo thử nghiệm.',
     keywords: ['kiến trúc', 'tái cấu trúc'],
-  },
+  } as any,
   sections: [
     {
       id: 'sec_1',
@@ -101,6 +101,8 @@ const createMockPaper = (): CompletePaper => ({
     {
       id: 1,
       raw: 'Nguyễn Văn A, Trần Thị B. Tạp chí KH&CN ĐHQG-HCM, 2026.',
+      isCited: true,
+      citationCount: 1,
     },
   ],
 });

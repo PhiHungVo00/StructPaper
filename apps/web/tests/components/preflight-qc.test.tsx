@@ -85,6 +85,7 @@ describe('Preflight QC & PreflightQCTab Integration', () => {
         id: 1,
         raw: 'Nguyen VA, et al. Respiratory Research. 2025; 10(1): 1-10.',
         isCited: true,
+        citationCount: 1,
       },
     ],
   };

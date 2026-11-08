@@ -9,6 +9,7 @@ export {
   sileo,
   toastStore,
   type ToastType,
+  type ToastVariant,
   type ToastItem,
   type ToastOptions,
   type ToastAction,
@@ -16,3 +17,4 @@ export {
 
 export { Toaster } from './toast/Toaster';
 export { LiquidGlassToast } from './toast/LiquidGlassToast';
+export { FullWidthStickyToast } from './toast/FullWidthStickyToast';

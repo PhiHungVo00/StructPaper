@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
+const isExport = process.env.NEXT_EXPORT === 'true';
+
 const nextConfig = {
+  output: isExport ? 'export' : undefined,
+  images: {
+    unoptimized: isExport ? true : undefined,
+  },
   transpilePackages: [
     '@structpaper/doc-model',
     '@structpaper/editor-core',
