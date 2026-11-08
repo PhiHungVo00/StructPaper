@@ -62,6 +62,15 @@ importers:
       '@structpaper/journal-profiles':
         specifier: workspace:*
         version: link:../../packages/journal-profiles
+      '@structpaper/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@structpaper/platform-desktop':
+        specifier: workspace:*
+        version: link:../../packages/platform-desktop
+      '@structpaper/platform-web':
+        specifier: workspace:*
+        version: link:../../packages/platform-web
       '@structpaper/qc-engine':
         specifier: workspace:*
         version: link:../../packages/qc-engine

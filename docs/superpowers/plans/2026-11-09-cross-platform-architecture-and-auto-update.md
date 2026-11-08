@@ -168,18 +168,18 @@
 - Modify: `apps/web/src/app/settings/page.tsx`
 - Test: `apps/web/tests/components/settings-distribution-slot.test.tsx`
 
-- [ ] **Step 6.1: Implement dynamic bootstrap in `apps/web`**
+- [x] **Step 6.1: Implement dynamic bootstrap in `apps/web`**
   In `apps/web/src/platform/bootstrap.ts`, implement `createPlatform()` using dynamic imports to load `platform-desktop` or `platform-web`.
-- [ ] **Step 6.2: Create `DownloadDesktopCard` (for Web)**
+- [x] **Step 6.2: Create `DownloadDesktopCard` (for Web)**
   Create modern, beautiful card showing links to download Windows `.exe` setup and macOS `.dmg`, highlighting offline Tectonic engine and local speed.
-- [ ] **Step 6.3: Create `CheckForUpdateCard` (for Desktop)**
+- [x] **Step 6.3: Create `CheckForUpdateCard` (for Desktop)**
   Create interactive card showing current app version, "Kiểm tra cập nhật" button, release notes modal, download progress bar, and "Cập nhật & Khởi động lại" button.
-- [ ] **Step 6.4: Create `UpdateNotificationBanner`**
+- [x] **Step 6.4: Create `UpdateNotificationBanner`**
   Floating, non-intrusive toast/banner when a new update is found, with "Xem nội dung", "Cập nhật ngay", "Nhắc tôi sau", "Bỏ qua".
-- [ ] **Step 6.5: Integrate Slot into Settings page & Root Layout**
+- [x] **Step 6.5: Integrate Slot into Settings page & Root Layout**
   In `apps/web/src/app/settings/page.tsx`, mount `<Slot id="app-distribution" />` right below the header banner.
   In `apps/web/src/app/layout.tsx`, wrap the app with `PlatformProvider` and mount `UpdateNotificationBanner`.
-- [ ] **Step 6.6: Write unit tests and verify**
+- [x] **Step 6.6: Write unit tests and verify**
   Create `apps/web/tests/components/settings-distribution-slot.test.tsx`. Verify both Web and Desktop slot rendering.
-- [ ] **Step 6.7: Run all tests and commit**
+- [x] **Step 6.7: Run all tests and commit**
   Run full test suite: `pnpm test` and commit.

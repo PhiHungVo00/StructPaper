@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/DynamicIslandToast';
+import { PlatformProvider } from '@/platform';
+import { UpdateNotificationBanner } from '@/components/platform/UpdateNotificationBanner';
 
 export default function RootLayout({
   children,
@@ -32,12 +34,15 @@ export default function RootLayout({
             `,
           }}
         />
-        <PaperProvider>
-          <Toaster />
-          <AppShell>
-            {children}
-          </AppShell>
-        </PaperProvider>
+        <PlatformProvider>
+          <PaperProvider>
+            <Toaster />
+            <UpdateNotificationBanner />
+            <AppShell>
+              {children}
+            </AppShell>
+          </PaperProvider>
+        </PlatformProvider>
       </body>
     </html>
   );

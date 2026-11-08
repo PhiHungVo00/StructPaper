@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { usePaper } from '@/context/PaperContext';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
+import { Slot } from '@/platform';
 
 export default function SettingsPage() {
   const { currentJournal, setCurrentJournal } = usePaper();
@@ -48,6 +49,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* App Distribution Slot (Web: DownloadDesktopCard; Desktop: CheckForUpdateCard) */}
+      <Slot id="app-distribution" />
 
       <form onSubmit={handleSave} className="space-y-5">
         {/* Card 1: Default Journal Template */}
