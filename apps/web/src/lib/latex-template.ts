@@ -459,7 +459,7 @@ ${(sec.table.bodyRows && sec.table.bodyRows.length > 0
                     escaped = escaped.replace(/•/g, '$\\bullet$~');
                     escaped = escaped.replace(/\r?\n/g, ' \\newline ');
                     if (cell.colSpan && cell.colSpan > 1) {
-                      const alignChar = cell.align === 'center' ? 'C' : cell.align === 'right' ? 'R' : 'L';
+                      const alignChar = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
                       return `\\multicolumn{${cell.colSpan}}{${alignChar}}{${escaped}}`;
                     }
                     return escaped;
