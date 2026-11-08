@@ -18,6 +18,7 @@ export default defineWorkspace([
         '@structpaper/exporters': path.resolve(__dirname, 'packages/exporters/src'),
         '@structpaper/platform': path.resolve(__dirname, 'packages/platform/src'),
         '@structpaper/platform-web': path.resolve(__dirname, 'packages/platform-web/src'),
+        '@structpaper/platform-desktop': path.resolve(__dirname, 'packages/platform-desktop/src'),
         '@': path.resolve(__dirname, 'apps/web/src'),
       },
     },

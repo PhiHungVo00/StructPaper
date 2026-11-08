@@ -114,18 +114,18 @@
 - Create: `packages/platform-desktop/src/index.ts`
 - Test: `packages/platform-desktop/tests/desktop-update-service.test.ts`
 
-- [ ] **Step 4.1: Define Desktop adapter package**
+- [x] **Step 4.1: Define Desktop adapter package**
   Create `packages/platform-desktop/package.json` (named `@structpaper/platform-desktop`).
-- [ ] **Step 4.2: Implement `DesktopUpdateService` with Tauri v2 Updater**
+- [x] **Step 4.2: Implement `DesktopUpdateService` with Tauri v2 Updater**
   Implement `DesktopUpdateService` calling `@tauri-apps/plugin-updater`. Implement safety hooks execution:
   - `flushAutosave`: Trigger and wait for IndexedDB save.
   - `settleCompile`: Wait for active compilation.
   - `downloadAndInstall`: Stream download progress (0-100%) and relaunch via `@tauri-apps/plugin-process`.
-- [ ] **Step 4.3: Implement `DesktopFileService` & `DesktopShellService`**
+- [x] **Step 4.3: Implement `DesktopFileService` & `DesktopShellService`**
   Wrap Tauri dialog, fs, and shell plugins.
-- [ ] **Step 4.4: Write unit tests with mock Tauri bindings**
+- [x] **Step 4.4: Write unit tests with mock Tauri bindings**
   Create `packages/platform-desktop/tests/desktop-update-service.test.ts` verifying state transitions (`idle` → `checking` → `available` → `downloading` → `ready`).
-- [ ] **Step 4.5: Run tests and commit**
+- [x] **Step 4.5: Run tests and commit**
   Run `pnpm --filter @structpaper/platform-desktop test` and commit.
 
 ---

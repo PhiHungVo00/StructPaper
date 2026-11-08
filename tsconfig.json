@@ -14,6 +14,7 @@
     "paths": {
       "@structpaper/platform": ["./packages/platform/src"],
       "@structpaper/platform-web": ["./packages/platform-web/src"],
+      "@structpaper/platform-desktop": ["./packages/platform-desktop/src"],
       "@structpaper/*": ["./packages/*/src"],
       "@/*": ["./apps/web/src/*"]
     }

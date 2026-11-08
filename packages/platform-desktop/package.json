@@ -1,0 +1,23 @@
+{
+  "name": "@structpaper/platform-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@structpaper/platform": "workspace:*",
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-process": "~2.0.0",
+    "@tauri-apps/plugin-updater": "~2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "vitest": "^2.1.9"
+  }
+}
