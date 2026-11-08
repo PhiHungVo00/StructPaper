@@ -9,10 +9,9 @@ export const BottomNav: React.FC = () => {
   const pathname = usePathname();
 
   const tabs = [
-    { path: '/upload', label: 'Tải bài', icon: UploadCloud },
     { path: '/papers', label: 'Bài báo', icon: FolderArchive },
+    { path: '/upload', label: 'Tải bài', icon: UploadCloud },
     { path: '/templates', label: 'Mẫu Tạp chí', icon: BookOpen },
-    { path: '/account', label: 'Tài khoản', icon: User },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 

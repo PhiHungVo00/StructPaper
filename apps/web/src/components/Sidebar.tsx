@@ -19,28 +19,22 @@ import {
 
 const NAV_ITEMS = [
   {
-    path: '/upload',
-    label: 'Tải file DOCX',
-    description: 'Nhập & bóc tách bản thảo',
-    icon: FileText,
-  },
-  {
     path: '/papers',
     label: 'Quản lý Bài báo',
     description: 'Quản lý & lưu trữ bản thảo',
     icon: FolderArchive,
   },
   {
+    path: '/upload',
+    label: 'Tải file DOCX',
+    description: 'Nhập & bóc tách bản thảo',
+    icon: FileText,
+  },
+  {
     path: '/templates',
     label: 'Quản lý Mẫu & Tạp chí',
     description: '7 Tạp chí ĐHQG & Quy định',
     icon: BookOpen,
-  },
-  {
-    path: '/account',
-    label: 'Tài khoản',
-    description: 'Thông tin tác giả & hồ sơ',
-    icon: User,
   },
   {
     path: '/settings',
