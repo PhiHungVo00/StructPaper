@@ -79,8 +79,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: './apps/web'
-          tagName: ${{ github.ref_name }}
-          releaseName: 'StructPaper ${{ github.ref_name }}'
+          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.0' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('StructPaper {0}', github.ref_name) || 'StructPaper v1.0.0' }}
           releaseBody: |
             ## StructPaper Desktop Release ${{ github.ref_name }}
             
