@@ -33,7 +33,7 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
   const notifiedVersionRef = useRef<string | null>(null);
   const readyNotifiedRef = useRef<string | null>(null);
 
-  // 1. Alert user when a new version is available
+  // 1. Alert user when a new version is available (persistent until user acts or dismisses)
   useEffect(() => {
     if (hasUpdate && updateInfo && notifiedVersionRef.current !== updateInfo.version) {
       notifiedVersionRef.current = updateInfo.version;
@@ -47,7 +47,8 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
         'Phiên bản mới của StructPaper đã sẵn sàng. Bấm để nâng cấp tự động.',
         {
           id: 'app-update-available',
-          duration: 12000,
+          duration: Infinity,
+          dismissible: true,
           action: {
             label: 'Cập nhật ngay',
             onClick: () => {
@@ -74,6 +75,7 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
         `${pct}% hoàn tất. Vui lòng chờ trong giây lát...`,
         {
           id: 'app-update-downloading',
+          duration: Infinity,
         }
       );
     } else {
@@ -81,7 +83,7 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
     }
   }, [isDownloading, downloadProgress, updateInfo]);
 
-  // 3. Prompt user to restart when update is downloaded & verified
+  // 3. Prompt user to restart when update is downloaded & verified (persistent until user acts or dismisses)
   useEffect(() => {
     if (isReady && updateInfo && readyNotifiedRef.current !== updateInfo.version) {
       readyNotifiedRef.current = updateInfo.version;
@@ -98,7 +100,8 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
         'Bản cập nhật đã được xác thực an toàn. Bấm để khởi động lại ngay.',
         {
           id: 'app-update-ready',
-          duration: 20000,
+          duration: Infinity,
+          dismissible: true,
           action: {
             label: 'Khởi động lại ngay',
             onClick: () => {
@@ -111,7 +114,7 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
     }
   }, [isReady, updateInfo, restart]);
 
-  // 4. Alert on error
+  // 4. Alert on error (persistent so user can see what happened)
   useEffect(() => {
     if (error) {
       toast.dismiss('app-update-downloading');
@@ -120,7 +123,8 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
         error.message || 'Không thể tải bản cập nhật. Vui lòng thử lại sau.',
         {
           id: 'app-update-error',
-          duration: 6000,
+          duration: Infinity,
+          dismissible: true,
         }
       );
     }

@@ -469,7 +469,7 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
   });
 
   describe('UpdateToastNotifier', () => {
-    it('triggers toast.info when a new update is available', () => {
+    it('triggers persistent toast.info when a new update is available', () => {
       const toastSpy = vi.spyOn(toast, 'info');
       const startUpdateMock = vi.fn();
 
@@ -506,6 +506,8 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
         expect.any(String),
         expect.objectContaining({
           id: 'app-update-available',
+          duration: Infinity,
+          dismissible: true,
           action: expect.objectContaining({
             label: 'Cập nhật ngay',
           }),
@@ -513,7 +515,7 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
       );
     });
 
-    it('triggers toast.loading during downloading and toast.success when ready', () => {
+    it('triggers toast.loading during downloading and persistent toast.success when ready', () => {
       const loadingSpy = vi.spyOn(toast, 'loading');
       const successSpy = vi.spyOn(toast, 'success');
       const restartMock = vi.fn();
@@ -561,7 +563,7 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
       expect(loadingSpy).toHaveBeenCalledWith(
         'Đang tải bản cập nhật v2.6.0...',
         expect.stringContaining('50% hoàn tất'),
-        expect.objectContaining({ id: 'app-update-downloading' })
+        expect.objectContaining({ id: 'app-update-downloading', duration: Infinity })
       );
 
       // 2. Transition to ready
@@ -581,9 +583,50 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
         expect.any(String),
         expect.objectContaining({
           id: 'app-update-ready',
+          duration: Infinity,
+          dismissible: true,
           action: expect.objectContaining({
             label: 'Khởi động lại ngay',
           }),
+        })
+      );
+    });
+
+    it('triggers persistent toast.error when updater encounters an error', () => {
+      const errorSpy = vi.spyOn(toast, 'error');
+
+      const platform = createFakePlatform({
+        overrides: {
+          updates: {
+            channel: 'stable',
+            getState: () => ({
+              s: 'error',
+              code: 'U3_DOWNLOAD',
+              message: 'Không thể kết nối đến máy chủ cập nhật',
+            }),
+            subscribe: () => () => {},
+            check: vi.fn(),
+            install: vi.fn(),
+            restart: vi.fn(),
+            skipVersion: vi.fn(),
+            remindLater: vi.fn(),
+          },
+        },
+      });
+
+      render(
+        <PlatformProvider value={platform}>
+          <UpdateToastNotifier />
+        </PlatformProvider>
+      );
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Lỗi cập nhật',
+        'Không thể kết nối đến máy chủ cập nhật',
+        expect.objectContaining({
+          id: 'app-update-error',
+          duration: Infinity,
+          dismissible: true,
         })
       );
     });
