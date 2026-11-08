@@ -1,105 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { usePaper } from '@/context/PaperContext';
-import { createEmptyPaper } from '@/types/paper';
-import {
-  getManagedJournals,
-  ManagedJournalProfile,
-  JournalStatus,
-} from '@/lib/templates/journal-storage';
+import React from 'react';
+import { useManagedJournals } from '@/hooks';
 import { JournalFiltersBar } from './JournalFiltersBar';
 import { JournalProfilesList } from './JournalProfilesList';
 import { JournalProfileCardShimmer } from './JournalProfileCardShimmer';
-import { toast } from '@/components/DynamicIslandToast';
-import { usePaperStorage } from '@/hooks';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
 
 export const JournalHubView: React.FC = () => {
-  const router = useRouter();
-  const { setPaper, setCurrentJournal } = usePaper();
-  const { savePaper } = usePaperStorage();
-  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-  const [journals, setJournals] = useState<ManagedJournalProfile[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | JournalStatus>('all');
-  const [isLoading, setIsLoading] = useState(!isTestEnv);
-
-  const triggerFilterLoading = () => {
-    if (isTestEnv) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  const handleSearchChange = (q: string) => {
-    setSearchQuery(q);
-    triggerFilterLoading();
-  };
-
-  const handleStatusFilterChange = (st: 'all' | JournalStatus) => {
-    setStatusFilter(st);
-    triggerFilterLoading();
-  };
-
-  useEffect(() => {
-    try {
-      const data = getManagedJournals();
-      setJournals(data);
-    } catch (err) {
-      console.error('Failed to load managed journals:', err);
-    } finally {
-      if (!isTestEnv) {
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 1500);
-      } else {
-        setIsLoading(false);
-      }
-    }
-  }, [isTestEnv]);
-
-  const handleCreatePaper = (managed: ManagedJournalProfile) => {
-    try {
-      const journalCode = `VNUHCM-${managed.id.toUpperCase()}`;
-      const emptyPaper = createEmptyPaper(journalCode);
-      emptyPaper.metadata.journalName = managed.profile.names?.vi || managed.profile.names?.en || managed.id;
-      emptyPaper.metadata.journalAbbv = managed.profile.names?.short || managed.id.toUpperCase();
-      setPaper(emptyPaper);
-      setCurrentJournal(journalCode);
-      savePaper(emptyPaper).catch((err) => {
-        console.warn('Failed to background persist template paper:', err);
-      });
-
-      toast.success(
-        'Đã khởi tạo bản thảo',
-        `Đã tạo bài báo mới theo chuẩn mẫu "${managed.profile.names?.short || managed.id.toUpperCase()}"`
-      );
-      router.push('/editor');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
-      toast.error('Không thể tạo bài báo', msg);
-    }
-  };
-
-  const filteredJournals = journals.filter((j) => {
-    // 1. Status filter
-    if (statusFilter !== 'all' && j.status !== statusFilter) {
-      return false;
-    }
-
-    // 2. Search query
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    const idMatch = j.id.toLowerCase().includes(q);
-    const shortMatch = j.profile.names?.short?.toLowerCase().includes(q);
-    const viMatch = j.profile.names?.vi?.toLowerCase().includes(q);
-    const enMatch = j.profile.names?.en?.toLowerCase().includes(q);
-
-    return idMatch || shortMatch || viMatch || enMatch;
-  });
+  const {
+    journals,
+    filteredJournals,
+    isLoading,
+    searchQuery,
+    statusFilter,
+    setSearchQuery,
+    setStatusFilter,
+    createPaperFromTemplate,
+  } = useManagedJournals();
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-16 px-4 sm:px-6">
@@ -123,9 +41,9 @@ export const JournalHubView: React.FC = () => {
         <div className="absolute inset-0 bg-[#F8F9FA]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
         <JournalFiltersBar
           searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
+          onSearchChange={setSearchQuery}
           statusFilter={statusFilter}
-          onStatusFilterChange={handleStatusFilterChange}
+          onStatusFilterChange={setStatusFilter}
           totalCount={journals.length}
           filteredCount={filteredJournals.length}
         />
@@ -139,7 +57,7 @@ export const JournalHubView: React.FC = () => {
       ) : (
         <JournalProfilesList
           journals={filteredJournals}
-          onCreatePaper={handleCreatePaper}
+          onCreatePaper={createPaperFromTemplate}
           onResetFilters={() => {
             setSearchQuery('');
             setStatusFilter('all');

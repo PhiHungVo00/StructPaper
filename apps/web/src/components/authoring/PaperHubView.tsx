@@ -1,20 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ManuscriptRecord, ManuscriptInfo, WorkflowStatus } from '@structpaper/doc-model';
-import { adaptV2toV1 } from '@structpaper/doc-model';
-import { usePaper } from '@/context/PaperContext';
-import { ALL_SAMPLE_PAPERS } from '@/lib/sample-papers';
-import {
-  defaultDatabase,
-  IndexedDbManuscriptRepo,
-  IndexedDbAssetRepo,
-  exportBackup,
-} from '@structpaper/storage';
-import { normalizeJournalId } from '@structpaper/journal-profiles';
-import { toast } from '@/components/DynamicIslandToast';
 import { CheckCircle2 } from 'lucide-react';
+import { usePapersHub } from '@/hooks';
 import {
   RecentPapersRow,
   PaperFiltersBar,
@@ -23,376 +12,47 @@ import {
   PaperTable,
   PaperQuickEditModal,
   EmptyPapersState,
-  type FilterWorkflowStatus,
-  type FilterJournal,
-  type SortOption,
-  type ViewMode,
-  getManuscriptTitle,
-  getManuscriptAuthors,
 } from '@/components/papers';
-import { SAMPLE_VNUHCM_RECORDS } from '@/lib/authoring/sample-records-seeder';
-import { getAuthoringPapers } from '@/lib/authoring/paper-storage';
 
 export const PaperHubView: React.FC = () => {
   const router = useRouter();
-  const { setPaper, setCurrentJournal } = usePaper();
-
-  // Storage Repositories
-  const repo = useMemo(() => new IndexedDbManuscriptRepo(defaultDatabase), []);
-  const assetRepo = useMemo(() => new IndexedDbAssetRepo(defaultDatabase), []);
-
-  // Papers State
-  const [records, setRecords] = useState<ManuscriptRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Filter & View State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<FilterWorkflowStatus>('all');
-  const [journalFilter, setJournalFilter] = useState<FilterJournal>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-
-  // Menu & Modal State
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [editingPaper, setEditingPaper] = useState<ManuscriptRecord | null>(null);
-
-  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-
-  const triggerFilterLoading = () => {
-    if (isTestEnv) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  const handleSearchChange = (q: string) => {
-    setSearchQuery(q);
-    triggerFilterLoading();
-  };
-
-  const handleStatusFilterChange = (st: FilterWorkflowStatus) => {
-    setStatusFilter(st);
-    triggerFilterLoading();
-  };
-
-  const handleJournalFilterChange = (jf: FilterJournal) => {
-    setJournalFilter(jf);
-    triggerFilterLoading();
-  };
-
-  const handleSortChange = (sb: SortOption) => {
-    setSortBy(sb);
-    triggerFilterLoading();
-  };
-
-  // Load records from IndexedDb, seeding samples if empty
-  const loadRecords = async () => {
-    try {
-      let loaded = await repo.listRecords();
-
-      // Seed sample records if storage is currently empty
-      if (loaded.length === 0) {
-        for (const sample of SAMPLE_VNUHCM_RECORDS) {
-          await repo.save(sample.doc, sample.info);
-        }
-
-        // Also import any legacy papers from localStorage authoring papers
-        const legacyPapers = getAuthoringPapers();
-        const legacyStatusMap: Record<string, WorkflowStatus> = {
-          ready: 'ready',
-          review: 'in-review',
-          'in-review': 'in-review',
-          proofing: 'proofing',
-          published: 'published',
-          draft: 'draft',
-        };
-        for (const lp of legacyPapers) {
-          if (!SAMPLE_VNUHCM_RECORDS.some((s) => s.info.id === lp.id)) {
-            await repo.save(
-              {
-                schemaVersion: 2,
-                id: lp.id,
-                journalId: lp.metadata?.journalId || 'std',
-                articleType: lp.metadata?.articleType || 'Research Article',
-                meta: {
-                  title: [{ t: 'text', v: lp.metadata?.title || 'Bài báo' }],
-                  authors: (lp.metadata?.authors || []).map((a, i) => ({
-                    id: a.id || `auth_${i + 1}`,
-                    name: a.name,
-                    affiliationIds: ['aff_1'],
-                    isCorresponding: a.isCorresponding,
-                    email: a.email,
-                  })),
-                  affiliations: [
-                    { id: 'aff_1', institution: 'Đại học Quốc gia TP.HCM' },
-                  ],
-                  abstract: [
-                    [{ t: 'text', v: lp.metadata?.abstract || '' }],
-                  ],
-                  keywords: lp.metadata?.keywords || [],
-                  dates: lp.metadata?.dates || {},
-                },
-                body: [],
-                back: [],
-                references: [],
-                assets: {},
-              } as any,
-              {
-                id: lp.id,
-                displayName: lp.metadata?.title || 'Bài báo nghiên cứu',
-                submissionId: lp.metadata?.journalAbbv || 'DOC_01',
-                tags: lp.metadata?.keywords || ['Khởi tạo'],
-                workflowStatus: (lp.status && legacyStatusMap[lp.status]) || 'draft',
-                pinned: false,
-                archived: false,
-                createdAt: lp.createdAt || new Date().toISOString(),
-                updatedAt: lp.updatedAt || new Date().toISOString(),
-              }
-            );
-          }
-        }
-
-        loaded = await repo.listRecords();
-      }
-
-      setRecords(loaded);
-    } catch (err) {
-      console.error('Failed to load manuscript records:', err);
-      // Fallback in-memory sample records
-      setRecords(SAMPLE_VNUHCM_RECORDS);
-    } finally {
-      if (!isTestEnv) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-      }
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRecords();
-  }, [repo]);
+  const {
+    records,
+    filteredPapers,
+    isLoading,
+    searchQuery,
+    statusFilter,
+    journalFilter,
+    sortBy,
+    viewMode,
+    activeMenuId,
+    editingPaper,
+    countsByStatus,
+    setSearchQuery,
+    setStatusFilter,
+    setJournalFilter,
+    setSortBy,
+    setViewMode,
+    setActiveMenuId,
+    setEditingPaper,
+    handleOpenEditor,
+    handleTogglePin,
+    handleSaveQuickEdit,
+    handleDuplicate,
+    handleExportBackup,
+    handleDelete,
+  } = usePapersHub();
 
   // Close menus on click outside
   useEffect(() => {
     const handleOutsideClick = () => setActiveMenuId(null);
     window.addEventListener('click', handleOutsideClick);
     return () => window.removeEventListener('click', handleOutsideClick);
-  }, []);
-
-  // Handlers
-  const handleOpenEditor = (id: string) => {
-    const record = records.find((r) => r.info.id === id);
-    const sample = ALL_SAMPLE_PAPERS.find(
-      (s) => s.paper.id === id || s.paper.metadata?.doi?.includes(id) || s.id === id
-    );
-
-    if (record) {
-      try {
-        const v1 = adaptV2toV1(record.doc as any);
-        if (!v1.id) v1.id = record.info.id;
-        if (record.info.displayName && v1.metadata && !v1.metadata.title) {
-          v1.metadata.title = record.info.displayName;
-        }
-        setPaper(v1 as any);
-        if (record.doc.journalId) {
-          const norm = record.doc.journalId.toUpperCase().startsWith('VNUHCM-')
-            ? record.doc.journalId
-            : `VNUHCM-${record.doc.journalId.toUpperCase()}`;
-          setCurrentJournal(norm);
-        }
-      } catch (err) {
-        console.error('Failed to adapt v2 doc to v1:', err);
-        if (sample) {
-          setPaper(sample.paper);
-          if (sample.journalId) {
-            setCurrentJournal(sample.journalId);
-          }
-        }
-      }
-    } else if (sample) {
-      setPaper(sample.paper);
-      if (sample.journalId) {
-        setCurrentJournal(sample.journalId);
-      }
-    }
-
-    toast.success('Đã tải bài báo', 'Đang chuyển sang bộ soạn thảo StructPaper...');
-    router.push('/editor');
-  };
-
-  const handleTogglePin = async (id: string, currentPinned: boolean) => {
-    try {
-      await repo.updateInfo(id, { pinned: !currentPinned });
-      toast.success(
-        !currentPinned ? 'Đã ghim bài báo lên đầu' : 'Đã bỏ ghim bài báo',
-        'Danh sách đã được cập nhật thứ tự ưu tiên.'
-      );
-      await loadRecords();
-    } catch (err: any) {
-      toast.error('Lỗi ghim bài báo', err?.message);
-    }
-  };
-
-  const handleSaveQuickEdit = async (
-    id: string,
-    patch: Partial<ManuscriptInfo>
-  ) => {
-    await repo.updateInfo(id, patch);
-    toast.success(
-      'Cập nhật thành công',
-      'Thông tin bài báo đã được cập nhật trực tiếp vào cơ sở dữ liệu.'
-    );
-    await loadRecords();
-  };
-
-  const handleDuplicate = async (paper: ManuscriptRecord) => {
-    try {
-      const newId = `paper_${Date.now()}`;
-      const newDoc = {
-        ...paper.doc,
-        id: newId,
-        meta: {
-          ...paper.doc.meta,
-          title: [{ t: 'text', v: `${getManuscriptTitle(paper)} (Bản sao)` }],
-        },
-      };
-
-      const newInfo: Partial<ManuscriptInfo> = {
-        ...paper.info,
-        id: newId,
-        displayName: `${paper.info.displayName || getManuscriptTitle(paper)} (Bản sao)`,
-        submissionId: paper.info.submissionId
-          ? `${paper.info.submissionId}_copy`
-          : undefined,
-        pinned: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await repo.save(newDoc as any, newInfo);
-      toast.success('Đã nhân bản bài báo', `Bản sao "${newInfo.displayName}" đã sẵn sàng.`);
-      await loadRecords();
-    } catch (err: any) {
-      toast.error('Lỗi nhân bản bài báo', err?.message);
-    }
-  };
-
-  const handleExportBackup = async (paper: ManuscriptRecord) => {
-    try {
-      const blob = await exportBackup(paper.doc, assetRepo);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      const safeTitle = (paper.info.submissionId || paper.info.displayName || 'paper')
-        .replace(/[^a-zA-Z0-9_-]/g, '_')
-        .slice(0, 30);
-      link.download = `${safeTitle}.structpaper`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success(
-        'Đã xuất bản sao lưu!',
-        `Gói tệp "${link.download}" đã được tải về máy.`
-      );
-    } catch (err: any) {
-      toast.error('Lỗi xuất bản sao lưu', err?.message);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await repo.delete(id);
-      toast.info('Đã xóa bài báo', 'Bản thảo đã được gỡ bỏ khỏi kho lưu trữ.');
-      await loadRecords();
-    } catch (err: any) {
-      toast.error('Lỗi xóa bài báo', err?.message);
-    }
-  };
-
-  // Status Counts
-  const countsByStatus = useMemo(() => {
-    const counts: Partial<Record<FilterWorkflowStatus, number>> = {
-      all: records.length,
-      draft: 0,
-      'in-review': 0,
-      proofing: 0,
-      ready: 0,
-      published: 0,
-    };
-    for (const r of records) {
-      const st = r.info.workflowStatus;
-      if (st && typeof counts[st] === 'number') {
-        counts[st] = (counts[st] || 0) + 1;
-      }
-    }
-    return counts;
-  }, [records]);
-
-  // Filtered & Sorted Papers
-  const filteredPapers = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return records
-      .filter((r) => {
-        // Search query
-        if (query) {
-          const title = getManuscriptTitle(r).toLowerCase();
-          const submissionId = (r.info.submissionId || '').toLowerCase();
-          const authors = getManuscriptAuthors(r).toLowerCase();
-          const tags = (r.info.tags || []).join(' ').toLowerCase();
-
-          const matchesQuery =
-            title.includes(query) ||
-            submissionId.includes(query) ||
-            authors.includes(query) ||
-            tags.includes(query);
-
-          if (!matchesQuery) return false;
-        }
-
-        // Status Filter
-        if (statusFilter !== 'all' && r.info.workflowStatus !== statusFilter) {
-          return false;
-        }
-
-        // Journal Filter
-        if (journalFilter !== 'all') {
-          const normCurrent = normalizeJournalId(r.doc.journalId);
-          const normFilter = normalizeJournalId(journalFilter);
-          if (normCurrent !== normFilter) return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        // Always place pinned items at the top
-        const aPinned = Boolean(a.info.pinned);
-        const bPinned = Boolean(b.info.pinned);
-        if (aPinned !== bPinned) return aPinned ? -1 : 1;
-
-        if (sortBy === 'title') {
-          return getManuscriptTitle(a).localeCompare(getManuscriptTitle(b));
-        }
-        if (sortBy === 'status') {
-          return (a.info.workflowStatus || '').localeCompare(
-            b.info.workflowStatus || ''
-          );
-        }
-        // Default newest
-        const timeA = new Date(a.info.updatedAt || a.info.createdAt).getTime();
-        const timeB = new Date(b.info.updatedAt || b.info.createdAt).getTime();
-        return timeB - timeA;
-      });
-  }, [records, searchQuery, statusFilter, journalFilter, sortBy]);
+  }, [setActiveMenuId]);
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-7 pb-16 pt-4 px-4 sm:px-6">
-      {/* 1. Header Banner */}
-
-      {/* 2. Top Horizontal Recent Papers Row */}
+      {/* 1. Top Horizontal Recent Papers Row */}
       <RecentPapersRow
         papers={records}
         onOpenPaper={handleOpenEditor}
@@ -400,18 +60,18 @@ export const PaperHubView: React.FC = () => {
         isLoading={isLoading}
       />
 
-      {/* 3. Sticky Filter Toolbar matching Eatzy */}
+      {/* 2. Sticky Filter Toolbar */}
       <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
         <div className="absolute inset-0 bg-[#F8F9FA]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
         <PaperFiltersBar
           searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
+          onSearchChange={setSearchQuery}
           statusFilter={statusFilter}
-          onStatusFilterChange={handleStatusFilterChange}
+          onStatusFilterChange={setStatusFilter}
           journalFilter={journalFilter}
-          onJournalFilterChange={handleJournalFilterChange}
+          onJournalFilterChange={setJournalFilter}
           sortBy={sortBy}
-          onSortChange={handleSortChange}
+          onSortChange={setSortBy}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           countsByStatus={countsByStatus}
@@ -419,7 +79,7 @@ export const PaperHubView: React.FC = () => {
         />
       </div>
 
-      {/* 4. Papers List (Loading Shimmer vs Grid vs Table vs Empty) */}
+      {/* 3. Papers List (Loading Shimmer vs Grid vs Table vs Empty) */}
       {isLoading ? (
         <div
           data-testid="papers-shimmer-grid"
@@ -479,7 +139,7 @@ export const PaperHubView: React.FC = () => {
         />
       )}
 
-      {/* 5. End of list indicator matching Eatzy */}
+      {/* 4. End of list indicator */}
       {!isLoading && filteredPapers.length > 0 && (
         <div className="py-10 flex items-center justify-center gap-4 opacity-50 select-none">
           <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />

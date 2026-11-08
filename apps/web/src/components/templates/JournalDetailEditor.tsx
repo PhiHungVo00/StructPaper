@@ -20,13 +20,9 @@ import { JournalProfile } from '@structpaper/journal-profiles';
 import {
   ManagedJournalProfile,
   JournalStatus,
-  saveManagedJournal,
-  resetJournalToBase,
-  createNewPaperFromJournal,
 } from '@/lib/templates/journal-storage';
 import { toast } from '@/components/DynamicIslandToast';
-import { usePaper } from '@/context/PaperContext';
-import { usePaperStorage } from '@/hooks';
+import { useManagedJournals } from '@/hooks';
 import { JournalGeneralTab } from './tabs/JournalGeneralTab';
 import { JournalFrontMatterTab } from './tabs/JournalFrontMatterTab';
 import { JournalArticleTypesTab } from './tabs/JournalArticleTypesTab';
@@ -45,8 +41,7 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   isNew = false,
 }) => {
   const router = useRouter();
-  const { setPaper, setCurrentJournal } = usePaper();
-  const { savePaper } = usePaperStorage();
+  const { saveProfile, resetProfile, createTestPaper } = useManagedJournals();
   const [managed, setManaged] = useState<ManagedJournalProfile>(initialManaged);
   const [activeTab, setActiveTab] = useState<TabKey>('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -75,7 +70,7 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   const handleSave = () => {
     setIsSaving(true);
     try {
-      saveManagedJournal(managed);
+      saveProfile(managed);
       toast.success(
         'Đã lưu thành công',
         `Đã lưu cấu hình hồ sơ tạp chí "${managed.profile.names?.short || managed.id}"`
@@ -98,7 +93,7 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
       );
       if (confirmed) {
         try {
-          const reset = resetJournalToBase(managed.id);
+          const reset = resetProfile(managed.id);
           setManaged(reset);
           toast.info('Đã khôi phục', 'Đã đặt lại thông số theo chuẩn gốc của hệ thống.');
         } catch (err: unknown) {
@@ -110,21 +105,7 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   };
 
   const handleCreateTestPaper = () => {
-    try {
-      const newPaper = createNewPaperFromJournal(managed);
-      setPaper(newPaper);
-      if (newPaper.metadata?.journalId) {
-        setCurrentJournal(newPaper.metadata.journalId);
-      }
-      savePaper(newPaper).catch((err) => {
-        console.warn('Failed to background persist test paper:', err);
-      });
-      toast.success('Đã tạo bài báo', 'Đang chuyển đến trang soạn thảo...');
-      router.push('/editor');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Không thể tạo bài báo';
-      toast.error('Lỗi', msg);
-    }
+    createTestPaper(managed);
   };
 
   const tabs: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [

@@ -102,10 +102,15 @@ export class TauriDesktopCompiler implements CompilerPort {
         durationMs,
       };
     } catch (err: any) {
+      const errorMsg =
+        typeof err === 'string'
+          ? err
+          : err?.message || (err ? String(err) : 'Error executing desktop compilation');
+
       return {
         status: 'error',
-        logs: [err?.message || String(err)],
-        error: err?.message || 'Error executing desktop compilation',
+        logs: [errorMsg],
+        error: errorMsg,
         producedBy: {
           kind: 'local-cli',
           environmentId: this.id,
