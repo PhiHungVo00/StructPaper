@@ -236,6 +236,27 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
+  packages/platform:
+    devDependencies:
+      '@types/react':
+        specifier: ^18
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18
+        version: 18.3.7(@types/react@18.3.31)
+      react:
+        specifier: ^18
+        version: 18.3.1
+      react-dom:
+        specifier: ^18
+        version: 18.3.1(react@18.3.1)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@26.6.6)(happy-dom@21.0.4)(lightningcss@1.33.0)
+
   packages/qc-engine:
     dependencies:
       '@structpaper/doc-model':

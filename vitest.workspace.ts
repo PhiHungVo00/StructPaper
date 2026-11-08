@@ -16,6 +16,7 @@ export default defineWorkspace([
         '@structpaper/compiler-client': path.resolve(__dirname, 'packages/compiler-client/src'),
         '@structpaper/qc-engine': path.resolve(__dirname, 'packages/qc-engine/src'),
         '@structpaper/exporters': path.resolve(__dirname, 'packages/exporters/src'),
+        '@structpaper/platform': path.resolve(__dirname, 'packages/platform/src'),
         '@': path.resolve(__dirname, 'apps/web/src'),
       },
     },
