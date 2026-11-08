@@ -139,20 +139,20 @@
 - Create: `scripts/generate-updater-keys.mjs`
 - Modify: `.github/workflows/release.yml`
 
-- [ ] **Step 5.1: Add updater plugins in Cargo.toml**
+- [x] **Step 5.1: Add updater plugins in Cargo.toml**
   Add `tauri-plugin-updater = "2"` and `tauri-plugin-process = "2"` to `apps/web/src-tauri/Cargo.toml`.
-- [ ] **Step 5.2: Register plugins in `main.rs`**
+- [x] **Step 5.2: Register plugins in `main.rs`**
   In `apps/web/src-tauri/src/main.rs`, register `.plugin(tauri_plugin_updater::Builder::new().build())` and `.plugin(tauri_plugin_process::init())`.
-- [ ] **Step 5.3: Create key generator script and generate updater keypair**
+- [x] **Step 5.3: Create key generator script and generate updater keypair**
   Create `scripts/generate-updater-keys.mjs`. Generate Ed25519 updater key pair. Add the public key to `tauri.conf.json` under `plugins.updater.pubkey`.
-- [ ] **Step 5.4: Configure `tauri.conf.json`**
+- [x] **Step 5.4: Configure `tauri.conf.json`**
   Add `plugins.updater`:
   - `endpoints`: `["https://github.com/StructPaper/StructPaper/releases/latest/download/latest.json"]`
   - `windows.installMode`: `"passive"`
   - Add `"bundle": { "createUpdaterArtifacts": true }`.
-- [ ] **Step 5.5: Update release workflow for signing**
+- [x] **Step 5.5: Update release workflow for signing**
   In `.github/workflows/release.yml`, pass `TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}` to `tauri-action`.
-- [ ] **Step 5.6: Verify Rust compilation**
+- [x] **Step 5.6: Verify Rust compilation**
   Run `cargo check` in `apps/web/src-tauri` and commit.
 
 ---

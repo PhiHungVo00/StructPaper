@@ -28,7 +28,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "dmg"],
+    "targets": [
+      "nsis",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -38,6 +41,18 @@
     ],
     "externalBin": [
       "bin/tectonic"
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDBCODhCRTMzREFGNUY0NjgKUldSbzlQWGFNNzZJQzQ4cWphd3ByQWVQdWV3R2VIOWIxQTVUdE1uQlUxVEJucVMyM1FxK0xlVzMK",
+      "endpoints": [
+        "https://github.com/StructPaper/StructPaper/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

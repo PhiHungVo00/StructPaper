@@ -221,6 +221,8 @@ async fn compile_latex_desktop(
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![compile_latex_desktop])
         .run(tauri::generate_context!())
         .expect("error while running StructPaper application");

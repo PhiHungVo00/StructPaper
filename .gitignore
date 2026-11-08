@@ -15,6 +15,11 @@ scripts/spikes/output/*.pdf
 *.bmp
 *.tmp
 
+# --- Tauri Signing Keys & Updater Secrets ---
+.tauri-keys/
+*.key
+*.key.pub
+
 # --- Java & Gradle (Backend) ---
 build/
 **/build/
