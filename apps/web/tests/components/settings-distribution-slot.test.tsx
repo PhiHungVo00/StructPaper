@@ -14,6 +14,8 @@ import { createPlatform, resetPlatform, isTauriEnvironment } from '@/platform/bo
 import { DownloadDesktopCard } from '@/components/platform/DownloadDesktopCard';
 import { CheckForUpdateCard } from '@/components/platform/CheckForUpdateCard';
 import { UpdateNotificationBanner } from '@/components/platform/UpdateNotificationBanner';
+import { UpdateToastNotifier } from '@/components/platform/UpdateToastNotifier';
+import { toast } from '@/components/DynamicIslandToast';
 
 describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
   afterEach(() => {
@@ -465,4 +467,126 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
       expect(p.capabilities.hasAppUpdater).toBe(true);
     });
   });
+
+  describe('UpdateToastNotifier', () => {
+    it('triggers toast.info when a new update is available', () => {
+      const toastSpy = vi.spyOn(toast, 'info');
+      const startUpdateMock = vi.fn();
+
+      const updateInfo: UpdateInfo = {
+        version: '2.5.0',
+        notes: 'Sửa lỗi biên dịch',
+        mandatory: false,
+        kind: 'app-binary',
+      };
+
+      const platform = createFakePlatform({
+        overrides: {
+          updates: {
+            channel: 'stable',
+            getState: () => ({ s: 'available', info: updateInfo }),
+            subscribe: () => () => {},
+            check: vi.fn(),
+            install: startUpdateMock,
+            restart: vi.fn(),
+            skipVersion: vi.fn(),
+            remindLater: vi.fn(),
+          },
+        },
+      });
+
+      render(
+        <PlatformProvider value={platform}>
+          <UpdateToastNotifier />
+        </PlatformProvider>
+      );
+
+      expect(toastSpy).toHaveBeenCalledWith(
+        'Đã có bản cập nhật mới v2.5.0',
+        expect.any(String),
+        expect.objectContaining({
+          id: 'app-update-available',
+          action: expect.objectContaining({
+            label: 'Cập nhật ngay',
+          }),
+        })
+      );
+    });
+
+    it('triggers toast.loading during downloading and toast.success when ready', () => {
+      const loadingSpy = vi.spyOn(toast, 'loading');
+      const successSpy = vi.spyOn(toast, 'success');
+      const restartMock = vi.fn();
+
+      const updateInfo: UpdateInfo = {
+        version: '2.6.0',
+        mandatory: false,
+        kind: 'app-binary',
+      };
+
+      // 1. Downloading
+      let currentState: UpdateState = {
+        s: 'downloading',
+        info: updateInfo,
+        received: 50,
+        total: 100,
+      };
+
+      let listenerCb: ((s: UpdateState) => void) | null = null;
+
+      const platform = createFakePlatform({
+        overrides: {
+          updates: {
+            channel: 'stable',
+            getState: () => currentState,
+            subscribe: (fn) => {
+              listenerCb = fn;
+              return () => {};
+            },
+            check: vi.fn(),
+            install: vi.fn(),
+            restart: restartMock,
+            skipVersion: vi.fn(),
+            remindLater: vi.fn(),
+          },
+        },
+      });
+
+      const { rerender } = render(
+        <PlatformProvider value={platform}>
+          <UpdateToastNotifier />
+        </PlatformProvider>
+      );
+
+      expect(loadingSpy).toHaveBeenCalledWith(
+        'Đang tải bản cập nhật v2.6.0...',
+        expect.stringContaining('50% hoàn tất'),
+        expect.objectContaining({ id: 'app-update-downloading' })
+      );
+
+      // 2. Transition to ready
+      currentState = { s: 'ready', info: updateInfo };
+      act(() => {
+        listenerCb?.(currentState);
+      });
+
+      rerender(
+        <PlatformProvider value={platform}>
+          <UpdateToastNotifier />
+        </PlatformProvider>
+      );
+
+      expect(successSpy).toHaveBeenCalledWith(
+        'Đã tải xong bản cập nhật v2.6.0!',
+        expect.any(String),
+        expect.objectContaining({
+          id: 'app-update-ready',
+          action: expect.objectContaining({
+            label: 'Khởi động lại ngay',
+          }),
+        })
+      );
+    });
+  });
 });
+

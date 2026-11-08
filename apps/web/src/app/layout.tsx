@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/DynamicIslandToast';
 import { PlatformProvider } from '@/platform';
-import { UpdateNotificationBanner } from '@/components/platform/UpdateNotificationBanner';
+import { UpdateToastNotifier } from '@/components/platform/UpdateToastNotifier';
 
 export default function RootLayout({
   children,
@@ -37,7 +37,7 @@ export default function RootLayout({
         <PlatformProvider>
           <PaperProvider>
             <Toaster />
-            <UpdateNotificationBanner />
+            <UpdateToastNotifier />
             <AppShell>
               {children}
             </AppShell>

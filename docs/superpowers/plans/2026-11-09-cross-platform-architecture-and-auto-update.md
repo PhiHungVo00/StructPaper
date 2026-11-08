@@ -183,3 +183,19 @@
   Create `apps/web/tests/components/settings-distribution-slot.test.tsx`. Verify both Web and Desktop slot rendering.
 - [x] **Step 6.7: Run all tests and commit**
   Run full test suite: `pnpm test` and commit.
+
+---
+
+### Task 7: Unified Dynamic Island Toast Notification for Updates
+
+**Files:**
+- Create: `apps/web/src/components/platform/UpdateToastNotifier.tsx`
+- Modify: `apps/web/src/app/layout.tsx`
+- Modify: `apps/web/tests/components/settings-distribution-slot.test.tsx`
+
+- [x] **Step 7.1: Implement `UpdateToastNotifier`**
+  Synchronizes `UpdateService` events directly with `DynamicIslandToast` (`toast.info`, `toast.loading`, `toast.success`, `toast.error`) maintaining 100% design system uniformity.
+- [x] **Step 7.2: Mount `UpdateToastNotifier` in Root Layout**
+  Replace banner in `apps/web/src/app/layout.tsx` with `<UpdateToastNotifier />`.
+- [x] **Step 7.3: Add tests and verify**
+  Add unit tests in `settings-distribution-slot.test.tsx` verifying toast calls on update available, downloading, and ready states.
