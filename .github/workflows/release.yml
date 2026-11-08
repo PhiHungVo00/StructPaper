@@ -49,22 +49,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Setup Tectonic CLI
-        uses: wtfjoke/setup-tectonic@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Prepare Tectonic sidecar binary (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "apps/web/src-tauri/bin"
-          $tectonicPath = (Get-Command tectonic.exe).Source
-          Copy-Item $tectonicPath "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
+          Copy-Item "bin/tectonic.exe" "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
 
       - name: Prepare Tectonic sidecar binary (macOS)
         if: runner.os == 'macOS'
         run: |
+          brew install tectonic
           mkdir -p apps/web/src-tauri/bin
           TECTONIC_PATH=$(which tectonic)
           cp "$TECTONIC_PATH" apps/web/src-tauri/bin/tectonic-aarch64-apple-darwin
