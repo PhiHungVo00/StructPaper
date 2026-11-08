@@ -81,86 +81,19 @@ export function usePapersHub() {
     triggerFilterLoading();
   }, [triggerFilterLoading]);
 
-  // Load records from IndexedDb, seeding samples if empty
+  // Load records from IndexedDb without seeding
   const loadRecords = useCallback(async () => {
     try {
-      let loaded = await repo.listRecords();
-
-      // Seed sample records if storage is currently empty
-      if (loaded.length === 0) {
-        for (const sample of SAMPLE_VNUHCM_RECORDS) {
-          await repo.save(sample.doc, sample.info);
-        }
-
-        // Also import any legacy papers from localStorage authoring papers
-        const legacyPapers = getAuthoringPapers();
-        const legacyStatusMap: Record<string, WorkflowStatus> = {
-          ready: 'ready',
-          review: 'in-review',
-          'in-review': 'in-review',
-          proofing: 'proofing',
-          published: 'published',
-          draft: 'draft',
-        };
-        for (const lp of legacyPapers) {
-          if (!SAMPLE_VNUHCM_RECORDS.some((s) => s.info.id === lp.id)) {
-            await repo.save(
-              {
-                schemaVersion: 2,
-                id: lp.id,
-                journalId: lp.metadata?.journalId || 'std',
-                articleType: lp.metadata?.articleType || 'Research Article',
-                meta: {
-                  title: [{ t: 'text', v: lp.metadata?.title || 'Bài báo' }],
-                  authors: (lp.metadata?.authors || []).map((a, i) => ({
-                    id: a.id || `auth_${i + 1}`,
-                    name: a.name,
-                    affiliationIds: ['aff_1'],
-                    isCorresponding: a.isCorresponding,
-                    email: a.email,
-                  })),
-                  affiliations: [
-                    { id: 'aff_1', institution: 'Đại học Quốc gia TP.HCM' },
-                  ],
-                  abstract: [
-                    [{ t: 'text', v: lp.metadata?.abstract || '' }],
-                  ],
-                  keywords: lp.metadata?.keywords || [],
-                  dates: lp.metadata?.dates || {},
-                },
-                body: [],
-                back: [],
-                references: [],
-                assets: {},
-              } as any,
-              {
-                id: lp.id,
-                displayName: lp.metadata?.title || 'Bài báo nghiên cứu',
-                submissionId: lp.metadata?.journalAbbv || 'DOC_01',
-                tags: lp.metadata?.keywords || ['Khởi tạo'],
-                workflowStatus: (lp.status && legacyStatusMap[lp.status]) || 'draft',
-                pinned: false,
-                archived: false,
-                createdAt: lp.createdAt || new Date().toISOString(),
-                updatedAt: lp.updatedAt || new Date().toISOString(),
-              }
-            );
-          }
-        }
-
-        loaded = await repo.listRecords();
-      }
-
+      const loaded = await repo.listRecords();
       setRecords(loaded);
       setError(null);
     } catch (err: any) {
       console.error('Failed to load manuscript records:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
-      // Fallback in-memory sample records
-      setRecords(SAMPLE_VNUHCM_RECORDS);
+      setRecords([]);
     } finally {
       if (!isTestEnv) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 600));
       }
       setIsLoading(false);
     }

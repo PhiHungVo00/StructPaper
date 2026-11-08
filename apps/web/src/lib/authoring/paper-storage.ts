@@ -265,25 +265,23 @@ export const DEFAULT_MOCK_PAPERS: CompletePaper[] = [
 ];
 
 /**
- * Retrieve all authoring papers from local storage (or fallback to initial mock papers)
+ * Retrieve all authoring papers from local storage (returns empty array if none)
  */
 export function getAuthoringPapers(): CompletePaper[] {
-  if (typeof window === 'undefined') return DEFAULT_MOCK_PAPERS;
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_MOCK_PAPERS));
-      return DEFAULT_MOCK_PAPERS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed)) {
       return parsed;
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_MOCK_PAPERS));
-    return DEFAULT_MOCK_PAPERS;
+    return [];
   } catch (err) {
     console.error('Failed to load authoring papers from storage:', err);
-    return DEFAULT_MOCK_PAPERS;
+    return [];
   }
 }
 

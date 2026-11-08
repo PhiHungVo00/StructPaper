@@ -26,6 +26,34 @@ vi.mock('@/components/DynamicIslandToast', () => ({
   },
 }));
 
+// Mock framer-motion to prevent unhandled animation aborts in happy-dom
+vi.mock('framer-motion', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('framer-motion');
+  return {
+    ...actual,
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    motion: new Proxy(actual.motion as Record<string, unknown>, {
+      get: (_target, prop: string) => {
+        const MotionComp = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
+          ({ children, ...props }, ref) => {
+            const Component = prop as unknown as React.ElementType;
+            const strippedProps = { ...props } as Record<string, unknown>;
+            delete strippedProps.initial;
+            delete strippedProps.animate;
+            delete strippedProps.exit;
+            delete strippedProps.transition;
+            delete strippedProps.whileHover;
+            delete strippedProps.whileTap;
+            return <Component ref={ref} {...strippedProps}>{children}</Component>;
+          }
+        );
+        MotionComp.displayName = `motion.${prop}`;
+        return MotionComp;
+      },
+    }),
+  };
+});
+
 import {
   RecentPapersRow,
   PaperFiltersBar,
@@ -175,10 +203,40 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
   });
 
   describe('PaperHubView Full Integration', () => {
-    it('seeds samples on empty database, renders top row, filters, pins, and quick edits', async () => {
+    it('renders clean EmptyPapersState when database is empty (no auto-seeding)', async () => {
       render(<PaperHubView />);
 
-      // Wait for records to be seeded and loaded from IndexedDB
+      await waitFor(() => {
+        expect(screen.getByTestId('empty-papers-state')).toBeDefined();
+      });
+
+      expect(screen.getByText('Chưa có bài báo nào')).toBeDefined();
+      expect(screen.getAllByText('Tạo từ mẫu').length).toBeGreaterThan(0);
+    });
+
+    it('renders top row, filters, pins, and quick edits when papers exist in IndexedDB', async () => {
+      // Pre-seed records into IndexedDb for populated test
+      for (const sample of SAMPLE_VNUHCM_RECORDS) {
+        await defaultDatabase.manuscripts.put({
+          id: sample.info.id,
+          schemaVersion: 2,
+          rev: 1,
+          syncState: 'local_only',
+          createdAt: sample.info.createdAt,
+          updatedAt: sample.info.updatedAt,
+          journalId: sample.doc.journalId,
+          displayName: sample.info.displayName,
+          workflowStatus: sample.info.workflowStatus,
+          tags: sample.info.tags,
+          pinned: sample.info.pinned,
+          archived: sample.info.archived,
+          doc: sample.doc as any,
+        });
+      }
+
+      render(<PaperHubView />);
+
+      // Wait for records to be loaded from IndexedDB
       await waitFor(() => {
         expect(screen.getByTestId('papers-grid')).toBeDefined();
       }, { timeout: 3000 });
