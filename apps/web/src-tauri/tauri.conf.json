@@ -46,7 +46,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDBCODhCRTMzREFGNUY0NjgKUldSbzlQWGFNNzZJQzQ4cWphd3ByQWVQdWV3R2VIOWIxQTVUdE1uQlUxVEJucVMyM1FxK0xlVzMK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNERTU5MEZFMDgxNTVEODMKUldTRFhSVUkvcERsUFlhUUNuREFLZDlwSWxoRHFUZks0am1yU25aN3UxOTFhS20vVjdKdUpUUEQK",
       "endpoints": [
         "https://github.com/StructPaper/StructPaper/releases/latest/download/latest.json"
       ],
