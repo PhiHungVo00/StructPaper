@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/DynamicIslandToast';
-import { PlatformProvider } from '@/platform';
+import { PlatformProvider } from '@/platform/provider';
 import { UpdateToastNotifier } from '@/components/platform/UpdateToastNotifier';
 
 export default function RootLayout({

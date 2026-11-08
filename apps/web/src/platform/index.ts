@@ -1,3 +1,5 @@
+'use client';
+
 export * from './bootstrap';
 export * from './provider';
 export * from './slots';

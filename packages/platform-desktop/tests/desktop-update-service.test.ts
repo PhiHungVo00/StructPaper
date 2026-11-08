@@ -22,7 +22,7 @@ describe('packages/platform-desktop: createDesktopPlatform', () => {
       hasFileSystem: true,
     });
 
-    expect(platform.config.appVersion).toBe('1.0.5');
+    expect(platform.config.appVersion).toBe('1.0.6');
     expect(platform.config.channel).toBe('stable');
     expect(platform.config.buildId).toBe('desktop-dev');
     expect(platform.files).toBeInstanceOf(DesktopFileService);
@@ -432,6 +432,16 @@ describe('packages/platform-desktop: Non-Tauri environment safety & fallbacks', 
   it('DesktopUpdateService check() does not crash in non-Tauri tests without mocks', async () => {
     const service = new DesktopUpdateService();
     // In happy-dom / Node without tauri internals or mocks, check should safely return null
+    const result = await service.check();
+    expect(result).toBeNull();
+    expect(service.getState()).toEqual({ s: 'idle' });
+  });
+
+  it('DesktopUpdateService check() gracefully handles plugin-updater null meta.available bug as up-to-date', async () => {
+    const service = new DesktopUpdateService({
+      checkUpdater: vi.fn().mockRejectedValue(new TypeError("Cannot read properties of null (reading 'available')")),
+    });
+
     const result = await service.check();
     expect(result).toBeNull();
     expect(service.getState()).toEqual({ s: 'idle' });

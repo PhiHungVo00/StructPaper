@@ -1,3 +1,5 @@
+'use client';
+
 import { registerSlot } from '@structpaper/platform';
 import { DownloadDesktopCard } from '@/components/platform/DownloadDesktopCard';
 import { CheckForUpdateCard } from '@/components/platform/CheckForUpdateCard';
@@ -23,3 +25,4 @@ export function registerAppSlots(): void {
 
 // Auto-register on import
 registerAppSlots();
+

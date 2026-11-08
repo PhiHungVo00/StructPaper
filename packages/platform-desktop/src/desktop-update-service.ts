@@ -163,7 +163,23 @@ export class DesktopUpdateService implements UpdateService {
     }
     try {
       const updaterMod = await import('@tauri-apps/plugin-updater');
-      return updaterMod.check;
+      return (async (options?: any) => {
+        try {
+          return await updaterMod.check(options);
+        } catch (err: unknown) {
+          const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+          // Workaround for @tauri-apps/plugin-updater 2.0.0 bug:
+          // When Rust returns null (no update), JS tries meta.available on null
+          if (
+            msg.includes("reading 'available'") ||
+            msg.includes('available of null') ||
+            (msg.includes('available') && msg.includes('null'))
+          ) {
+            return null;
+          }
+          throw err;
+        }
+      }) as unknown as typeof checkUpdaterType;
     } catch {
       return null;
     }
@@ -231,11 +247,14 @@ export class DesktopUpdateService implements UpdateService {
       return info;
     } catch (err: unknown) {
       const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-      // Handle running in non-Tauri test environments without mocks
+      // Handle running in non-Tauri test environments or updater null bug
       if (
         msg.includes('window is not defined') ||
         msg.includes("reading 'invoke'") ||
-        (msg.includes('invoke') && msg.includes('undefined'))
+        (msg.includes('invoke') && msg.includes('undefined')) ||
+        msg.includes("reading 'available'") ||
+        msg.includes('available of null') ||
+        (msg.includes('available') && msg.includes('null'))
       ) {
         this.setState({ s: 'idle' });
         return null;
