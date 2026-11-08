@@ -49,25 +49,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Setup Tectonic CLI
+        uses: wtfjoke/setup-tectonic@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Prepare Tectonic sidecar binary (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "apps/web/src-tauri/bin"
-          if (Test-Path "bin/tectonic.exe") {
-            Copy-Item "bin/tectonic.exe" "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
-          } else {
-            Invoke-WebRequest -Uri "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-pc-windows-msvc.zip" -OutFile "tectonic.zip"
-            Expand-Archive -Path "tectonic.zip" -DestinationPath "temp_tectonic" -Force
-            Copy-Item "temp_tectonic/tectonic.exe" "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
-          }
+          $tectonicPath = (Get-Command tectonic.exe).Source
+          Copy-Item $tectonicPath "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
 
       - name: Prepare Tectonic sidecar binary (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p apps/web/src-tauri/bin
-          curl -L "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-aarch64-apple-darwin.tar.gz" | tar -xz
-          mv tectonic apps/web/src-tauri/bin/tectonic-aarch64-apple-darwin
+          TECTONIC_PATH=$(which tectonic)
+          cp "$TECTONIC_PATH" apps/web/src-tauri/bin/tectonic-aarch64-apple-darwin
           chmod +x apps/web/src-tauri/bin/tectonic-aarch64-apple-darwin
 
       - name: Build Next.js Web App for Desktop
