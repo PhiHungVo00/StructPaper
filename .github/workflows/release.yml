@@ -50,7 +50,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Setup Tectonic CLI
-        uses: wtfjoke/setup-tectonic@v3
+        uses: wtfjoke/setup-tectonic@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -74,7 +74,7 @@ jobs:
         run: pnpm --filter @structpaper/web build:desktop
 
       - name: Build Desktop Application with Tauri
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
