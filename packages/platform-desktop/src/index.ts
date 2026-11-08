@@ -44,7 +44,7 @@ export function createDesktopPlatform(
 
   const config: RuntimeConfig = {
     apiBaseUrl: options?.config?.apiBaseUrl ?? defaultApiBaseUrl,
-    appVersion: options?.config?.appVersion ?? '0.1.0',
+    appVersion: options?.config?.appVersion ?? '1.0.5',
     buildId: options?.config?.buildId ?? 'desktop-dev',
     channel: options?.config?.channel ?? 'stable',
   };

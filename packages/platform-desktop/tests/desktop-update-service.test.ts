@@ -22,7 +22,7 @@ describe('packages/platform-desktop: createDesktopPlatform', () => {
       hasFileSystem: true,
     });
 
-    expect(platform.config.appVersion).toBe('0.1.0');
+    expect(platform.config.appVersion).toBe('1.0.5');
     expect(platform.config.channel).toBe('stable');
     expect(platform.config.buildId).toBe('desktop-dev');
     expect(platform.files).toBeInstanceOf(DesktopFileService);
