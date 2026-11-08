@@ -90,15 +90,15 @@
 - Create: `packages/platform-web/src/index.ts`
 - Test: `packages/platform-web/tests/web-platform.test.ts`
 
-- [ ] **Step 3.1: Define Web adapter package**
+- [x] **Step 3.1: Define Web adapter package**
   Create `packages/platform-web/package.json` (named `@structpaper/platform-web`).
-- [ ] **Step 3.2: Implement `WebUpdateService`**
+- [x] **Step 3.2: Implement `WebUpdateService`**
   Implement `WebUpdateService` with `kind: 'web-reload'`, checking version or emitting `idle` / `available` for page reload without native binaries.
-- [ ] **Step 3.3: Implement `WebFileService` & `WebShellService`**
+- [x] **Step 3.3: Implement `WebFileService` & `WebShellService`**
   Implement DOM-based downloads (`<a download>`), input file picker, and `window.open` for links.
-- [ ] **Step 3.4: Write unit tests for Web adapter**
+- [x] **Step 3.4: Write unit tests for Web adapter**
   Create `packages/platform-web/tests/web-platform.test.ts`.
-- [ ] **Step 3.5: Run tests and commit**
+- [x] **Step 3.5: Run tests and commit**
   Run `pnpm --filter @structpaper/platform-web test` and commit.
 
 ---

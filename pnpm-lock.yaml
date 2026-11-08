@@ -257,6 +257,19 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@26.6.6)(happy-dom@21.0.4)(lightningcss@1.33.0)
 
+  packages/platform-web:
+    dependencies:
+      '@structpaper/platform':
+        specifier: workspace:*
+        version: link:../platform
+    devDependencies:
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@26.6.6)(happy-dom@21.0.4)(lightningcss@1.33.0)
+
   packages/qc-engine:
     dependencies:
       '@structpaper/doc-model':

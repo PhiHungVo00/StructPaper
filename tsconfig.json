@@ -12,6 +12,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
+      "@structpaper/platform": ["./packages/platform/src"],
+      "@structpaper/platform-web": ["./packages/platform-web/src"],
       "@structpaper/*": ["./packages/*/src"],
       "@/*": ["./apps/web/src/*"]
     }
