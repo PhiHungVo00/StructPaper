@@ -13,11 +13,13 @@ import { JournalFiltersBar } from './JournalFiltersBar';
 import { JournalProfilesList } from './JournalProfilesList';
 import { JournalProfileCardShimmer } from './JournalProfileCardShimmer';
 import { toast } from '@/components/DynamicIslandToast';
+import { usePaperStorage } from '@/hooks';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
 
 export const JournalHubView: React.FC = () => {
   const router = useRouter();
   const { setPaper, setCurrentJournal } = usePaper();
+  const { savePaper } = usePaperStorage();
   const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
   const [journals, setJournals] = useState<ManagedJournalProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,6 +69,9 @@ export const JournalHubView: React.FC = () => {
       emptyPaper.metadata.journalAbbv = managed.profile.names?.short || managed.id.toUpperCase();
       setPaper(emptyPaper);
       setCurrentJournal(journalCode);
+      savePaper(emptyPaper).catch((err) => {
+        console.warn('Failed to background persist template paper:', err);
+      });
 
       toast.success(
         'Đã khởi tạo bản thảo',

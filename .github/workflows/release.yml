@@ -82,7 +82,7 @@ jobs:
             Ứng dụng soạn thảo và định dạng bài báo khoa học chuẩn tạp chí, tích hợp sẵn động cơ Tectonic XeTeX chạy ngoại tuyến tốc độ cao.
             
             ### Hướng dẫn cài đặt:
-            - **Windows**: Tải file `.exe` hoặc `.msi`. Nếu Windows SmartScreen hiển thị cảnh báo, chọn **More info** -> **Run anyway**.
+            - **Windows**: Tải file `.exe` cài đặt (`StructPaper_*_x64-setup.exe`). Nếu Windows SmartScreen hiển thị cảnh báo, chọn **More info** -> **Run anyway**.
             - **macOS**: Tải file `.dmg`, mở file và kéo StructPaper vào thư mục Applications. Nếu macOS chặn mở, nhấp chuột phải vào ứng dụng chọn **Open**.
           releaseDraft: false
           prerelease: false

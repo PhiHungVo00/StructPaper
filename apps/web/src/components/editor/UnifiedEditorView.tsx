@@ -24,6 +24,7 @@ import { LivePreviewPane } from './LivePreviewPane';
 import { ResizableSplitLayout } from './ResizableSplitLayout';
 import { generateStandardCitation } from './sections/utils';
 import { useEditorCompilation, useEditorExport, useEditorShortcuts } from './hooks';
+import { usePaperStorage } from '@/hooks';
 
 interface UnifiedEditorViewProps {
   paper: CompletePaper;
@@ -33,6 +34,7 @@ interface UnifiedEditorViewProps {
 
 export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onUpdatePaper }) => {
   const { currentJournal, setCurrentJournal } = usePaper();
+  const { savePaper } = usePaperStorage();
   const [formData, setFormData] = useState<CompletePaper>(() => JSON.parse(JSON.stringify(paper)));
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -47,13 +49,14 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const { isExportingDocx, isExportingZip, isExportingPdf, handleDownloadDocx, handleDownloadZip, handleDownloadPdf } =
     useEditorExport({ formData, compiledPdfUrl, compileLatexToPdf });
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     onUpdatePaper(formData);
+    await savePaper(formData);
     setIsDirty(false);
     setSaveSuccess(true);
     sileo.success({ title: 'Đã lưu thay đổi', description: 'Bản thảo bài báo đã được cập nhật thành công vào hệ thống' });
     setTimeout(() => setSaveSuccess(false), 2500);
-  }, [formData, onUpdatePaper]);
+  }, [formData, onUpdatePaper, savePaper]);
 
   useEditorShortcuts({ onSave: handleSave });
   useEffect(() => { setFormData(JSON.parse(JSON.stringify(paper))); setIsDirty(false); }, [paper.id]);

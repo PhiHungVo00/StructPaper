@@ -187,14 +187,13 @@ export const PaperHubView: React.FC = () => {
       (s) => s.paper.id === id || s.paper.metadata?.doi?.includes(id) || s.id === id
     );
 
-    if (sample) {
-      setPaper(sample.paper);
-      if (sample.journalId) {
-        setCurrentJournal(sample.journalId);
-      }
-    } else if (record) {
+    if (record) {
       try {
         const v1 = adaptV2toV1(record.doc as any);
+        if (!v1.id) v1.id = record.info.id;
+        if (record.info.displayName && v1.metadata && !v1.metadata.title) {
+          v1.metadata.title = record.info.displayName;
+        }
         setPaper(v1 as any);
         if (record.doc.journalId) {
           const norm = record.doc.journalId.toUpperCase().startsWith('VNUHCM-')
@@ -204,6 +203,17 @@ export const PaperHubView: React.FC = () => {
         }
       } catch (err) {
         console.error('Failed to adapt v2 doc to v1:', err);
+        if (sample) {
+          setPaper(sample.paper);
+          if (sample.journalId) {
+            setCurrentJournal(sample.journalId);
+          }
+        }
+      }
+    } else if (sample) {
+      setPaper(sample.paper);
+      if (sample.journalId) {
+        setCurrentJournal(sample.journalId);
       }
     }
 

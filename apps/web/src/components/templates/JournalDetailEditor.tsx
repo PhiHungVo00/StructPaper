@@ -25,6 +25,8 @@ import {
   createNewPaperFromJournal,
 } from '@/lib/templates/journal-storage';
 import { toast } from '@/components/DynamicIslandToast';
+import { usePaper } from '@/context/PaperContext';
+import { usePaperStorage } from '@/hooks';
 import { JournalGeneralTab } from './tabs/JournalGeneralTab';
 import { JournalFrontMatterTab } from './tabs/JournalFrontMatterTab';
 import { JournalArticleTypesTab } from './tabs/JournalArticleTypesTab';
@@ -43,6 +45,8 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   isNew = false,
 }) => {
   const router = useRouter();
+  const { setPaper, setCurrentJournal } = usePaper();
+  const { savePaper } = usePaperStorage();
   const [managed, setManaged] = useState<ManagedJournalProfile>(initialManaged);
   const [activeTab, setActiveTab] = useState<TabKey>('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -108,8 +112,15 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   const handleCreateTestPaper = () => {
     try {
       const newPaper = createNewPaperFromJournal(managed);
-      toast.success('Đã tạo bài báo', 'Đang chuyển đến trang soạn thảo Typst...');
-      router.push(`/papers/editor?id=${encodeURIComponent(newPaper.id)}`);
+      setPaper(newPaper);
+      if (newPaper.metadata?.journalId) {
+        setCurrentJournal(newPaper.metadata.journalId);
+      }
+      savePaper(newPaper).catch((err) => {
+        console.warn('Failed to background persist test paper:', err);
+      });
+      toast.success('Đã tạo bài báo', 'Đang chuyển đến trang soạn thảo...');
+      router.push('/editor');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Không thể tạo bài báo';
       toast.error('Lỗi', msg);
