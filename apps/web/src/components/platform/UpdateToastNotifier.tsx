@@ -28,10 +28,19 @@ export function UpdateToastNotifier(props: UpdateToastNotifierProps): React.Reac
     error,
     startUpdate,
     restart,
+    checkForUpdates,
   } = useAppUpdater();
 
   const notifiedVersionRef = useRef<string | null>(null);
   const readyNotifiedRef = useRef<string | null>(null);
+
+  // Auto-check for updates on initial mount after gentle delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      checkForUpdates().catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [checkForUpdates]);
 
   // 1. Alert user when a new version is available (persistent until user acts or dismisses)
   useEffect(() => {
