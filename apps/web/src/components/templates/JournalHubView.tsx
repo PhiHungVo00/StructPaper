@@ -80,13 +80,11 @@ export const JournalHubView: React.FC = () => {
       )}
 
       {/* 5. Create Paper Modal with Preselected Template */}
-      {selectedJournalForPaper && (
-        <CreatePaperModal
-          isOpen={Boolean(selectedJournalForPaper)}
-          onClose={() => setSelectedJournalForPaper(null)}
-          preselectedManaged={selectedJournalForPaper}
-        />
-      )}
+      <CreatePaperModal
+        isOpen={Boolean(selectedJournalForPaper)}
+        onClose={() => setSelectedJournalForPaper(null)}
+        preselectedManaged={selectedJournalForPaper}
+      />
     </div>
   );
 };

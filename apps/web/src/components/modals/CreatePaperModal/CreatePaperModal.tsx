@@ -36,6 +36,16 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
   const [parsedPaper, setParsedPaper] = useState<CompletePaper | null>(null);
   const [isBlank, setIsBlank] = useState<boolean>(false);
 
+  const [cachedManaged, setCachedManaged] = useState<ManagedJournalProfile | null>(preselectedManaged);
+
+  useEffect(() => {
+    if (preselectedManaged) {
+      setCachedManaged(preselectedManaged);
+    }
+  }, [preselectedManaged]);
+
+  const activeManaged = preselectedManaged || cachedManaged;
+
   // Reset state on open
   useEffect(() => {
     if (isOpen) {
@@ -45,13 +55,11 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
-  const targetJournalCode = preselectedManaged
-    ? `VNUHCM-${preselectedManaged.id.toUpperCase()}`
+  const targetJournalCode = activeManaged
+    ? `VNUHCM-${activeManaged.id.toUpperCase()}`
     : undefined;
-  const targetJournalName = preselectedManaged
-    ? preselectedManaged.profile.names?.vi || preselectedManaged.profile.names?.short
+  const targetJournalName = activeManaged
+    ? activeManaged.profile.names?.vi || activeManaged.profile.names?.short
     : undefined;
 
   // Finalize paper creation with chosen template
@@ -133,7 +141,16 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
         data-testid="create-paper-modal"
         initial={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
         animate={isTest ? undefined : { opacity: 1, scale: 1, y: 0 }}
-        exit={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
+        exit={
+          isTest
+            ? undefined
+            : {
+                opacity: 0,
+                scale: 0.9,
+                y: 30,
+                transition: { duration: 0.22, ease: [0.32, 0, 0.67, 0] },
+              }
+        }
         transition={isTest ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
         className="bg-[#F8F9FA] w-full max-w-xl rounded-[40px] overflow-hidden shadow-2xl flex flex-col border border-white/20 select-text"
       >
