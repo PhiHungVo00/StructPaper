@@ -10,6 +10,7 @@ import {
   PaperCard,
   PaperCardShimmer,
   PaperTable,
+  PaperTableShimmer,
   PaperQuickEditModal,
   EmptyPapersState,
 } from '@/components/papers';
@@ -81,12 +82,18 @@ export const PaperHubView: React.FC = () => {
 
       {/* 3. Papers List (Loading Shimmer vs Grid vs Table vs Empty) */}
       {isLoading ? (
-        <div
-          data-testid="papers-shimmer-grid"
-          className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-        >
-          <PaperCardShimmer cardCount={8} />
-        </div>
+        viewMode === 'grid' ? (
+          <div
+            data-testid="papers-shimmer-grid"
+            className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          >
+            <PaperCardShimmer cardCount={8} />
+          </div>
+        ) : (
+          <div data-testid="papers-shimmer-table">
+            <PaperTableShimmer rowCount={8} />
+          </div>
+        )
       ) : filteredPapers.length === 0 ? (
         <EmptyPapersState
           isFiltered={Boolean(searchQuery || statusFilter !== 'all' || journalFilter !== 'all')}

@@ -6,3 +6,4 @@ export * from './PaperTable';
 export * from './PaperQuickEditModal';
 export * from './EmptyPapersState';
 export * from './PaperCardShimmer';
+export * from './PaperTableShimmer';

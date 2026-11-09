@@ -59,6 +59,7 @@ import {
   PaperFiltersBar,
   PaperCard,
   PaperTable,
+  PaperTableShimmer,
   PaperQuickEditModal,
   type FilterWorkflowStatus,
 } from '@/components/papers';
@@ -199,6 +200,29 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
         })
       );
       expect(handleClose).toHaveBeenCalled();
+    });
+  });
+
+  describe('PaperTableShimmer Component', () => {
+    it('renders full table header and shimmering row skeletons', () => {
+      render(<PaperTableShimmer rowCount={5} />);
+
+      // Verify table shimmer container exists
+      const tableShimmer = screen.getByTestId('papers-table-shimmer');
+      expect(tableShimmer).toBeDefined();
+
+      // Verify full headers are displayed
+      expect(screen.getByText('Ghim')).toBeDefined();
+      expect(screen.getByText('Tên bài báo & Mã bài')).toBeDefined();
+      expect(screen.getByText('Tạp chí')).toBeDefined();
+      expect(screen.getByText('Trạng thái')).toBeDefined();
+      expect(screen.getByText('Tác giả')).toBeDefined();
+      expect(screen.getByText('Cập nhật')).toBeDefined();
+      expect(screen.getByText('Thao tác')).toBeDefined();
+
+      // Verify 5 rows rendered
+      const rows = tableShimmer.querySelectorAll('tbody tr');
+      expect(rows.length).toBe(5);
     });
   });
 
