@@ -15,6 +15,29 @@ const KEYWORD_SEPARATOR_OPTIONS: SelectOption<';' | ','>[] = [
   { value: ',', label: 'Dấu phẩy ( , )', description: 'Phân cách bằng dấu phẩy đơn' },
 ];
 
+const CITATION_STYLE_OPTIONS: SelectOption<string>[] = [
+  {
+    value: 'vancouver',
+    label: 'Vancouver (Đánh số [1-3] - Chuẩn ĐHQG-HCM)',
+    description: 'Tài liệu tham khảo đánh số theo thứ tự xuất hiện',
+  },
+  {
+    value: 'apa',
+    label: 'APA 7th (Tác giả - Năm: Author, Year)',
+    description: 'Tài liệu tham khảo sắp xếp theo bảng chữ cái tác giả',
+  },
+  {
+    value: 'ieee',
+    label: 'IEEE (Đánh số kỹ thuật trong ngoặc vuông)',
+    description: 'Chuẩn ngành Kỹ thuật, Công nghệ & Điện tử',
+  },
+  {
+    value: 'harvard',
+    label: 'Harvard (Author-Date Format)',
+    description: 'Chuẩn học thuật quốc tế dạng tác giả - năm',
+  },
+];
+
 const CITATION_INTEXT_OPTIONS: SelectOption<'bracket' | 'superscript'>[] = [
   {
     value: 'bracket',
@@ -222,7 +245,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
         <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
           <Quote className="w-4 h-4 text-zinc-700" />
           <h3 className="font-extrabold text-sm text-zinc-900">
-            Định dạng Ngày, Mẫu DOI &amp; Trích dẫn (Vancouver Standard)
+            Định dạng Ngày, Mẫu DOI &amp; Phong cách Trích dẫn (Citation Style)
           </h3>
         </div>
 
@@ -251,33 +274,55 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
             />
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-xs font-bold text-zinc-700 mb-1">
-              Kiểu hiển thị trích dẫn trong văn bản (In-text format)
+              Phong cách trích dẫn (Citation Style)
             </label>
-            <Select<'bracket' | 'superscript'>
-              options={CITATION_INTEXT_OPTIONS}
-              value={citation.inText}
-              onChange={(val) => updateCitation({ inText: val })}
+            <Select<string>
+              options={CITATION_STYLE_OPTIONS}
+              value={citation.style || 'vancouver'}
+              onChange={(val) => updateCitation({ style: val })}
               size="sm"
               variant="default"
               fullWidth
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 mb-1">
-              Ký tự dải số trích dẫn (Range Dash)
-            </label>
-            <Select<string>
-              options={RANGE_DASH_OPTIONS}
-              value={citation.rangeDash || '-'}
-              onChange={(val) => updateCitation({ rangeDash: val })}
-              size="sm"
-              variant="default"
-              fullWidth
-            />
-          </div>
+          {(citation.style === 'vancouver' || citation.style === 'ieee' || !citation.style) ? (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Kiểu hiển thị trích dẫn trong văn bản (In-text format)
+                </label>
+                <Select<'bracket' | 'superscript'>
+                  options={CITATION_INTEXT_OPTIONS}
+                  value={citation.inText || 'bracket'}
+                  onChange={(val) => updateCitation({ inText: val })}
+                  size="sm"
+                  variant="default"
+                  fullWidth
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Ký tự dải số trích dẫn (Range Dash)
+                </label>
+                <Select<string>
+                  options={RANGE_DASH_OPTIONS}
+                  value={citation.rangeDash || '-'}
+                  onChange={(val) => updateCitation({ rangeDash: val })}
+                  size="sm"
+                  variant="default"
+                  fullWidth
+                />
+              </div>
+            </>
+          ) : (
+            <div className="md:col-span-2 p-3 rounded-2xl bg-zinc-50 border border-zinc-200/80 text-xs text-zinc-600">
+              <span className="font-bold text-zinc-800">Quy chuẩn {citation.style?.toUpperCase()}:</span> Trích dẫn trong văn bản sử dụng định dạng Tác giả - Năm xuất bản (Author, Year). Danh mục tài liệu tham khảo cuối bài được tự động sắp xếp theo thứ tự bảng chữ cái tên tác giả.
+            </div>
+          )}
         </div>
       </div>
     </div>

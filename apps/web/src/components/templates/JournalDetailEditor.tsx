@@ -159,9 +159,19 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
     await compileLatexToPdf(updated);
   }, [managed.profile, compileLatexToPdf]);
 
-  // Left Side: Editor Form Tabs
+  // Left Side: Editor Form Tabs with Header
   const leftEditorContent = (
-    <div className="h-full flex flex-col min-h-0 min-w-0 w-full overflow-hidden space-y-3">
+    <div className="h-full flex flex-col min-h-0 min-w-0 w-full overflow-hidden space-y-2.5">
+      {/* Journal Header Bar: Title, Short code badge & English Subtitle */}
+      <div className="flex-shrink-0">
+        <JournalEditorTopBar
+          profile={managed.profile}
+          status={managed.status}
+          isNew={isNew}
+        />
+      </div>
+
+      {/* Tabs Navigation */}
       <div className="flex-shrink-0">
         <JournalEditorTabNav
           activeTab={activeTab}
@@ -269,13 +279,6 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Clean Header Bar: Journal Name + Badge + Straight Subtitle */}
-        <JournalEditorTopBar
-          profile={managed.profile}
-          status={managed.status}
-          isNew={isNew}
-        />
 
         {/* Split View: Left Forms & Right Live XeLaTeX Preview */}
         <div className="flex-1 min-h-0 h-full w-full overflow-hidden">

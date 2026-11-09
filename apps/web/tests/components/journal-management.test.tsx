@@ -94,8 +94,8 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
 
       // Check for specific Vietnamese names
       expect(
-        screen.getByText('Tạp chí Phát triển KH&CN - Khoa học Sức khỏe')
-      ).toBeDefined();
+        screen.getAllByText('Tạp chí Phát triển KH&CN - Khoa học Sức khỏe').length
+      ).toBeGreaterThanOrEqual(1);
       expect(
         screen.getByText('Tạp chí Phát triển KH&CN - Môi trường & Khoa học Trái đất')
       ).toBeDefined();
@@ -164,32 +164,32 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
       render(<JournalDetailEditor initialManaged={sampleManaged} isNew={false} />);
 
       expect(
-        screen.getByText('Tạp chí Phát triển KH&CN - Khoa học Sức khỏe')
-      ).toBeDefined();
+        screen.getAllByText('Tạp chí Phát triển KH&CN - Khoa học Sức khỏe').length
+      ).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('VNUHCM-HS').length).toBeGreaterThanOrEqual(1);
 
-      // Verify the 4 editor tabs exist (Tab 5 removed as per requirement)
-      expect(screen.getAllByText('1. Nhận diện & Thương hiệu').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('2. Tóm tắt & Từ khóa').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('3. Chuyên mục & Loại bài').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('4. Dàn trang').length).toBeGreaterThanOrEqual(1);
+      // Verify the 4 editor tabs exist (Tab 5 removed and numbers/icons removed as per requirement)
+      expect(screen.getAllByText('Nhận diện & Thương hiệu').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Tóm tắt & Từ khóa').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Chuyên mục & Loại bài').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Dàn trang').length).toBeGreaterThanOrEqual(1);
     });
 
     it('switches tabs and renders respective settings panels', () => {
       render(<JournalDetailEditor initialManaged={sampleManaged} isNew={false} />);
 
       // Switch to FrontMatter tab
-      fireEvent.click(screen.getAllByText('2. Tóm tắt & Từ khóa')[0]);
+      fireEvent.click(screen.getAllByText('Tóm tắt & Từ khóa')[0]);
       expect(screen.getAllByText('Quy định Phần Tóm Tắt (Abstract Guidelines)').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Quy định Từ Khóa (Keywords Guidelines)').length).toBeGreaterThanOrEqual(1);
 
       // Switch to Article Types tab
-      fireEvent.click(screen.getAllByText('3. Chuyên mục & Loại bài')[0]);
+      fireEvent.click(screen.getAllByText('Chuyên mục & Loại bài')[0]);
       expect(screen.getAllByText(/Chuyên Mục/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Bài báo nghiên cứu').length).toBeGreaterThan(0);
 
       // Switch to Layout tab (Technical boxes removed)
-      fireEvent.click(screen.getAllByText('4. Dàn trang')[0]);
+      fireEvent.click(screen.getAllByText('Dàn trang')[0]);
       expect(screen.getAllByText('Dàn Trang & Bố Cục Bản In (Page & Column Grid)').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Khổ giấy').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Số cột nội dung').length).toBeGreaterThanOrEqual(1);

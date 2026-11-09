@@ -7,6 +7,7 @@ import {
   ALL_ARTICLE_TYPES,
 } from '@structpaper/journal-profiles';
 import { Layers, Plus, Trash2, CheckCircle2, ShieldCheck, X } from 'lucide-react';
+import { toast } from '@/components/DynamicIslandToast';
 
 interface JournalArticleTypesTabProps {
   profile: JournalProfile;
@@ -60,11 +61,12 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
   const handleRemoveType = (typeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (currentTypes.length <= 1) {
-      alert('Tạp chí phải có tối thiểu 1 loại bài báo.');
+      toast.warning('Không thể xóa', 'Tạp chí phải có tối thiểu 1 loại bài báo.');
       return;
     }
     const updated = currentTypes.filter((t) => t.id !== typeId);
     onChange({ articleTypes: updated });
+    toast.info('Đã xóa chuyên mục', 'Đã loại bỏ chuyên mục khỏi danh sách tiếp nhận của tạp chí.');
     if (selectedTypeId === typeId) {
       setSelectedTypeId(updated[0]?.id || '');
     }
@@ -73,11 +75,11 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
   const handleCreateNewType = () => {
     const cleanId = newTypeId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
     if (!cleanId || !newLabelVi.trim()) {
-      alert('Vui lòng nhập mã định danh và tên tiếng Việt.');
+      toast.warning('Thiếu thông tin', 'Vui lòng nhập mã định danh và tên tiếng Việt cho chuyên mục.');
       return;
     }
     if (currentTypes.some((t) => t.id === cleanId)) {
-      alert('Mã chuyên mục này đã tồn tại.');
+      toast.warning('Trùng lặp', 'Mã chuyên mục này đã tồn tại trong tạp chí.');
       return;
     }
 
@@ -92,6 +94,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
 
     const updated = [...currentTypes, newType];
     onChange({ articleTypes: updated });
+    toast.success('Đã thêm chuyên mục', `Đã thêm chuyên mục "${newLabelVi.trim()}"`);
     setSelectedTypeId(cleanId);
     setIsAddingNew(false);
     setNewTypeId('');

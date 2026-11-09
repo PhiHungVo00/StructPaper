@@ -14,21 +14,29 @@ import {
 import { JournalStatus } from '@/lib/templates/journal-storage';
 
 interface DockIconButtonProps {
-  icon: React.ReactNode;
+  id?: string;
+  icon?: React.ReactNode;
+  customContent?: React.ReactNode;
   label: string;
   onClick?: () => void;
   active?: boolean;
   disabled?: boolean;
   badge?: React.ReactNode;
+  containerRef?: React.RefObject<HTMLDivElement>;
+  suppressTooltip?: boolean;
 }
 
 const DockIconButton: React.FC<DockIconButtonProps> = ({
+  id,
   icon,
+  customContent,
   label,
   onClick,
   active,
   disabled,
   badge,
+  containerRef,
+  suppressTooltip,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -55,41 +63,42 @@ const DockIconButton: React.FC<DockIconButtonProps> = ({
 
   return (
     <div
-      className="relative flex items-center justify-center"
+      ref={containerRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      className="relative flex items-center justify-center"
     >
       <button
+        id={id}
         type="button"
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
         title={label}
-        className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer relative ${
-          disabled
-            ? 'opacity-40 cursor-not-allowed'
-            : active
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-950 hover:bg-white hover:shadow-2xs active:scale-95'
-        }`}
+        className={`w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all duration-200 select-none cursor-pointer relative ${
+          active
+            ? 'bg-white/90 text-zinc-950 font-bold shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.95),0_0_16px_rgba(0,0,0,0.10),0_0_4px_rgba(0,0,0,0.06)] border border-white scale-105'
+            : 'bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950 hover:scale-105 active:scale-95'
+        } ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
       >
-        {icon}
+        {customContent || icon}
         {badge}
       </button>
 
-      {/* Tooltip */}
+      {/* Liquid Glass Tooltip matching EditorLeftDock */}
       <AnimatePresence>
-        {showTooltip && (
-          <motion.div
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -6 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-full ml-3 px-2.5 py-1.5 rounded-xl bg-zinc-900 text-white text-[11px] font-bold whitespace-nowrap shadow-xl z-50 pointer-events-none"
-          >
-            {label}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-zinc-900" />
-          </motion.div>
+        {showTooltip && !suppressTooltip && !active && (
+          <div className="absolute left-[62px] top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap">
+            <motion.div
+              initial={{ opacity: 0, x: -8, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -8, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="h-10 px-3.5 rounded-3xl flex items-center gap-2 bg-white/85 backdrop-blur-sm border border-white/80 shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_4px_20px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.04)] text-zinc-800 font-extrabold text-xs tracking-tight drop-shadow-xl"
+            >
+              {label}
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
@@ -119,30 +128,45 @@ export const JournalEditorDock: React.FC<JournalEditorDockProps> = ({
   isDirty = false,
   saveSuccess = false,
 }) => {
-  const router = useRouter();
+  let router: any = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    // Fallback for headless environments
+  }
+
   const isPublished = status === 'published';
+
+  const handleBack = () => {
+    if (router) {
+      router.back();
+    } else if (typeof window !== 'undefined' && window.history) {
+      window.history.back();
+    }
+  };
 
   return (
     <aside
-      className="hidden sm:flex flex-col items-center justify-between h-full w-12 sm:w-14 py-3 px-1 flex-shrink-0 select-none relative z-40 bg-zinc-200/50 rounded-2xl border border-zinc-200/60"
+      className="hidden sm:flex flex-col items-center justify-between h-full w-12 sm:w-14 py-2 px-1 flex-shrink-0 select-none relative z-40"
       aria-label="Thanh công cụ trình biên tập mẫu tạp chí"
     >
       {/* TOP SECTION: BACK BUTTON */}
-      <div className="flex flex-col items-center gap-2">
+      <div className="relative z-10 flex flex-col items-center gap-2.5">
         <DockIconButton
-          onClick={() => router.back()}
+          onClick={handleBack}
           label="Quay lại danh mục mẫu tạp chí"
           icon={<ArrowLeft className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
         />
       </div>
 
-      {/* MIDDLE SECTION: CORE ACTIONS */}
-      <div className="flex flex-col items-center gap-2.5">
+      {/* MIDDLE SECTION: CORE TEMPLATE ACTIONS */}
+      <div className="relative z-10 flex flex-col items-center gap-2.5">
         {/* Action 1: Reset to Base */}
         <DockIconButton
           onClick={onReset}
           label="Khôi phục cấu hình Base mặc định"
-          icon={<RotateCcw className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
+          icon={<RotateCcw className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
         />
 
         {/* Action 2: Toggle Status (Draft vs Published) */}
@@ -155,14 +179,14 @@ export const JournalEditorDock: React.FC<JournalEditorDockProps> = ({
           }
           icon={
             isPublished ? (
-              <CheckCircle2 className="w-4 h-4 text-[#78C841]" strokeWidth={2.4} />
+              <CheckCircle2 className="w-5 h-5 text-[#78C841]" strokeWidth={2.4} />
             ) : (
-              <FileEdit className="w-4 h-4 text-amber-600" strokeWidth={2.4} />
+              <FileEdit className="w-5 h-5 text-amber-600" strokeWidth={2.4} />
             )
           }
           badge={
             <span
-              className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
+              className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${
                 isPublished ? 'bg-[#78C841]' : 'bg-amber-500'
               }`}
             />
@@ -176,44 +200,55 @@ export const JournalEditorDock: React.FC<JournalEditorDockProps> = ({
           label={isCompiling ? 'Đang biên dịch lại PDF...' : 'Biên dịch lại xem thử (Recompile)'}
           icon={
             <RefreshCw
-              className={`w-4 h-4 text-zinc-700 ${isCompiling ? 'animate-spin text-[#78C841]' : ''}`}
+              className={`w-5 h-5 text-zinc-700 ${isCompiling ? 'animate-spin text-[#78C841]' : ''}`}
               strokeWidth={2.4}
             />
           }
         />
 
         {/* Subtle Separator */}
-        <div className="w-6 h-[1px] bg-zinc-300 my-1" />
+        <div className="w-8 h-[1px] my-3" />
 
         {/* Action 4: Save Changes */}
         <DockIconButton
           onClick={onSave}
           disabled={isSaving}
           label={saveSuccess ? 'Đã lưu thành công!' : isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-          icon={<Save className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
+          icon={<Save className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
           badge={
             saveSuccess ? (
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-2xs">
                 <CheckCircle2 className="w-2.5 h-2.5 text-white" />
               </span>
             ) : isDirty ? (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
             ) : null
           }
         />
       </div>
 
-      {/* BOTTOM SECTION: STATUS BADGE PILL */}
-      <div className="flex flex-col items-center">
-        <span
-          className={`text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md ${
+      {/* BOTTOM SECTION: STATUS BADGE PILL (Styled like Editor's QC pill) */}
+      <div className="relative z-10 flex flex-col items-center pt-1 w-full">
+        <div className="w-6 h-[1px] mb-2" />
+        <DockIconButton
+          onClick={onToggleStatus}
+          label={
             isPublished
-              ? 'bg-[#E4F8D5] text-[#14532D]'
-              : 'bg-amber-100 text-amber-900'
-          }`}
-        >
-          {isPublished ? 'PUB' : 'DRAFT'}
-        </span>
+              ? 'Hồ sơ đang phát hành công khai (PUB)'
+              : 'Hồ sơ đang lưu trữ bản nháp (DRAFT)'
+          }
+          customContent={
+            <div className="flex flex-col items-center justify-center">
+              <span
+                className={`text-[11px] font-extrabold leading-none tracking-tight ${
+                  isPublished ? 'text-[#14532D]' : 'text-amber-700'
+                }`}
+              >
+                {isPublished ? 'PUB' : 'DRAFT'}
+              </span>
+            </div>
+          }
+        />
       </div>
     </aside>
   );
