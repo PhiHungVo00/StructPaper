@@ -24,15 +24,10 @@ export const JournalHubView: React.FC = () => {
       {/* 1. Header Hero Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
-              <span>Quản Lý Mẫu &amp; Tạp Chí Khoa Học</span>
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E4F8D5] text-[#14532D]">
-              7 Tạp chí ĐHQG-HCM
-            </span>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
+            <span>Quản Lý Mẫu &amp; Tạp Chí Khoa Học</span>
+          </h1>
         </div>
       </div>
 

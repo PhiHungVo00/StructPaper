@@ -80,9 +80,8 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
     it('renders all 7 VNUHCM journals with bilingual titles, brand badges and specifications', () => {
       render(<JournalHubView />);
 
-      // Verify top heading & subtitle
+      // Verify top heading
       expect(screen.getByText('Quản Lý Mẫu & Tạp Chí Khoa Học')).toBeDefined();
-      expect(screen.getByText('7 Tạp chí ĐHQG-HCM')).toBeDefined();
 
       // Check for the 7 short codes
       expect(screen.getByText('VNUHCM-STD')).toBeDefined();

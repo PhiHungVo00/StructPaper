@@ -1,36 +1,61 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Monitor,
   ExternalLink,
   ArrowDownToLine,
 } from 'lucide-react';
 
-const WINDOWS_DOWNLOAD_URL =
-  'https://github.com/StructPaper/StructPaper/releases/latest/download/StructPaper-Setup.exe';
-const MACOS_DOWNLOAD_URL =
-  'https://github.com/StructPaper/StructPaper/releases/latest/download/StructPaper.dmg';
+const FALLBACK_VERSION = '1.0.8';
 const ALL_RELEASES_URL = 'https://github.com/StructPaper/StructPaper/releases/latest';
 
+function getWindowsDownloadUrl(ver: string): string {
+  return `https://github.com/StructPaper/StructPaper/releases/download/v${ver}/StructPaper_${ver}_x64-setup.exe`;
+}
+
+function getMacDownloadUrl(ver: string): string {
+  return `https://github.com/StructPaper/StructPaper/releases/download/v${ver}/StructPaper_${ver}_aarch64.dmg`;
+}
+
 export function DownloadDesktopCard(): React.ReactElement {
+  const [version, setVersion] = useState<string>(FALLBACK_VERSION);
+
+  useEffect(() => {
+    // Optionally query latest release version from GitHub endpoint
+    let isMounted = true;
+    fetch('https://github.com/StructPaper/StructPaper/releases/latest/download/latest.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((manifest) => {
+        if (isMounted && manifest?.version) {
+          setVersion(manifest.version);
+        }
+      })
+      .catch(() => {
+        // Fallback to FALLBACK_VERSION
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const windowsUrl = getWindowsDownloadUrl(version);
+  const macUrl = getMacDownloadUrl(version);
+
+  const handleCardClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div data-testid="download-desktop-card" className="space-y-4">
       {/* 1. Header Toolbar Minimalist */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Monitor className="w-5 h-5 text-[#78C841]" strokeWidth={2.5} />
-              <span>Cài Đặt Ứng Dụng StructPaper Cho Máy Tính (Desktop App)</span>
-            </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#D9F99D] text-[#14532D]">
-              Khuyên dùng
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Tích hợp sẵn Tectonic XeTeX biên dịch 100% ngoại tuyến siêu tốc, lưu trữ dữ liệu an toàn trên ổ cứng.
-          </p>
+          <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Monitor className="w-5 h-5 text-[#78C841]" strokeWidth={2.5} />
+            <span>Cài Đặt Ứng Dụng StructPaper Cho Máy Tính (Desktop App)</span>
+          </h2>
         </div>
 
         <a
@@ -48,7 +73,8 @@ export function DownloadDesktopCard(): React.ReactElement {
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Card 1: Windows */}
         <div
-          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px]"
+          onClick={() => handleCardClick(windowsUrl)}
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px] cursor-pointer"
         >
           <div>
             {/* Top Badges */}
@@ -84,10 +110,11 @@ export function DownloadDesktopCard(): React.ReactElement {
             </span>
 
             <a
-              href={WINDOWS_DOWNLOAD_URL}
+              href={windowsUrl}
               target="_blank"
               rel="noopener noreferrer"
               data-testid="download-windows-btn"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 hover:text-zinc-950 transition-colors cursor-pointer"
             >
               <span>Tải bản Windows (.exe Setup)</span>
@@ -98,7 +125,8 @@ export function DownloadDesktopCard(): React.ReactElement {
 
         {/* Card 2: macOS */}
         <div
-          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px]"
+          onClick={() => handleCardClick(macUrl)}
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px] cursor-pointer"
         >
           <div>
             {/* Top Badges */}
@@ -134,10 +162,11 @@ export function DownloadDesktopCard(): React.ReactElement {
             </span>
 
             <a
-              href={MACOS_DOWNLOAD_URL}
+              href={macUrl}
               target="_blank"
               rel="noopener noreferrer"
               data-testid="download-macos-btn"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 hover:text-zinc-950 transition-colors cursor-pointer"
             >
               <span>Tải bản macOS (.dmg Apple Silicon)</span>

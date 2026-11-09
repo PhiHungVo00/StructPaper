@@ -10,15 +10,10 @@ export default function SettingsPage() {
       {/* 1. Header Minimalist matching Templates & Papers Page */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Settings className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
-              <span>Cài Đặt Hệ Thống</span>
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E4F8D5] text-[#14532D]">
-              Cấu hình &amp; Nền tảng
-            </span>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Settings className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
+            <span>Cài Đặt Hệ Thống</span>
+          </h1>
         </div>
       </div>
 

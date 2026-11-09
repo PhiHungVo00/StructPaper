@@ -74,7 +74,7 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
   });
 
   describe('DownloadDesktopCard (Web Distribution Card)', () => {
-    it('displays required headings, highlights, and OS download buttons', () => {
+    it('displays required headings and valid OS download buttons', () => {
       render(<DownloadDesktopCard />);
 
       // Heading check
@@ -83,28 +83,17 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
       });
       expect(heading).toBeTruthy();
 
-      // Highlight text check
-      expect(
-        screen.getByText(
-          /Tích hợp sẵn Tectonic XeTeX biên dịch 100% ngoại tuyến siêu tốc, lưu trữ dữ liệu an toàn trên ổ cứng/i
-        )
-      ).toBeTruthy();
-
       // Windows button check
       const winBtn = screen.getByTestId('download-windows-btn');
       expect(winBtn).toBeTruthy();
       expect(winBtn.textContent).toContain('Tải bản Windows (.exe Setup)');
-      expect(winBtn.getAttribute('href')).toBe(
-        'https://github.com/StructPaper/StructPaper/releases/latest/download/StructPaper-Setup.exe'
-      );
+      expect(winBtn.getAttribute('href')).toMatch(/StructPaper_.*_x64-setup\.exe/);
 
       // macOS button check
       const macBtn = screen.getByTestId('download-macos-btn');
       expect(macBtn).toBeTruthy();
       expect(macBtn.textContent).toContain('Tải bản macOS (.dmg Apple Silicon)');
-      expect(macBtn.getAttribute('href')).toBe(
-        'https://github.com/StructPaper/StructPaper/releases/latest/download/StructPaper.dmg'
-      );
+      expect(macBtn.getAttribute('href')).toMatch(/StructPaper_.*_aarch64\.dmg/);
     });
   });
 
