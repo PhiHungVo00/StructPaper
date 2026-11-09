@@ -8,7 +8,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:updater": "vitest run tests/live-updater-e2e.test.ts"
   },
   "dependencies": {
     "@structpaper/platform": "workspace:*",

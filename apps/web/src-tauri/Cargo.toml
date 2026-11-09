@@ -8,6 +8,10 @@ edition = "2021"
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[profile.dev]
+debug = 1
+incremental = false
+
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
