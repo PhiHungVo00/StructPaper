@@ -1,32 +1,41 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { ManagedJournalProfile, getDefaultVnuhcmJournals } from '@/lib/templates/journal-storage';
 import { CompactTemplateCard } from './CompactTemplateCard';
 
 interface StepSelectTemplateProps {
-  onSelectTemplate: (managed: ManagedJournalProfile) => void;
+  onConfirm: (managed: ManagedJournalProfile) => void;
   onBack: () => void;
   selectedJournalId?: string;
 }
 
 export const StepSelectTemplate: React.FC<StepSelectTemplateProps> = ({
-  onSelectTemplate,
+  onConfirm,
   onBack,
   selectedJournalId,
 }) => {
   const journals = getDefaultVnuhcmJournals();
-  const [selected, setSelected] = useState<string>(selectedJournalId || journals[0]?.id || 'std');
+  const initialJournal =
+    journals.find((j) => j.id.toLowerCase() === selectedJournalId?.toLowerCase()) ||
+    journals[0];
 
-  const handleChoose = (managed: ManagedJournalProfile) => {
-    setSelected(managed.id);
-    onSelectTemplate(managed);
+  const [selectedManaged, setSelectedManaged] = useState<ManagedJournalProfile>(initialJournal);
+
+  const handleSelectCard = (managed: ManagedJournalProfile) => {
+    setSelectedManaged(managed);
+  };
+
+  const handleContinue = () => {
+    if (selectedManaged) {
+      onConfirm(selectedManaged);
+    }
   };
 
   return (
     <div className="space-y-4">
-      {/* Top action row */}
+      {/* Top Header info */}
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -48,10 +57,31 @@ export const StepSelectTemplate: React.FC<StepSelectTemplateProps> = ({
           <CompactTemplateCard
             key={journal.id}
             managed={journal}
-            isSelected={selected === journal.id}
-            onSelect={handleChoose}
+            isSelected={selectedManaged?.id === journal.id}
+            onSelect={handleSelectCard}
           />
         ))}
+      </div>
+
+      {/* Action Footer: Continue to Editor Button */}
+      <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between">
+        <div className="text-xs text-slate-500 font-medium">
+          Mẫu đang chọn:{' '}
+          <span className="font-black text-slate-900">
+            {selectedManaged?.profile.names?.short || selectedManaged?.id.toUpperCase()}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          data-testid="continue-to-editor-btn"
+          disabled={!selectedManaged}
+          onClick={handleContinue}
+          className="px-6 py-2.5 rounded-full bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 font-extrabold text-xs inline-flex items-center gap-2 shadow-md shadow-[#78C841]/20 hover:scale-102 active:scale-98 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span>Tiếp tục</span>
+          <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+        </button>
       </div>
     </div>
   );

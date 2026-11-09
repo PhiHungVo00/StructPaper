@@ -50,32 +50,43 @@ export const ModalPortal: React.FC<ModalPortalProps> = ({
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
-        <div
+        <motion.div
+          key="modal-portal-root"
           data-testid="modal-portal-root"
+          initial={isTest ? undefined : { opacity: 0 }}
+          animate={isTest ? undefined : { opacity: 1 }}
+          exit={isTest ? undefined : { opacity: 0 }}
+          transition={isTest ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
           className="fixed inset-0 flex items-center justify-center p-3 sm:p-4 select-none"
           style={{ zIndex }}
         >
           {/* Backdrop overlay */}
           <motion.div
+            key="modal-portal-backdrop"
             data-testid="modal-portal-backdrop"
             initial={isTest ? undefined : { opacity: 0 }}
             animate={isTest ? undefined : { opacity: 1 }}
             exit={isTest ? undefined : { opacity: 0 }}
-            transition={isTest ? { duration: 0 } : { duration: 0.25, ease: 'easeOut' }}
+            transition={isTest ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
             onClick={onClose}
             className={`fixed inset-0 ${backdropClassName}`}
           />
 
           {/* Modal Content Wrapper (pointer-events-auto) */}
-          <div
+          <motion.div
+            key="modal-portal-content"
+            initial={isTest ? undefined : { opacity: 0 }}
+            animate={isTest ? undefined : { opacity: 1 }}
+            exit={isTest ? undefined : { opacity: 0 }}
+            transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
             className="relative z-10 w-full flex justify-center pointer-events-auto"
           >
             {children}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body

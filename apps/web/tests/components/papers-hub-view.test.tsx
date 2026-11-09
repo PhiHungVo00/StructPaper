@@ -287,9 +287,17 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
       const stdTemplateCard = screen.getByTestId('compact-template-std');
       expect(stdTemplateCard).toBeDefined();
 
-      // Select STD template -> redirects to editor
+      // Select STD template -> updates selection
       await act(async () => {
         fireEvent.click(stdTemplateCard);
+      });
+
+      // Verify "Tiếp tục" button is present and click it -> redirects to editor
+      const continueBtn = screen.getByTestId('continue-to-editor-btn');
+      expect(continueBtn).toBeDefined();
+
+      await act(async () => {
+        fireEvent.click(continueBtn);
       });
 
       await waitFor(() => {

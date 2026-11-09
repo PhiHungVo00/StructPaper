@@ -182,24 +182,20 @@ export const PaperHubView: React.FC = () => {
       )}
 
       {/* 5. Quick Edit Modal */}
-      {editingPaper && (
-        <PaperQuickEditModal
-          paper={editingPaper}
-          isOpen={Boolean(editingPaper)}
-          onClose={() => setEditingPaper(null)}
-          onSave={handleSaveQuickEdit}
-        />
-      )}
+      <PaperQuickEditModal
+        paper={editingPaper}
+        isOpen={Boolean(editingPaper)}
+        onClose={() => setEditingPaper(null)}
+        onSave={handleSaveQuickEdit}
+      />
 
       {/* 6. Delete Confirmation Modal (matching Image 2) */}
-      {deletingPaper && (
-        <PaperDeleteConfirmModal
-          paper={deletingPaper}
-          isOpen={Boolean(deletingPaper)}
-          onClose={() => setDeletingPaper(null)}
-          onConfirm={handleDelete}
-        />
-      )}
+      <PaperDeleteConfirmModal
+        paper={deletingPaper}
+        isOpen={Boolean(deletingPaper)}
+        onClose={() => setDeletingPaper(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* 7. 2-Step Create Paper Modal (Upload DOCX / Blank -> Select Template -> Editor) */}
       <CreatePaperModal

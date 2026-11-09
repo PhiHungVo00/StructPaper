@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ManuscriptRecord, WorkflowStatus, ManuscriptInfo } from '@structpaper/doc-model';
 import { X, Sliders, Save, Tag, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -9,7 +9,7 @@ import { Select, SelectOption } from '@/components/ui/Select';
 import { ModalPortal } from '@/components/modals/ModalPortal';
 
 interface PaperQuickEditModalProps {
-  paper: ManuscriptRecord;
+  paper: ManuscriptRecord | null;
   isOpen: boolean;
   onClose: () => void;
   onSave: (id: string, patch: Partial<ManuscriptInfo>) => Promise<void>;
@@ -61,20 +61,40 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
   onClose,
   onSave,
 }) => {
-  const { info } = paper;
+  const [cachedPaper, setCachedPaper] = useState<ManuscriptRecord | null>(paper);
 
-  const [displayName, setDisplayName] = useState(info.displayName || '');
-  const [submissionId, setSubmissionId] = useState(info.submissionId || '');
+  useEffect(() => {
+    if (paper) {
+      setCachedPaper(paper);
+    }
+  }, [paper]);
+
+  const activePaper = paper || cachedPaper;
+
+  const [displayName, setDisplayName] = useState(activePaper?.info.displayName || '');
+  const [submissionId, setSubmissionId] = useState(activePaper?.info.submissionId || '');
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>(
-    info.workflowStatus || 'draft'
+    activePaper?.info.workflowStatus || 'draft'
   );
-  const [note, setNote] = useState(info.note || '');
-  const [tags, setTags] = useState<string[]>(info.tags || []);
+  const [note, setNote] = useState(activePaper?.info.note || '');
+  const [tags, setTags] = useState<string[]>(activePaper?.info.tags || []);
   const [newTagInput, setNewTagInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (activePaper) {
+      setDisplayName(activePaper.info.displayName || '');
+      setSubmissionId(activePaper.info.submissionId || '');
+      setWorkflowStatus(activePaper.info.workflowStatus || 'draft');
+      setNote(activePaper.info.note || '');
+      setTags(activePaper.info.tags || []);
+      setError(null);
+    }
+  }, [activePaper]);
+
+  if (!activePaper) return null;
+  const { info } = activePaper;
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -122,10 +142,10 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
     <ModalPortal isOpen={isOpen} onClose={onClose}>
       <motion.div
         data-testid="quick-edit-modal"
-        initial={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
+        initial={isTest ? undefined : { opacity: 0, scale: 0.94, y: 24 }}
         animate={isTest ? undefined : { opacity: 1, scale: 1, y: 0 }}
-        exit={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
-        transition={isTest ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
+        exit={isTest ? undefined : { opacity: 0, scale: 0.94, y: 24 }}
+        transition={isTest ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className="bg-[#F8F9FA] w-full max-w-2xl rounded-[40px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/20 select-text"
       >
         {/* Header - Eatzy OrderDetailsModal Identity */}

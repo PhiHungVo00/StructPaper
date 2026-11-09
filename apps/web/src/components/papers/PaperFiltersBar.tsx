@@ -100,9 +100,9 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
   return (
     <div className="space-y-3">
       {/* Row 1: Eatzy-style Search Bar */}
-      <div className="w-full">
-        {/* Eatzy Search Input Box */}
-        <div className="w-full relative group">
+      <div className="w-full flex items-center justify-start">
+        {/* Eatzy Search Input Box with constrained width */}
+        <div className="w-full max-w-xl relative group">
           <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-3 z-10 pointer-events-none">
             <Search className="w-5 h-5 text-gray-400 group-hover:text-zinc-600 group-focus-within:text-[#78C841] transition-colors" />
             <div className="w-px h-4 bg-gray-200 group-hover:bg-zinc-300 transition-colors" />
