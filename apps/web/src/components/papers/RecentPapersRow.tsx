@@ -26,6 +26,7 @@ interface RecentPapersRowProps {
   papers: ManuscriptRecord[];
   onOpenPaper: (id: string) => void;
   onCreateNew?: () => void;
+  isCreateOpen?: boolean;
   isLoading?: boolean;
 }
 
@@ -33,6 +34,7 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
   papers,
   onOpenPaper,
   onCreateNew,
+  isCreateOpen = false,
   isLoading = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -95,23 +97,34 @@ export const RecentPapersRow: React.FC<RecentPapersRowProps> = ({
         className="w-full flex items-stretch gap-3.5 overflow-x-auto pb-2 pt-1 scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-transparent snap-x snap-mandatory"
         style={{ scrollbarWidth: 'thin' }}
       >
-        {/* Quick New Paper Starter Card */}
+        {/* Quick New Paper Starter Card with Shared Element Transition */}
         <motion.div
+          layout
+          layoutId="create-paper-modal-card"
+          data-testid="create-paper-starter-card"
           onClick={onCreateNew}
           whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.15 }}
-          className="group cursor-pointer shrink-0 w-60 sm:w-64 snap-start select-none bg-white p-4 rounded-3xl border-2 border-dashed border-[#78C841]/40 hover:border-[#78C841] hover:bg-[#D9F99D]/10 flex flex-col justify-between transition-all duration-300 shadow-2xs hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+          transition={
+            isTest
+              ? { duration: 0 }
+              : {
+                  type: 'spring',
+                  stiffness: 100,
+                  damping: 18,
+                  mass: 0.8,
+                }
+          }
+          className={`group cursor-pointer shrink-0 w-60 sm:w-64 snap-start select-none bg-white p-4 rounded-3xl border-2 border-dashed border-[#78C841]/40 hover:border-[#78C841] hover:bg-[#D9F99D]/10 flex flex-col justify-between shadow-2xs hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] ${
+            isCreateOpen ? 'opacity-0 pointer-events-none' : ''
+          }`}
         >
-          <div>
+          <div className='flex-col items-center justify-center'>
             <div className="w-10 h-10 rounded-2xl bg-[#D9F99D] text-[#14532D] flex items-center justify-center mb-3 transition-transform group-hover:scale-110 shadow-2xs">
-              <Plus className="w-5 h-5 stroke-[2.5]" />
+              <Plus className="w-5 h-5 stroke-[3.5]" />
             </div>
-            <h4 className="font-extrabold text-sm text-[#1A1A1A] group-hover:text-zinc-950 mb-1">
+            <h4 className="font-extrabold text-md text-[#1A1A1A] group-hover:text-zinc-950 mb-1">
               Tạo bài báo mới
             </h4>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Khởi tạo bản thảo trắng theo cấu trúc chuẩn của 7 Tạp chí ĐHQG-HCM.
-            </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-zinc-100 flex items-center justify-between text-xs font-bold text-zinc-800">
             <span>Bắt đầu</span>

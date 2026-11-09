@@ -82,14 +82,14 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       {/* Left: Liquid Glass Back to Home Button with strong 4-sided shadow & text */}
       <div className="flex items-center gap-2 flex-wrap">
         <Link
-          href="/upload"
+          href="/papers"
           className="h-10 px-3.5 rounded-3xl flex items-center gap-2 bg-white/65 hover:bg-white/90 backdrop-blur-md border border-white/80 shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_4px_20px_rgba(0,0,0,0.05),0_1px_6px_rgba(0,0,0,0.04)] text-zinc-800 hover:text-zinc-950 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer group flex-shrink-0"
-          title="Quay lại trang chủ (Tải file)"
-          aria-label="Quay lại trang chủ"
+          title="Quay lại danh sách bài báo"
+          aria-label="Quay lại danh sách bài báo"
         >
           <ChevronLeft className="w-4 h-4 text-zinc-700 group-hover:text-zinc-950 transition-transform duration-200 group-hover:-translate-x-0.5" strokeWidth={3.5} />
           <span className="font-extrabold text-xs text-zinc-800 group-hover:text-zinc-950 tracking-tight">
-            Quay lại trang chủ
+            Quay lại danh sách bài báo
           </span>
         </Link>
       </div>

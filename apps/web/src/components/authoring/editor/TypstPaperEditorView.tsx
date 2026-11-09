@@ -31,8 +31,10 @@ import { PreflightQCTab } from '@/components/editor/PreflightQCTab';
 import { generateStandardCitation } from '@/components/editor/sections/utils';
 import { ResizableSplitLayout } from '@/components/editor/ResizableSplitLayout';
 import { TypstLivePreviewPane } from './TypstLivePreviewPane';
-import { Home, Eye, Edit3 } from 'lucide-react';
+import { Home, Eye, Edit3, FileEdit } from 'lucide-react';
 import { sileo } from '@/components/DynamicIslandToast';
+import { PaperQuickEditModal } from '@/components/papers';
+import { useEditorQuickEdit } from '@/hooks';
 
 interface TypstPaperEditorViewProps {
   initialPaper: CompletePaper;
@@ -55,6 +57,14 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
   const [isExtractedDrawerOpen, setIsExtractedDrawerOpen] = useState(false);
+
+  const {
+    isQuickEditOpen,
+    quickEditRecord,
+    handleOpenQuickEdit,
+    handleCloseQuickEdit,
+    handleSaveQuickEdit,
+  } = useEditorQuickEdit(formData, setFormData);
 
   // Export progress states
   const [isExportingDocx, setIsExportingDocx] = useState(false);
@@ -307,6 +317,7 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
       {/* 1. LEFT VERTICAL DOCK (Desktop/Tablet) */}
       <EditorLeftDock
         homeHref="/papers"
+        onOpenQuickEdit={handleOpenQuickEdit}
         onOpenExtractedDrawer={() => setIsExtractedDrawerOpen(true)}
         onOpenLayoutSettings={() => setIsSettingsDrawerOpen(true)}
         onSave={handleSave}
@@ -397,6 +408,13 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
         settings={formData.layoutSettings || DEFAULT_LAYOUT_SETTINGS}
         journalId={formData.metadata.journalId}
         onApplySettings={handleLayoutSettingsChange}
+      />
+
+      <PaperQuickEditModal
+        paper={quickEditRecord}
+        isOpen={isQuickEditOpen}
+        onClose={handleCloseQuickEdit}
+        onSave={handleSaveQuickEdit}
       />
     </div>
   );

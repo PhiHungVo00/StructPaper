@@ -33,6 +33,8 @@ import { ElementsManagerView } from './elements-manager/ElementsManagerView';
 
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from '@/components/DynamicIslandToast';
+import { ActionConfirmModal } from '@/components/modals';
+import { useCustomTemplateSave } from '@/hooks';
 import {
   addChildSubZone,
   updateZoneDeep,
@@ -127,8 +129,20 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
     return ensureSchemaHasGrid(VNUHCM_HEALTH_SCIENCES_TEMPLATE);
   });
 
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  // Tách biệt logic kiểm tra tính duy nhất & lưu custom template sang custom hook
+  const {
+    isSaveConfirmOpen,
+    isSaving,
+    saveSuccess,
+    requestSave: handleRequestSaveToLibrary,
+    confirmSave: handleSaveToLibrary,
+    cancelSave: handleCancelSaveToLibrary,
+  } = useCustomTemplateSave({
+    schema,
+    setIsDirty,
+  });
   const [mobilePane, setMobilePane] = useState<'editor' | 'preview'>('editor');
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(
     schema.zones[0]?.id || null
@@ -423,34 +437,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
     );
   };
 
-  // Save to persistent custom templates list
-  const handleSaveToLibrary = async () => {
-    try {
-      const updatedSchema: UniversalTemplateSchema = {
-        ...schema,
-        updatedAt: new Date().toISOString().split('T')[0],
-      };
 
-      // 1. Save to local storage registry
-      templateRegistry.saveCustomTemplate(updatedSchema);
-
-      // 2. Also sync to server storage API
-      try {
-        await fetch('/api/templates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedSchema),
-        });
-      } catch {}
-
-      setSaveSuccess(true);
-      setIsDirty(false);
-      setTimeout(() => setSaveSuccess(false), 2500);
-      toast.success('Lưu thành công', `Đã lưu "${schema.name}" vào Thư viện mẫu!`);
-    } catch {
-      toast.error('Lỗi khi lưu template');
-    }
-  };
 
   // Export JSON Schema using standard storage file service
   const handleExportJson = () => {
@@ -684,7 +671,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
             }
             if (mobilePane === 'preview') setMobilePane('editor');
           }}
-          onSaveToLibrary={handleSaveToLibrary}
+          onSaveToLibrary={handleRequestSaveToLibrary}
           onExportJson={handleExportJson}
           onTriggerImport={() => fileInputRef.current?.click()}
           primaryColor={schema.primaryColor}
@@ -739,7 +726,7 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
           </div>
 
           <button
-            onClick={handleSaveToLibrary}
+            onClick={handleRequestSaveToLibrary}
             className="p-2 rounded-xl bg-[#78C841] text-white font-bold text-xs shadow-2xs"
             title="Lưu vào Thư viện"
           >
@@ -769,6 +756,33 @@ export const TemplateBuilderView: React.FC<TemplateBuilderViewProps> = ({
           {mobilePane === 'editor' ? leftEditorContent : rightPreviewContent}
         </div>
       </div>
+
+      {/* Warning Confirmation Modal when Saving Custom Template */}
+      <ActionConfirmModal
+        isOpen={isSaveConfirmOpen}
+        onClose={handleCancelSaveToLibrary}
+        onConfirm={handleSaveToLibrary}
+        isLoading={isSaving}
+        variant="warning"
+        title="Lưu template vào Thư viện?"
+        previewCard={
+          <div className="w-full bg-slate-50 border border-slate-200/70 rounded-3xl p-3.5 flex items-center gap-3 shadow-inner">
+            <div className="min-w-0 flex-1">
+              <h4 className="text-xs font-bold text-slate-900 truncate">
+                {schema.name}
+              </h4>
+              <p className="text-[10.5px] text-zinc-500 font-medium truncate">
+                Cập nhật phân vùng lưới và cấu trúc trực quan
+              </p>
+            </div>
+          </div>
+        }
+        description="Thay đổi cấu hình template này sẽ cập nhật trực tiếp bố cục dàn trang và các bản thảo bài báo đang áp dụng mẫu này. Bạn có chắc chắn muốn lưu?"
+        cancelLabel="Hủy bỏ"
+        confirmLabel="Xác nhận lưu"
+        confirmIcon={<Save className="w-4 h-4" />}
+        testId="template-builder-save-confirm-modal"
+      />
     </div>
   );
 };

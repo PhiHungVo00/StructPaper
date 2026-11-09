@@ -50,30 +50,27 @@ export const ModalPortal: React.FC<ModalPortalProps> = ({
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {isOpen && (
         <motion.div
-          key="modal-portal-root"
-          data-testid="modal-portal-root"
+          key="modal-portal-backdrop"
+          data-testid="modal-portal-backdrop"
           initial={isTest ? undefined : { opacity: 0 }}
           animate={isTest ? undefined : { opacity: 1 }}
           exit={isTest ? undefined : { opacity: 0 }}
-          transition={isTest ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
-          className="fixed inset-0 flex items-center justify-center p-3 sm:p-4 select-none"
+          transition={isTest ? { duration: 0 } : { duration: 0.25, ease: 'easeOut' }}
+          onClick={onClose}
+          className={`fixed inset-0 ${backdropClassName} transform-gpu will-change-[opacity]`}
           style={{ zIndex }}
+        />
+      )}
+      {isOpen && (
+        <div
+          key="modal-portal-root"
+          data-testid="modal-portal-root"
+          className="fixed inset-0 flex items-center justify-center p-3 sm:p-4 select-none pointer-events-none"
+          style={{ zIndex: zIndex + 1 }}
         >
-          {/* Backdrop overlay */}
-          <motion.div
-            key="modal-portal-backdrop"
-            data-testid="modal-portal-backdrop"
-            initial={isTest ? undefined : { opacity: 0 }}
-            animate={isTest ? undefined : { opacity: 1 }}
-            exit={isTest ? undefined : { opacity: 0 }}
-            transition={isTest ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
-            onClick={onClose}
-            className={`fixed inset-0 ${backdropClassName}`}
-          />
-
           {/* Modal Content Wrapper (pointer-events-auto) */}
           <div
             onClick={(e) => e.stopPropagation()}
@@ -81,7 +78,7 @@ export const ModalPortal: React.FC<ModalPortalProps> = ({
           >
             {children}
           </div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>,
     document.body

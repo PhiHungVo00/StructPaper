@@ -32,6 +32,7 @@ vi.mock('framer-motion', async () => {
   return {
     ...actual,
     AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    LayoutGroup: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
     motion: new Proxy(actual.motion as Record<string, unknown>, {
       get: (_target, prop: string) => {
         const MotionComp = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
@@ -44,6 +45,8 @@ vi.mock('framer-motion', async () => {
             delete strippedProps.transition;
             delete strippedProps.whileHover;
             delete strippedProps.whileTap;
+            delete strippedProps.layoutId;
+            delete strippedProps.layout;
             return <Component ref={ref} {...strippedProps}>{children}</Component>;
           }
         );
@@ -64,7 +67,8 @@ import {
   PaperDeleteConfirmModal,
   type FilterWorkflowStatus,
 } from '@/components/papers';
-import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
+import { CreatePaperModal, DuplicatePaperWarningModal } from '@/components/modals';
+import { getUniquePaperTitle, countDuplicatePapers } from '@/lib/storage/paper-naming';
 import { PaperHubView } from '@/components/authoring/PaperHubView';
 import { SAMPLE_VNUHCM_RECORDS } from '@/lib/authoring/sample-records-seeder';
 import { defaultDatabase } from '@structpaper/storage';
@@ -225,6 +229,75 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
       // Verify 5 rows rendered
       const rows = tableShimmer.querySelectorAll('tbody tr');
       expect(rows.length).toBe(5);
+    });
+  });
+
+  describe('PaperTable Component with Portal Floating Menu', () => {
+    it('renders table rows, toggles 3-dots popup in portal without clipping, and executes actions', async () => {
+      const handleToggleMenu = vi.fn();
+      const handleCloseMenu = vi.fn();
+      const handleOpenEditor = vi.fn();
+      const handleQuickEdit = vi.fn();
+      const handleTogglePin = vi.fn();
+      const handleDuplicate = vi.fn();
+      const handleExportBackup = vi.fn();
+      const handleDelete = vi.fn();
+
+      const { rerender } = render(
+        <PaperTable
+          papers={SAMPLE_VNUHCM_RECORDS}
+          activeMenuId={null}
+          onToggleMenu={handleToggleMenu}
+          onCloseMenu={handleCloseMenu}
+          onOpenEditor={handleOpenEditor}
+          onQuickEdit={handleQuickEdit}
+          onTogglePin={handleTogglePin}
+          onDuplicate={handleDuplicate}
+          onExportBackup={handleExportBackup}
+          onDelete={handleDelete}
+        />
+      );
+
+      const targetId = SAMPLE_VNUHCM_RECORDS[0].info.id;
+      const triggerBtn = screen.getByTestId(`menu-trigger-${targetId}`);
+      expect(triggerBtn).toBeDefined();
+
+      // Click trigger button
+      fireEvent.click(triggerBtn);
+      expect(handleToggleMenu).toHaveBeenCalledWith(targetId, expect.anything());
+
+      // Re-render with activeMenuId set to targetId (simulating parent state)
+      rerender(
+        <PaperTable
+          papers={SAMPLE_VNUHCM_RECORDS}
+          activeMenuId={targetId}
+          onToggleMenu={handleToggleMenu}
+          onCloseMenu={handleCloseMenu}
+          onOpenEditor={handleOpenEditor}
+          onQuickEdit={handleQuickEdit}
+          onTogglePin={handleTogglePin}
+          onDuplicate={handleDuplicate}
+          onExportBackup={handleExportBackup}
+          onDelete={handleDelete}
+        />
+      );
+
+      // Verify portal popup renders in document.body
+      const popup = screen.getByTestId(`paper-menu-${targetId}`);
+      expect(popup).toBeDefined();
+      expect(screen.getByText('Thao tác bài báo')).toBeDefined();
+      expect(screen.getByText('Mở soạn thảo')).toBeDefined();
+      expect(screen.getByText('Sửa thông tin nhanh')).toBeDefined();
+      expect(screen.getByText('Bỏ ghim')).toBeDefined();
+      expect(screen.getByText('Nhân bản bài báo')).toBeDefined();
+      expect(screen.getByText('Xuất .structpaper')).toBeDefined();
+      expect(screen.getByText('Xóa bài báo')).toBeDefined();
+
+      // Click "Nhân bản bài báo"
+      const duplicateBtn = screen.getByText('Nhân bản bài báo');
+      fireEvent.click(duplicateBtn);
+      expect(handleDuplicate).toHaveBeenCalledWith(SAMPLE_VNUHCM_RECORDS[0]);
+      expect(handleCloseMenu).toHaveBeenCalled();
     });
   });
 
@@ -409,6 +482,48 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
       });
 
       expect(screen.getByTestId('papers-table')).toBeDefined();
+    });
+  });
+
+  describe('Duplicate Paper Warning Modal & Paper Naming Utilities', () => {
+    it('getUniquePaperTitle generates incremented suffix when duplicates exist', () => {
+      const existing = ['Bản thảo bài báo', 'Bản thảo bài báo (1)', 'Nghiên cứu AI'];
+      expect(getUniquePaperTitle('Bản thảo bài báo', existing)).toBe('Bản thảo bài báo (2)');
+      expect(getUniquePaperTitle('Nghiên cứu AI', existing)).toBe('Nghiên cứu AI (1)');
+      expect(getUniquePaperTitle('Bài báo mới', existing)).toBe('Bài báo mới');
+    });
+
+    it('renders DuplicatePaperWarningModal with suggested incremented title and triggers actions', async () => {
+      const handleClose = vi.fn();
+      const handleConfirmUpload = vi.fn();
+
+      render(
+        <DuplicatePaperWarningModal
+          isOpen={true}
+          paperTitle="Nghiên cứu học máy trong y tế"
+          suggestedTitle="Nghiên cứu học máy trong y tế (1)"
+          matchCount={1}
+          journalId="VNUHCM-HS"
+          onClose={handleClose}
+          onConfirmUpload={handleConfirmUpload}
+        />
+      );
+
+      // Verify modal content
+      expect(screen.getByTestId('duplicate-paper-warning-modal')).toBeDefined();
+      expect(screen.getByText('Bài báo đã tồn tại?')).toBeDefined();
+      expect(screen.getByText('Nghiên cứu học máy trong y tế')).toBeDefined();
+      expect(screen.getByText('Nghiên cứu học máy trong y tế (1)')).toBeDefined();
+
+      // Click "Vẫn tải lên"
+      const confirmBtn = screen.getByTestId('confirm-upload-anyway-btn');
+      fireEvent.click(confirmBtn);
+      expect(handleConfirmUpload).toHaveBeenCalledTimes(1);
+
+      // Click "Hủy bỏ"
+      const cancelBtn = screen.getByText('Hủy bỏ');
+      fireEvent.click(cancelBtn);
+      expect(handleClose).toHaveBeenCalledTimes(1);
     });
   });
 });

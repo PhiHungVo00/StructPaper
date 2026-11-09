@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LayoutGroup } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import { usePapersHub } from '@/hooks';
 import type { ManuscriptRecord } from '@structpaper/doc-model';
@@ -59,12 +60,14 @@ export const PaperHubView: React.FC = () => {
   }, [setActiveMenuId]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-7 pb-16 pt-4 px-4 sm:px-6">
+    <LayoutGroup id="paper-hub-layout-group">
+      <div className="w-full max-w-7xl mx-auto space-y-7 pb-16 pt-4 px-4 sm:px-6">
       {/* 1. Top Horizontal Recent Papers Row */}
       <RecentPapersRow
         papers={records}
         onOpenPaper={handleOpenEditor}
         onCreateNew={() => setIsCreateModalOpen(true)}
+        isCreateOpen={isCreateModalOpen}
         isLoading={isLoading}
       />
 
@@ -204,6 +207,7 @@ export const PaperHubView: React.FC = () => {
         onPaperCreated={() => loadRecords()}
       />
     </div>
+    </LayoutGroup>
   );
 };
 

@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Layers,
   Sliders,
+  FileEdit,
   Save,
   RefreshCw,
   FileText,
@@ -126,6 +127,7 @@ const DockIconButton: React.FC<DockIconButtonProps> = ({
 };
 
 interface EditorLeftDockProps {
+  onOpenQuickEdit?: () => void;
   onOpenExtractedDrawer: () => void;
   onOpenLayoutSettings: () => void;
   onSave: () => void;
@@ -152,6 +154,7 @@ interface EditorLeftDockProps {
 }
 
 export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
+  onOpenQuickEdit,
   onOpenExtractedDrawer,
   onOpenLayoutSettings,
   onSave,
@@ -241,21 +244,26 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       <div className="relative z-10 flex flex-col items-center gap-2.5">
         <DockIconButton
           onClick={() => {
-            if (homeHref && homeHref !== '/upload') {
-              if (router) router.push(homeHref);
-              else if (typeof window !== 'undefined') window.location.href = homeHref;
-            } else {
-              if (router) router.back();
-              else if (typeof window !== 'undefined' && window.history) window.history.back();
-            }
+            const destination = homeHref || '/papers';
+            if (router) router.push(destination);
+            else if (typeof window !== 'undefined') window.location.href = destination;
           }}
-          label="Quay lại trang trước"
+          label="Quay lại danh sách bài báo"
           icon={<ArrowLeft className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
         />
       </div>
 
       {/* MIDDLE SECTION: FEATURE CLUSTER + ACTION CLUSTER */}
       <div className="relative z-10 flex flex-col items-center gap-2.5">
+        {/* Feature 0: Quick Edit Paper Info Modal */}
+        {onOpenQuickEdit && (
+          <DockIconButton
+            onClick={onOpenQuickEdit}
+            label="Sửa thông tin bài báo"
+            icon={<FileEdit className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
+          />
+        )}
+
         {/* Feature 1: Extracted Content Drawer */}
         <DockIconButton
           onClick={onOpenExtractedDrawer}

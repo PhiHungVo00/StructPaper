@@ -20,6 +20,8 @@ import { JOURNAL_TEMPLATES } from '@/lib/templates';
 import { usePaper } from '@/context/PaperContext';
 import { Select, SelectOption } from './ui/Select';
 import { sileo } from '@/components/DynamicIslandToast';
+import { usePaperDuplicateWarning } from '@/hooks';
+import { DuplicatePaperWarningModal } from '@/components/modals';
 
 interface UploadViewProps {
   onPaperLoaded: (paper: CompletePaper) => void;
@@ -44,6 +46,14 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
   const { currentJournal, setCurrentJournal } = usePaper();
   const activeTemplate = JOURNAL_TEMPLATES[currentJournal] || JOURNAL_TEMPLATES['VNUHCM-HS'];
 
+  const {
+    duplicatePrompt,
+    checkAndPromptDuplicate,
+    getAutoUniqueTitle,
+    handleConfirmDuplicate,
+    handleCloseDuplicate,
+  } = usePaperDuplicateWarning();
+
   const handleFile = async (file: File) => {
     if (!file.name.endsWith('.docx') && !file.name.endsWith('.doc')) {
       setErrorMsg('Vui lòng chọn file tài liệu định dạng Microsoft Word (.docx hoặc .doc)');
@@ -64,11 +74,21 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
         parsed.metadata.journalName = activeTemplate.name;
         parsed.metadata.journalAbbv = activeTemplate.shortName;
       }
-      sileo.success({
-        title: 'Tải lên thành công',
-        description: `Đã xử lý & trích xuất cấu trúc văn bản "${file.name}"`,
+
+      // Kiểm tra trùng lặp tiêu đề bài báo qua hook chuyên biệt
+      const paperTitle = parsed.metadata.title?.trim() || file.name.replace(/\.[^/.]+$/, '');
+      await checkAndPromptDuplicate(paperTitle, {
+        journalId: parsed.metadata.journalId || currentJournal,
+        onProceed: (resolvedTitle) => {
+          parsed.metadata.title = resolvedTitle;
+          (parsed as any).displayName = resolvedTitle;
+          sileo.success({
+            title: 'Tải lên thành công',
+            description: `Đã xử lý & trích xuất cấu trúc văn bản "${file.name}"`,
+          });
+          onPaperLoaded(parsed);
+        },
       });
-      onPaperLoaded(parsed);
     } catch (err: any) {
       console.error('Error parsing docx:', err);
       const msg = 'Có lỗi xảy ra khi đọc file Word: ' + (err.message || 'File không hợp lệ');
@@ -108,7 +128,7 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
   });
 
   return (
-    <div className="space-y-2 max-w-5xl mx-auto pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-3.5 my-auto pb-6">
       {/* Title & Introduction Banner */}
 
 
@@ -213,8 +233,11 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
 
         {/* Right Card: 30% width (lg:col-span-3) - Bắt đầu với template trống */}
         <div
-          onClick={() => {
+          onClick={async () => {
             const blankPaper = createEmptyPaper(currentJournal || 'VNUHCM-HS');
+            const uniqueTitle = await getAutoUniqueTitle('Bản thảo bài báo');
+            blankPaper.metadata.title = uniqueTitle;
+            (blankPaper as any).displayName = uniqueTitle;
             onPaperLoaded(blankPaper);
           }}
           className="rounded-[48px] p-8 sm:p-10 text-center cursor-pointer transition-all border-2 border-dashed border-gray-200 hover:border-4 hover:bg-lime-50 hover:border-[#78C841] bg-white hover:shadow-md lg:col-span-3 flex flex-col items-center justify-center group"
@@ -236,102 +259,115 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
         </div>
       </div>
 
-      {/* Quick Load Preloaded Samples for All 7 VNUHCM Journals */}
-      <div className="soft-card p-6 bg-white border border-gray-100/80 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-zinc-900" />
-            <h3 className="font-extrabold text-[#1A1A1A] text-base">
-              Thử nghiệm nhanh với các bài báo mẫu
-            </h3>
-          </div>
+      {/* Tạm thời ẩn phần thử nghiệm nhanh với các bài báo mẫu theo yêu cầu */}
+      {false && (
+        <div className="soft-card p-6 bg-white border border-gray-100/80 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-zinc-900" />
+              <h3 className="font-extrabold text-[#1A1A1A] text-base">
+                Thử nghiệm nhanh với các bài báo mẫu
+              </h3>
+            </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Filter className="w-3.5 h-3.5 text-zinc-400 mr-1 hidden sm:inline" />
-            <button
-              onClick={() => setSelectedFilter('all')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedFilter === 'all'
-                ? 'bg-[#1A1A1A] text-white shadow-xs'
-                : 'bg-gray-100 text-zinc-600 hover:bg-gray-200'
-                }`}
-            >
-              Tất cả (8)
-            </button>
-            {Object.values(JOURNAL_TEMPLATES).map((tmpl) => (
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Filter className="w-3.5 h-3.5 text-zinc-400 mr-1 hidden sm:inline" />
               <button
-                key={tmpl.id}
-                onClick={() => setSelectedFilter(tmpl.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedFilter === tmpl.id
-                  ? 'text-white shadow-xs'
+                onClick={() => setSelectedFilter('all')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedFilter === 'all'
+                  ? 'bg-[#1A1A1A] text-white shadow-xs'
                   : 'bg-gray-100 text-zinc-600 hover:bg-gray-200'
                   }`}
-                style={
-                  selectedFilter === tmpl.id
-                    ? { backgroundColor: tmpl.color }
-                    : {}
-                }
               >
-                {tmpl.shortName.replace('Sci. Tech. Dev. J.', 'STDJ')}
+                Tất cả (8)
               </button>
-            ))}
+              {Object.values(JOURNAL_TEMPLATES).map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  onClick={() => setSelectedFilter(tmpl.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${selectedFilter === tmpl.id
+                    ? 'text-white shadow-xs'
+                    : 'bg-gray-100 text-zinc-600 hover:bg-gray-200'
+                    }`}
+                  style={
+                    selectedFilter === tmpl.id
+                      ? { backgroundColor: tmpl.color }
+                      : {}
+                  }
+                >
+                  {tmpl.shortName.replace('Sci. Tech. Dev. J.', 'STDJ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid of sample papers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1.5">
+            {filteredSamples.map((item) => {
+              const tmpl = JOURNAL_TEMPLATES[item.journalId] || JOURNAL_TEMPLATES['VNUHCM-HS'];
+              const isSelected = currentPaper.id === item.paper.id;
+              const refCount = item.paper.references.length;
+              const tableCount = item.paper.sections.filter((s) => s.type === 'table').length;
+              const figCount = item.paper.sections.filter((s) => s.type === 'figure').length;
+
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => handleSelectSample(item)}
+                  className={`bg-gray-200/50 p-4 rounded-3xl transition-all cursor-pointer flex flex-col justify-between hover:shadow-md ${isSelected
+                    ? 'ring-2 ring-[#78C841]/20 shadow-md'
+                    : 'hover:border-gray-300'
+                    }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs"
+                        style={{ backgroundColor: tmpl.color }}
+                      >
+                        {tmpl.id.replace('VNUHCM-', '')}
+                      </span>
+                      <span className="text-[10px] font-extrabold text-[#14532D] bg-[#D9F99D] px-2 py-0.5 rounded-full">
+                        {refCount} TLTK
+                      </span>
+                    </div>
+
+                    <h4 className="font-bold text-xs text-[#1A1A1A] line-clamp-2 mb-1.5 leading-snug">
+                      {item.paper.metadata.title}
+                    </h4>
+
+                    <p className="text-[11px] text-zinc-500 line-clamp-2 mb-2">
+                      {item.paper.metadata.authors.map((a) => a.name).join(', ') || 'Tác giả bài báo'}
+                    </p>
+
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2">
+                      {tableCount > 0 && <span>{tableCount} Bảng</span>}
+                      {figCount > 0 && <span>• {figCount} Hình</span>}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-zinc-800">
+                    <span>Nạp bản thảo</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        {/* Grid of sample papers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1.5">
-          {filteredSamples.map((item) => {
-            const tmpl = JOURNAL_TEMPLATES[item.journalId] || JOURNAL_TEMPLATES['VNUHCM-HS'];
-            const isSelected = currentPaper.id === item.paper.id;
-            const refCount = item.paper.references.length;
-            const tableCount = item.paper.sections.filter((s) => s.type === 'table').length;
-            const figCount = item.paper.sections.filter((s) => s.type === 'figure').length;
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleSelectSample(item)}
-                className={`bg-gray-200/50 p-4 rounded-3xl transition-all cursor-pointer flex flex-col justify-between hover:shadow-md ${isSelected
-                  ? 'ring-2 ring-[#78C841]/20 shadow-md'
-                  : 'hover:border-gray-300'
-                  }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs"
-                      style={{ backgroundColor: tmpl.color }}
-                    >
-                      {tmpl.id.replace('VNUHCM-', '')}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-[#14532D] bg-[#D9F99D] px-2 py-0.5 rounded-full">
-                      {refCount} TLTK
-                    </span>
-                  </div>
-
-                  <h4 className="font-bold text-xs text-[#1A1A1A] line-clamp-2 mb-1.5 leading-snug">
-                    {item.paper.metadata.title}
-                  </h4>
-
-                  <p className="text-[11px] text-zinc-500 line-clamp-2 mb-2">
-                    {item.paper.metadata.authors.map((a) => a.name).join(', ') || 'Tác giả bài báo'}
-                  </p>
-
-                  <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2">
-                    {tableCount > 0 && <span>{tableCount} Bảng</span>}
-                    {figCount > 0 && <span>• {figCount} Hình</span>}
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-zinc-800">
-                  <span>Nạp bản thảo</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#78C841]" />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Warning Modal when Uploaded Paper Title already exists in Database */}
+      <DuplicatePaperWarningModal
+        isOpen={Boolean(duplicatePrompt?.isOpen)}
+        paperTitle={duplicatePrompt?.paperTitle || ''}
+        suggestedTitle={duplicatePrompt?.suggestedTitle || ''}
+        matchCount={duplicatePrompt?.matchCount || 1}
+        journalId={duplicatePrompt?.journalId}
+        onClose={handleCloseDuplicate}
+        onConfirmUpload={handleConfirmDuplicate}
+      />
     </div>
   );
 };

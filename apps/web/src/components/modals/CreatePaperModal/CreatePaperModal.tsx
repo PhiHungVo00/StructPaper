@@ -10,14 +10,16 @@ import { StepSelectTemplate } from './StepSelectTemplate';
 import { ManagedJournalProfile } from '@/lib/templates/journal-storage';
 import { createEmptyPaper, CompletePaper } from '@/types/paper';
 import { usePaper } from '@/context/PaperContext';
-import { usePaperStorage } from '@/hooks/usePaperStorage';
+import { usePaperStorage, usePaperDuplicateWarning } from '@/hooks';
 import { toast } from '@/components/DynamicIslandToast';
+import { DuplicatePaperWarningModal } from '@/components/modals/DuplicatePaperWarningModal';
 
 interface CreatePaperModalProps {
   isOpen: boolean;
   onClose: () => void;
   preselectedManaged?: ManagedJournalProfile | null;
   onPaperCreated?: (paper: CompletePaper) => void;
+  layoutId?: string;
 }
 
 const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
@@ -27,7 +29,14 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
   onClose,
   preselectedManaged = null,
   onPaperCreated,
+  layoutId,
 }) => {
+  const modalLayoutId =
+    layoutId !== undefined
+      ? layoutId
+      : preselectedManaged
+      ? undefined
+      : 'create-paper-modal-card';
   const router = useRouter();
   const { setPaper, setCurrentJournal } = usePaper();
   const { savePaper } = usePaperStorage();
@@ -35,6 +44,14 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
   const [step, setStep] = useState<1 | 2>(1);
   const [parsedPaper, setParsedPaper] = useState<CompletePaper | null>(null);
   const [isBlank, setIsBlank] = useState<boolean>(false);
+
+  const {
+    duplicatePrompt,
+    checkAndPromptDuplicate,
+    getAutoUniqueTitle,
+    handleConfirmDuplicate,
+    handleCloseDuplicate,
+  } = usePaperDuplicateWarning();
 
   const [cachedManaged, setCachedManaged] = useState<ManagedJournalProfile | null>(preselectedManaged);
 
@@ -52,8 +69,9 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
       setStep(1);
       setParsedPaper(null);
       setIsBlank(false);
+      handleCloseDuplicate();
     }
-  }, [isOpen]);
+  }, [isOpen, handleCloseDuplicate]);
 
   const targetJournalCode = activeManaged
     ? `VNUHCM-${activeManaged.id.toUpperCase()}`
@@ -62,50 +80,67 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
     ? activeManaged.profile.names?.vi || activeManaged.profile.names?.short
     : undefined;
 
+  const executeSaveAndRedirect = async (finalPaper: CompletePaper, managed: ManagedJournalProfile) => {
+    const journalCode = `VNUHCM-${managed.id.toUpperCase()}`;
+    setPaper(finalPaper);
+    setCurrentJournal(journalCode);
+
+    try {
+      await savePaper(finalPaper);
+    } catch (saveErr) {
+      console.warn('Background save error:', saveErr);
+    }
+
+    toast.success(
+      'Khởi tạo bài báo thành công',
+      `Đã tạo bài báo mới theo chuẩn "${managed.profile.names?.short || managed.id.toUpperCase()}"`
+    );
+
+    if (onPaperCreated) {
+      onPaperCreated(finalPaper);
+    }
+
+    onClose();
+    router.push('/editor');
+  };
+
   // Finalize paper creation with chosen template
   const finalizeCreation = async (managed: ManagedJournalProfile, docxPaper?: CompletePaper | null) => {
     try {
       const journalCode = `VNUHCM-${managed.id.toUpperCase()}`;
-      let finalPaper: CompletePaper;
 
       if (docxPaper) {
-        finalPaper = {
-          ...docxPaper,
-          metadata: {
-            ...docxPaper.metadata,
-            journalId: journalCode,
-            journalName: managed.profile.names?.vi || managed.profile.names?.en || managed.id,
-            journalAbbv: managed.profile.names?.short || managed.id.toUpperCase(),
+        const title = docxPaper.metadata.title?.trim() || 'Bản thảo bài báo';
+        await checkAndPromptDuplicate(title, {
+          journalId: journalCode,
+          onProceed: async (resolvedTitle) => {
+            const finalPaper: CompletePaper = {
+              ...docxPaper,
+              metadata: {
+                ...docxPaper.metadata,
+                title: resolvedTitle,
+                journalId: journalCode,
+                journalName: managed.profile.names?.vi || managed.profile.names?.en || managed.id,
+                journalAbbv: managed.profile.names?.short || managed.id.toUpperCase(),
+              },
+            };
+            (finalPaper as any).displayName = resolvedTitle;
+            await executeSaveAndRedirect(finalPaper, managed);
           },
-        };
+        });
       } else {
-        finalPaper = createEmptyPaper(journalCode);
+        const finalPaper = createEmptyPaper(journalCode);
         finalPaper.metadata.journalName =
           managed.profile.names?.vi || managed.profile.names?.en || managed.id;
         finalPaper.metadata.journalAbbv =
           managed.profile.names?.short || managed.id.toUpperCase();
+
+        const uniqueTitle = await getAutoUniqueTitle('Bản thảo bài báo');
+        finalPaper.metadata.title = uniqueTitle;
+        (finalPaper as any).displayName = uniqueTitle;
+
+        await executeSaveAndRedirect(finalPaper, managed);
       }
-
-      setPaper(finalPaper);
-      setCurrentJournal(journalCode);
-
-      try {
-        await savePaper(finalPaper);
-      } catch (saveErr) {
-        console.warn('Background save error:', saveErr);
-      }
-
-      toast.success(
-        'Khởi tạo bài báo thành công',
-        `Đã tạo bài báo mới theo chuẩn "${managed.profile.names?.short || managed.id.toUpperCase()}"`
-      );
-
-      if (onPaperCreated) {
-        onPaperCreated(finalPaper);
-      }
-
-      onClose();
-      router.push('/editor');
     } catch (err: any) {
       console.error('Lỗi khởi tạo bài báo:', err);
       toast.error('Lỗi khởi tạo bài báo', err?.message || 'Có lỗi xảy ra');
@@ -136,13 +171,29 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
   };
 
   return (
-    <ModalPortal isOpen={isOpen} onClose={onClose}>
+    <>
+      <ModalPortal isOpen={isOpen} onClose={onClose}>
       <motion.div
         data-testid="create-paper-modal"
-        initial={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
-        animate={isTest ? undefined : { opacity: 1, scale: 1, y: 0 }}
+        layoutId={modalLayoutId}
+        initial={
+          isTest
+            ? undefined
+            : modalLayoutId
+            ? undefined
+            : { opacity: 0, scale: 0.9, y: 30 }
+        }
+        animate={
+          isTest
+            ? undefined
+            : modalLayoutId
+            ? undefined
+            : { opacity: 1, scale: 1, y: 0 }
+        }
         exit={
           isTest
+            ? undefined
+            : modalLayoutId
             ? undefined
             : {
                 opacity: 0,
@@ -151,7 +202,16 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
                 transition: { duration: 0.22, ease: [0.32, 0, 0.67, 0] },
               }
         }
-        transition={isTest ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
+        transition={
+          isTest
+            ? { duration: 0 }
+            : {
+                type: 'spring',
+                stiffness: 120,
+                damping: 18,
+                mass: 0.8,
+              }
+        }
         className="bg-[#F8F9FA] w-full max-w-xl rounded-[40px] overflow-hidden shadow-2xl flex flex-col border border-white/20 select-text"
       >
         {/* Header - Eatzy OrderDetailsModal Identity */}
@@ -227,5 +287,17 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
         </div>
       </motion.div>
     </ModalPortal>
+
+    <DuplicatePaperWarningModal
+      isOpen={Boolean(duplicatePrompt?.isOpen)}
+      paperTitle={duplicatePrompt?.paperTitle || ''}
+      suggestedTitle={duplicatePrompt?.suggestedTitle || ''}
+      matchCount={duplicatePrompt?.matchCount || 1}
+      journalId={duplicatePrompt?.journalId}
+      zIndex={120}
+      onClose={handleCloseDuplicate}
+      onConfirmUpload={handleConfirmDuplicate}
+    />
+    </>
   );
 };

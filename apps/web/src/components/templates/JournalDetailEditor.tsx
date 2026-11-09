@@ -2,14 +2,15 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, RefreshCw, Save, Sliders, Eye } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Save, Sliders, Eye, RotateCcw } from 'lucide-react';
 import { JournalProfile } from '@structpaper/journal-profiles';
 import {
   ManagedJournalProfile,
   JournalStatus,
 } from '@/lib/templates/journal-storage';
 import { toast } from '@/components/DynamicIslandToast';
-import { useManagedJournals } from '@/hooks';
+import { useJournalEditorSave } from '@/hooks';
+import { ActionConfirmModal } from '@/components/modals';
 import { JournalEditorDock } from './JournalEditorDock';
 import { JournalEditorTopBar } from './JournalEditorTopBar';
 import {
@@ -48,13 +49,10 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   isNew = false,
 }) => {
   const router = useRouter();
-  const { saveProfile, resetProfile } = useManagedJournals();
 
   const [managed, setManaged] = useState<ManagedJournalProfile>(initialManaged);
   const [activeTab, setActiveTab] = useState<JournalEditorTabKey>('general');
-  const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Dynamic sample paper based on active in-memory profile
   const samplePaper = useMemo(
@@ -75,6 +73,30 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
     paper: livePaper,
     formData: livePaper,
     onUpdatePaper: setLivePaper,
+  });
+
+  // Tách biệt logic quản lý lưu, xác nhận và khôi phục template sang custom hook
+  const {
+    isSaveWarningOpen,
+    isResetWarningOpen,
+    isSaving,
+    saveSuccess,
+    requestSave,
+    confirmSave,
+    cancelSave,
+    requestReset,
+    confirmReset,
+    cancelReset,
+  } = useJournalEditorSave({
+    managed,
+    setManaged,
+    setIsDirty,
+    isNew,
+    onAfterReset: (reset) => {
+      const resetSample = generateSamplePaperForJournal(reset.profile);
+      setLivePaper(resetSample);
+      compileLatexToPdf(resetSample);
+    },
   });
 
   // Preload official precompiled PDF if available for instant display on mount
@@ -108,50 +130,6 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
         : 'Chuyển sang: Bản nháp (draft)'
     );
   }, [managed.status]);
-
-  const handleSave = useCallback(() => {
-    setIsSaving(true);
-    try {
-      saveProfile(managed);
-      setIsDirty(false);
-      setSaveSuccess(true);
-      toast.success(
-        'Đã lưu thành công',
-        `Đã lưu cấu hình hồ sơ tạp chí "${managed.profile.names?.short || managed.id}"`
-      );
-      setTimeout(() => setSaveSuccess(false), 2500);
-      if (isNew) {
-        router.push(`/templates/journal/${managed.id}`);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi lưu dữ liệu';
-      toast.error('Lưu thất bại', msg);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [managed, isNew, router, saveProfile]);
-
-  const handleReset = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      const confirmed = window.confirm(
-        'Bạn có chắc chắn muốn khôi phục về cấu hình Base mặc định của tạp chí này?'
-      );
-      if (confirmed) {
-        try {
-          const reset = resetProfile(managed.id);
-          setManaged(reset);
-          setIsDirty(false);
-          const resetSample = generateSamplePaperForJournal(reset.profile);
-          setLivePaper(resetSample);
-          compileLatexToPdf(resetSample);
-          toast.info('Đã khôi phục', 'Đã đặt lại thông số theo chuẩn gốc của hệ thống.');
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : 'Không thể khôi phục';
-          toast.error('Lỗi', msg);
-        }
-      }
-    }
-  }, [managed.id, resetProfile, compileLatexToPdf]);
 
   const handleRecompile = useCallback(async () => {
     const updated = generateSamplePaperForJournal(managed.profile);
@@ -231,10 +209,10 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
       <JournalEditorDock
         status={managed.status}
         onToggleStatus={handleToggleStatus}
-        onReset={handleReset}
+        onReset={requestReset}
         onRecompile={handleRecompile}
         isCompiling={isCompilingPdf}
-        onSave={handleSave}
+        onSave={requestSave}
         isSaving={isSaving}
         isDirty={isDirty}
         saveSuccess={saveSuccess}
@@ -246,7 +224,10 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
         <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-zinc-200">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              if (router) router.push('/templates');
+              else if (typeof window !== 'undefined') window.location.href = '/templates';
+            }}
             aria-label="Quay lại danh mục tạp chí"
             className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs"
             title="Quay lại danh mục tạp chí"
@@ -269,7 +250,7 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
             </button>
             <button
               type="button"
-              onClick={handleSave}
+              onClick={requestSave}
               disabled={isSaving}
               aria-label="Lưu thay đổi (di động)"
               className="p-2 rounded-xl bg-[#78C841] text-zinc-950 font-bold shadow-2xs"
@@ -293,6 +274,55 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
           />
         </div>
       </div>
+
+      {/* Warning Confirmation Modal when Saving Template */}
+      <ActionConfirmModal
+        isOpen={isSaveWarningOpen}
+        onClose={cancelSave}
+        onConfirm={confirmSave}
+        variant="warning"
+        title="Lưu cấu hình tạp chí?"
+        previewCard={
+          <div className="w-full bg-slate-50 border border-slate-200/70 rounded-3xl p-3.5 flex items-center gap-3 shadow-inner">
+            <span
+              className="shrink-0 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold text-white shadow-2xs"
+              style={{ backgroundColor: managed.profile.color || '#000099' }}
+            >
+              {managed.profile.names?.short || managed.id.toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-xs font-bold text-slate-900 truncate">
+                {managed.profile.names?.vi || managed.profile.names?.en || managed.id}
+              </h4>
+              <p className="text-[10.5px] text-zinc-500 font-medium truncate">
+                Cập nhật cấu hình khuôn mẫu dàn trang & typography
+              </p>
+            </div>
+          </div>
+        }
+        description="Thay đổi cấu hình template này sẽ cập nhật trực tiếp quy chuẩn dàn trang PDF, Word và các bài báo đang áp dụng mẫu tạp chí này. Bạn có chắc chắn muốn lưu các thay đổi?"
+        cancelLabel="Hủy bỏ"
+        confirmLabel="Xác nhận lưu"
+        confirmIcon={<Save className="w-4 h-4" />}
+        isLoading={isSaving}
+        testId="template-save-confirm-modal"
+        confirmTestId="confirm-save-template-btn"
+      />
+
+      {/* Reset Confirmation Modal */}
+      <ActionConfirmModal
+        isOpen={isResetWarningOpen}
+        onClose={cancelReset}
+        onConfirm={confirmReset}
+        variant="danger"
+        title="Khôi phục cấu hình gốc?"
+        description="Toàn bộ tùy chỉnh của tạp chí này sẽ bị hoàn tác về thông số gốc mặc định của hệ thống. Bạn có chắc chắn muốn tiếp tục?"
+        cancelLabel="Hủy bỏ"
+        confirmLabel="Khôi phục gốc"
+        confirmIcon={<RotateCcw className="w-4 h-4" />}
+        testId="template-reset-confirm-modal"
+        confirmTestId="confirm-reset-template-btn"
+      />
     </div>
   );
 };

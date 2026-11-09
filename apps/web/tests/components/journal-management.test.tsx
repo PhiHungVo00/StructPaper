@@ -43,6 +43,7 @@ import { JournalProfileCard } from '@/components/templates/JournalProfileCard';
 import { JournalFiltersBar } from '@/components/templates/JournalFiltersBar';
 import { JournalProfilesList } from '@/components/templates/JournalProfilesList';
 import { JournalDetailEditor } from '@/components/templates/JournalDetailEditor';
+import { ActionConfirmModal } from '@/components/modals';
 import { Sidebar } from '@/components/Sidebar';
 import {
   getManagedJournals,
@@ -206,19 +207,86 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
       expect(screen.getAllByText('Số cột nội dung').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('saves changes to localStorage on "Lưu Thay Đổi"', () => {
+    it('saves changes to localStorage on "Lưu Thay Đổi" after confirming warning modal', () => {
       render(<JournalDetailEditor initialManaged={sampleManaged} isNew={false} />);
 
       // Modify short code input
       const shortInput = screen.getAllByPlaceholderText(/VNUHCM-HS/)[0];
       fireEvent.change(shortInput, { target: { value: 'STDJ-HEALTH' } });
 
-      // Click save from dock
+      // Click save from dock -> opens ActionConfirmModal
       const saveBtn = screen.getAllByRole('button', { name: 'Lưu Thay Đổi' })[0];
       fireEvent.click(saveBtn);
 
+      // Verify warning modal is open
+      expect(screen.getByTestId('template-save-confirm-modal')).toBeDefined();
+      expect(screen.getByText('Lưu cấu hình tạp chí?')).toBeDefined();
+
+      // Click confirm in modal
+      const confirmBtn = screen.getByTestId('confirm-save-template-btn');
+      fireEvent.click(confirmBtn);
+
       const stored = getManagedJournalById('hs');
       expect(stored?.profile.names?.short).toBe('STDJ-HEALTH');
+    });
+
+    it('rejects saving when template short code or name conflicts with existing journal', () => {
+      render(<JournalDetailEditor initialManaged={sampleManaged} isNew={false} />);
+
+      // Try setting short code to existing journal "VNUHCM-STD"
+      const shortInput = screen.getAllByPlaceholderText(/VNUHCM-HS/)[0];
+      fireEvent.change(shortInput, { target: { value: 'VNUHCM-STD' } });
+
+      // Click save
+      const saveBtn = screen.getAllByRole('button', { name: 'Lưu Thay Đổi' })[0];
+      fireEvent.click(saveBtn);
+
+      // Modal should NOT open because of duplicate validation error
+      expect(screen.queryByTestId('template-save-confirm-modal')).toBeNull();
+    });
+  });
+
+  describe('4. ActionConfirmModal Unified Modal System', () => {
+    it('renders with polymorphic variants (danger, warning, info, success) and handles actions', () => {
+      const handleClose = vi.fn();
+      const handleConfirm = vi.fn();
+
+      const { rerender } = render(
+        <ActionConfirmModal
+          isOpen={true}
+          onClose={handleClose}
+          onConfirm={handleConfirm}
+          variant="warning"
+          title="Cảnh báo kiểm tra"
+          description="Nội dung mô tả cảnh báo"
+          confirmLabel="Đồng ý"
+          cancelLabel="Bỏ qua"
+        />
+      );
+
+      expect(screen.getByText('Cảnh báo kiểm tra')).toBeDefined();
+      expect(screen.getByText('Nội dung mô tả cảnh báo')).toBeDefined();
+
+      // Test confirm click
+      fireEvent.click(screen.getByTestId('action-confirm-submit-btn'));
+      expect(handleConfirm).toHaveBeenCalledTimes(1);
+
+      // Test cancel click
+      fireEvent.click(screen.getByText('Bỏ qua'));
+      expect(handleClose).toHaveBeenCalledTimes(1);
+
+      // Rerender as danger
+      rerender(
+        <ActionConfirmModal
+          isOpen={true}
+          onClose={handleClose}
+          onConfirm={handleConfirm}
+          variant="danger"
+          title="Xác nhận xóa nguy hiểm"
+          description="Dữ liệu sẽ bị xóa vĩnh viễn"
+        />
+      );
+      expect(screen.getByText('Xác nhận xóa nguy hiểm')).toBeDefined();
     });
   });
 });

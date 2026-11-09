@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ManuscriptRecord } from '@structpaper/doc-model';
 import {
   Pin,
@@ -12,7 +14,7 @@ import {
   Download,
   Trash2,
   Clock,
-  ExternalLink,
+  X,
 } from 'lucide-react';
 import {
   getJournalColor,
@@ -22,6 +24,8 @@ import {
   getWorkflowStatusConfig,
   formatRelativeTime,
 } from './types';
+
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
 interface PaperTableProps {
   papers: ManuscriptRecord[];
@@ -36,6 +40,14 @@ interface PaperTableProps {
   onDelete: (id: string) => void;
 }
 
+interface MenuAnchor {
+  id: string;
+  top: number;
+  bottom: number;
+  right: number;
+  openUpwards: boolean;
+}
+
 export const PaperTable: React.FC<PaperTableProps> = ({
   papers,
   activeMenuId,
@@ -48,6 +60,79 @@ export const PaperTable: React.FC<PaperTableProps> = ({
   onExportBackup,
   onDelete,
 }) => {
+  const [mounted, setMounted] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Compute position relative to viewport
+  const computeAnchor = (targetId: string, buttonEl: HTMLElement): MenuAnchor => {
+    const rect = buttonEl.getBoundingClientRect();
+    const estimatedHeight = 270;
+    const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const spaceBelow = windowHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUpwards = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+
+    return {
+      id: targetId,
+      top: rect.bottom + 6,
+      bottom: windowHeight - rect.top + 6,
+      right: Math.max(12, windowWidth - rect.right),
+      openUpwards,
+    };
+  };
+
+  const handleToggleClick = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (activeMenuId === id) {
+      onCloseMenu();
+      setMenuAnchor(null);
+      return;
+    }
+
+    const anchor = computeAnchor(id, e.currentTarget);
+    setMenuAnchor(anchor);
+    onToggleMenu(id, e);
+  };
+
+  // Synchronize anchor if activeMenuId changes or is set externally
+  useEffect(() => {
+    if (!activeMenuId) {
+      setMenuAnchor(null);
+      return;
+    }
+    if (!menuAnchor || menuAnchor.id !== activeMenuId) {
+      const el = triggerRefs.current[activeMenuId];
+      if (el) {
+        setMenuAnchor(computeAnchor(activeMenuId, el));
+      }
+    }
+  }, [activeMenuId, menuAnchor]);
+
+  // Close floating menu on scroll or window resize
+  useEffect(() => {
+    if (!activeMenuId) return;
+
+    const handleScrollOrResize = () => {
+      onCloseMenu();
+    };
+
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true, capture: true });
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, { capture: true });
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [activeMenuId, onCloseMenu]);
+
+  const activePaper = activeMenuId ? papers.find((p) => p.info.id === activeMenuId) : null;
+
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs overflow-hidden">
       <div className="overflow-x-auto">
@@ -122,7 +207,6 @@ export const PaperTable: React.FC<PaperTableProps> = ({
                   {/* Journal */}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1.5">
-                      
                       <span
                         className="font-extrabold text-[11px]"
                         style={{ color: journalColor }}
@@ -172,96 +256,28 @@ export const PaperTable: React.FC<PaperTableProps> = ({
                         <Sliders className="w-3.5 h-3.5" />
                       </button>
 
-                      {/* 3-dot dropdown menu */}
-                      <button
-                        onClick={(e) => onToggleMenu(info.id, e)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="Thao tác khác"
+                      {/* 3-dots trigger button */}
+                      <div
+                        className="w-7 h-7 shrink-0 relative flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {isMenuOpen && (
-                        <div className="absolute right-0 top-8 z-30 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-xs text-left text-slate-700 animate-in fade-in zoom-in-95">
-                          <button
-                            onClick={() => {
-                              onOpenEditor(info.id);
-                              onCloseMenu();
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Mở soạn thảo</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              onQuickEdit(paper);
-                              onCloseMenu();
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                          >
-                            <Sliders className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>Sửa thông tin nhanh</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              onTogglePin(info.id, info.pinned);
-                              onCloseMenu();
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                          >
-                            {info.pinned ? (
-                              <>
-                                <PinOff className="w-3.5 h-3.5 text-amber-600" />
-                                <span>Bỏ ghim</span>
-                              </>
-                            ) : (
-                              <>
-                                <Pin className="w-3.5 h-3.5 text-amber-600" />
-                                <span>Ghim lên đầu</span>
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              onDuplicate(paper);
-                              onCloseMenu();
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                          >
-                            <Copy className="w-3.5 h-3.5 text-slate-600" />
-                            <span>Nhân bản bài báo</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              onExportBackup(paper);
-                              onCloseMenu();
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 font-medium cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5 text-[#14532D]" />
-                            <span>Xuất .structpaper</span>
-                          </button>
-
-                          <div className="border-t border-slate-100 my-1" />
-
-                          <button
-                            onClick={() => {
-                              onDelete(info.id);
-                              onCloseMenu();
-                            }}
-                            className="w-full px-3 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 font-medium cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Xóa bài báo</span>
-                          </button>
-                        </div>
-                      )}
+                        <button
+                          ref={(el) => {
+                            triggerRefs.current[info.id] = el;
+                          }}
+                          key={`table-menu-trigger-btn-${info.id}`}
+                          data-testid={`menu-trigger-${info.id}`}
+                          onClick={(e) => handleToggleClick(info.id, e)}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center shadow-xs border transition-colors cursor-pointer ${
+                            isMenuOpen
+                              ? 'bg-zinc-900 text-white border-zinc-900 ring-2 ring-zinc-900/20'
+                              : 'bg-white/70 hover:bg-white text-zinc-600 hover:text-zinc-950 border-zinc-200/60'
+                          }`}
+                          title="Thao tác khác"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -270,6 +286,183 @@ export const PaperTable: React.FC<PaperTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Floating Menu rendered into Portal: completely escapes table overflow-hidden / overflow-x-auto */}
+      {mounted && activePaper && menuAnchor && (
+        createPortal(
+          <AnimatePresence>
+            {activeMenuId === activePaper.info.id && (
+              <div
+                key={`table-menu-portal-wrapper-${activePaper.info.id}`}
+                className="fixed inset-0 z-[9999] pointer-events-none"
+              >
+                {/* Transparent click-outside dismisser */}
+                <div
+                  className="fixed inset-0 z-[9998] pointer-events-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCloseMenu();
+                  }}
+                />
+
+                {/* Floating Popup */}
+                <motion.div
+                  key={`table-menu-dropdown-popup-${activePaper.info.id}`}
+                  data-testid={`paper-menu-${activePaper.info.id}`}
+                  initial={
+                    isTest
+                      ? false
+                      : {
+                          opacity: 0,
+                          scale: 0.9,
+                          y: menuAnchor.openUpwards ? 8 : -8,
+                        }
+                  }
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={
+                    isTest
+                      ? undefined
+                      : {
+                          opacity: 0,
+                          scale: 0.9,
+                          y: menuAnchor.openUpwards ? 8 : -8,
+                        }
+                  }
+                  transition={
+                    isTest
+                      ? { duration: 0 }
+                      : {
+                          type: 'spring',
+                          stiffness: 350,
+                          damping: 25,
+                          mass: 0.5,
+                        }
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  className="fixed z-[9999] pointer-events-auto w-52 max-h-[min(380px,85vh)] overflow-y-auto bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none text-left"
+                  style={{
+                    top: menuAnchor.openUpwards ? undefined : `${menuAnchor.top}px`,
+                    bottom: menuAnchor.openUpwards ? `${menuAnchor.bottom}px` : undefined,
+                    right: `${menuAnchor.right}px`,
+                    transformOrigin: menuAnchor.openUpwards ? 'bottom right' : 'top right',
+                  }}
+                >
+                  <div className="flex items-center justify-between px-2 py-1 select-none">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                      Thao tác bài báo
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCloseMenu();
+                      }}
+                      className="w-5 h-5 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-700 cursor-pointer"
+                      title="Đóng menu"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="border-t border-zinc-200/80 my-0.5" />
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenEditor(activePaper.info.id);
+                      onCloseMenu();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-zinc-800 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Mở soạn thảo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid={`quick-edit-${activePaper.info.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickEdit(activePaper);
+                      onCloseMenu();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-zinc-800 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Sửa thông tin nhanh</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid={`pin-toggle-${activePaper.info.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTogglePin(activePaper.info.id, activePaper.info.pinned);
+                      onCloseMenu();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-zinc-800 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    {activePaper.info.pinned ? (
+                      <>
+                        <PinOff className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Bỏ ghim</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pin className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Ghim lên đầu</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicate(activePaper);
+                      onCloseMenu();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-zinc-800 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-zinc-600" />
+                    <span>Nhân bản bài báo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onExportBackup(activePaper);
+                      onCloseMenu();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-zinc-100 flex items-center gap-2 text-zinc-800 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#14532D]" />
+                    <span>Xuất .structpaper</span>
+                  </button>
+
+                  <div className="border-t border-zinc-200/80 my-0.5" />
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(activePaper.info.id);
+                      onCloseMenu();
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-rose-50 text-rose-600 flex items-center gap-2 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xóa bài báo</span>
+                  </button>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )
+      )}
     </div>
   );
 };

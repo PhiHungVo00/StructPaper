@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { ManuscriptRecord, WorkflowStatus, ManuscriptInfo } from '@structpaper/doc-model';
-import { X, Sliders, Save, Tag, AlertCircle } from 'lucide-react';
+import { X, Sliders, Save, Tag, AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { WORKFLOW_STATUS_CONFIG } from './types';
 import { Select, SelectOption } from '@/components/ui/Select';
 import { ModalPortal } from '@/components/modals/ModalPortal';
+import { validateDisplayNameUniqueness } from '@/lib/storage/paper-naming';
+import { toast } from '@/components/DynamicIslandToast';
 
 interface PaperQuickEditModalProps {
   paper: ManuscriptRecord | null;
@@ -93,6 +95,23 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
     }
   }, [activePaper]);
 
+  // Tiêu đề học thuật bên trong nội dung bài báo (độc lập với tên hiển thị quản lý)
+  const academicTitle = useMemo(() => {
+    if (!activePaper) return '';
+    if (Array.isArray(activePaper.doc?.meta?.title)) {
+      const extracted = activePaper.doc.meta.title
+        .map((item: any) => (typeof item === 'string' ? item : item?.v || item?.text || ''))
+        .join('')
+        .trim();
+      if (extracted) return extracted;
+    }
+    const anyDoc = activePaper.doc as any;
+    if (typeof anyDoc?.metadata?.title === 'string' && anyDoc.metadata.title.trim()) {
+      return anyDoc.metadata.title.trim();
+    }
+    return '';
+  }, [activePaper]);
+
   if (!activePaper) return null;
   const { info } = activePaper;
 
@@ -113,7 +132,8 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) {
+    const trimmedDisplayName = displayName.trim();
+    if (!trimmedDisplayName) {
       setError('Vui lòng nhập tên hiển thị cho bài báo.');
       return;
     }
@@ -121,8 +141,28 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
     try {
       setIsSaving(true);
       setError(null);
+
+      // Hiệu ứng kiểm tra mượt mà để nút xoay và hoàn tất thẩm định tính hợp lệ
+      if (!isTest) {
+        await new Promise((resolve) => setTimeout(resolve, 550));
+      }
+
+      // Kiểm tra trùng lặp tên hiển thị và tiêu đề bài báo trong cơ sở dữ liệu IndexedDB
+      const { isDuplicate, duplicateSubmissionId } = await validateDisplayNameUniqueness(
+        info.id,
+        trimmedDisplayName
+      );
+
+      if (isDuplicate) {
+        const errorMsg = `Tên hiển thị "${trimmedDisplayName}" đã tồn tại trên một bài báo khác trong hệ thống (Mã: ${duplicateSubmissionId}). Hệ thống quy định tiêu đề và tên hiển thị không được trùng nhau, vui lòng đặt tên phân biệt.`;
+        setError(errorMsg);
+        toast.warning('Tên bài báo bị trùng', errorMsg);
+        setIsSaving(false);
+        return;
+      }
+
       await onSave(info.id, {
-        displayName: displayName.trim(),
+        displayName: trimmedDisplayName,
         submissionId: submissionId.trim() || undefined,
         workflowStatus,
         note: note.trim() || undefined,
@@ -208,21 +248,33 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
 
           {/* Card 1: Display Name */}
           <div className="p-3 px-5 space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-800 flex items-center justify-between">
-              <span>
-                Tên hiển thị bài báo <span className="text-rose-500">*</span>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-extrabold text-slate-800 flex items-center gap-1">
+                <span>Tên hiển thị bài báo</span>
+                <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[10px] text-zinc-400 font-normal">
+                Tên định danh quản lý nội bộ (không thay đổi nội dung bài báo)
               </span>
-              <span className="text-[10px] text-zinc-400 font-normal">Tiêu đề xuất bản hoặc tên đại diện</span>
-            </label>
+            </div>
             <input
               type="text"
               data-testid="quick-edit-displayname"
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                if (error) setError(null);
+              }}
               placeholder="Nhập tên đại diện hoặc tiêu đề bài báo..."
               className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all"
               required
             />
+            {academicTitle && academicTitle !== displayName && (
+              <p className="text-[11px] text-zinc-500 flex items-start gap-1 pt-0.5">
+                <span className="font-semibold text-zinc-600 shrink-0">Tiêu đề học thuật trong bài:</span>
+                <span className="italic text-zinc-600 line-clamp-1">{academicTitle}</span>
+              </p>
+            )}
           </div>
 
           {/* Card 2: Submission ID & Workflow Status (Custom Select) */}
@@ -342,8 +394,12 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
               disabled={isSaving}
               className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-xs sm:text-sm font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-md shadow-[#78C841]/20 hover:scale-102 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>{isSaving ? 'Đang lưu...' : 'Lưu thông tin'}</span>
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin text-zinc-950" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{isSaving ? 'Đang kiểm tra & lưu...' : 'Lưu thông tin'}</span>
             </button>
           </div>
         </form>

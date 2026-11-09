@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { Home, Layers, Sliders } from 'lucide-react';
+import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
 import { CompletePaper, PaperSection, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/paper';
 import { computePreflightCheck } from '@/lib/docx-extractor';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
@@ -24,7 +24,8 @@ import { LivePreviewPane } from './LivePreviewPane';
 import { ResizableSplitLayout } from './ResizableSplitLayout';
 import { generateStandardCitation } from './sections/utils';
 import { useEditorCompilation, useEditorExport, useEditorShortcuts } from './hooks';
-import { usePaperStorage } from '@/hooks';
+import { usePaperStorage, useEditorQuickEdit } from '@/hooks';
+import { PaperQuickEditModal } from '@/components/papers';
 
 interface UnifiedEditorViewProps {
   paper: CompletePaper;
@@ -42,6 +43,14 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const [isExtractedDrawerOpen, setIsExtractedDrawerOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<EditorTabKey>('metadata');
   const [mobilePane, setMobilePane] = useState<'editor' | 'preview'>('editor');
+
+  const {
+    isQuickEditOpen,
+    quickEditRecord,
+    handleOpenQuickEdit,
+    handleCloseQuickEdit,
+    handleSaveQuickEdit,
+  } = useEditorQuickEdit(formData, setFormData);
 
   const { compiledPdfUrl, isCompilingPdf, compileStats, compileErrorInfo, setCompileErrorInfo, compileLatexToPdf, handleRecompile } =
     useEditorCompilation({ paper, formData, onUpdatePaper, setIsDirty });
@@ -142,6 +151,8 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   return (
     <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
       <EditorLeftDock
+        homeHref="/papers"
+        onOpenQuickEdit={handleOpenQuickEdit}
         onOpenExtractedDrawer={() => setIsExtractedDrawerOpen(true)}
         onOpenLayoutSettings={() => setIsSettingsDrawerOpen(true)}
         onSave={handleSave}
@@ -166,7 +177,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative z-10">
         <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 mb-1.5 bg-white/70 backdrop-blur-md rounded-2xl border border-zinc-200">
-          <Link href="/upload" className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs" title="Quay lại trang chủ">
+          <Link href="/papers" className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs" title="Quay lại danh sách bài báo">
             <Home className="w-4 h-4" />
           </Link>
           <div className="flex items-center gap-1 bg-zinc-200/70 p-0.5 rounded-xl">
@@ -174,6 +185,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
             <button type="button" onClick={() => setMobilePane('preview')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${mobilePane === 'preview' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}>PDF</button>
           </div>
           <div className="flex items-center gap-1">
+            <button type="button" onClick={handleOpenQuickEdit} className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs" title="Sửa thông tin bài báo"><FileEdit className="w-4 h-4" /></button>
             <button type="button" onClick={() => setIsExtractedDrawerOpen(true)} className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs" title="Nội dung trích xuất"><Layers className="w-4 h-4" /></button>
             <button type="button" onClick={() => setIsSettingsDrawerOpen(true)} className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs" title="Cài đặt dàn trang"><Sliders className="w-4 h-4" /></button>
           </div>
@@ -190,6 +202,12 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
 
       <ExtractedContentDrawer isOpen={isExtractedDrawerOpen} onClose={() => setIsExtractedDrawerOpen(false)} paper={formData} />
       <LayoutSettingsDrawer isOpen={isSettingsDrawerOpen} onClose={() => setIsSettingsDrawerOpen(false)} settings={formData.layoutSettings || DEFAULT_LAYOUT_SETTINGS} journalId={formData.metadata.journalId || currentJournal} onApplySettings={handleApplyLayoutSettings} isCompiling={isCompilingPdf} />
+      <PaperQuickEditModal
+        paper={quickEditRecord}
+        isOpen={isQuickEditOpen}
+        onClose={handleCloseQuickEdit}
+        onSave={handleSaveQuickEdit}
+      />
     </div>
   );
 };

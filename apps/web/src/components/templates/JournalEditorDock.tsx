@@ -140,9 +140,9 @@ export const JournalEditorDock: React.FC<JournalEditorDockProps> = ({
 
   const handleBack = () => {
     if (router) {
-      router.back();
-    } else if (typeof window !== 'undefined' && window.history) {
-      window.history.back();
+      router.push('/templates');
+    } else if (typeof window !== 'undefined') {
+      window.location.href = '/templates';
     }
   };
 

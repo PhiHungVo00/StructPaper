@@ -38,14 +38,29 @@ export async function savePaperToIndexedDb(paper: CompletePaper): Promise<void> 
     // 2. Convert v1 document to v2 Manuscript and save to IndexedDbManuscriptRepo
     const v2Doc = migrateV1toV2(paper as any);
     const paperId = v2Doc.id || paper.id || `doc-${Date.now()}`;
+    const existingRecord = await repo.getRecord(paperId);
 
     await repo.save(v2Doc, {
       id: paperId,
-      displayName: paper.metadata?.title || paper.metadata?.titleEn || 'Bản thảo bài báo',
-      workflowStatus: (paper.status as any) || 'draft',
-      tags: [paper.metadata?.journalId || 'VNUHCM'],
-      pinned: false,
-      archived: false,
+      displayName:
+        (paper as any).displayName ||
+        existingRecord?.info?.displayName ||
+        paper.metadata?.title ||
+        paper.metadata?.titleEn ||
+        'Bản thảo bài báo',
+      workflowStatus:
+        (paper.status as any) ||
+        existingRecord?.info?.workflowStatus ||
+        'draft',
+      submissionId:
+        (paper as any).submissionId || existingRecord?.info?.submissionId,
+      note: (paper as any).note || existingRecord?.info?.note,
+      tags:
+        (paper as any).tags ||
+        existingRecord?.info?.tags ||
+        [paper.metadata?.journalId || 'VNUHCM'],
+      pinned: existingRecord?.info?.pinned ?? false,
+      archived: existingRecord?.info?.archived ?? false,
     });
   } catch (err) {
     console.error('[paper-sync] Error saving paper to IndexedDB:', err);
@@ -66,6 +81,11 @@ export async function loadPaperFromIndexedDb(id: string): Promise<CompletePaper 
 
     const v1 = adaptV2toV1(record.doc as any) as CompletePaper;
     if (!v1.id) v1.id = record.info.id;
+    (v1 as any).displayName = record.info.displayName;
+    (v1 as any).submissionId = record.info.submissionId;
+    (v1 as any).workflowStatus = record.info.workflowStatus;
+    (v1 as any).tags = record.info.tags;
+    (v1 as any).note = record.info.note;
     if (record.info.displayName && v1.metadata && !v1.metadata.title) {
       v1.metadata.title = record.info.displayName;
     }
