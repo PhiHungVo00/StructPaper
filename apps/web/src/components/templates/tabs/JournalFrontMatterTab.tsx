@@ -93,10 +93,10 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
   return (
     <div className="space-y-5 w-full">
       {/* 1. Abstract Rules */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <FileText className="w-4 h-4 text-zinc-700" />
-          <h3 className="font-extrabold text-sm text-zinc-900">
+          <h3 className="font-extrabold text-md text-zinc-900">
             Quy định Phần Tóm Tắt (Abstract Guidelines)
           </h3>
         </div>
@@ -119,7 +119,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
@@ -140,7 +140,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
@@ -166,10 +166,10 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
       </div>
 
       {/* 2. Keywords Rules */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <KeyRound className="w-4 h-4 text-zinc-700" />
-          <h3 className="font-extrabold text-sm text-zinc-900">
+          <h3 className="font-extrabold text-md text-zinc-900">
             Quy định Từ Khóa (Keywords Guidelines)
           </h3>
         </div>
@@ -192,7 +192,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
@@ -213,7 +213,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
@@ -241,10 +241,10 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
       </div>
 
       {/* 3. Dates, DOI & Citations */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4 pb-40">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <Quote className="w-4 h-4 text-zinc-700" />
-          <h3 className="font-extrabold text-sm text-zinc-900">
+          <h3 className="font-extrabold text-md text-zinc-900">
             Định dạng Ngày, Mẫu DOI &amp; Phong cách Trích dẫn (Citation Style)
           </h3>
         </div>
@@ -258,7 +258,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
               type="text"
               value={frontMatter.dateFormat || 'YYYY-MM-DD'}
               onChange={(e) => updateFrontMatter({ dateFormat: e.target.value })}
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
@@ -270,7 +270,7 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
               type="text"
               value={frontMatter.doiPattern || ''}
               onChange={(e) => updateFrontMatter({ doiPattern: e.target.value })}
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 

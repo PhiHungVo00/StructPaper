@@ -105,15 +105,12 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
   return (
     <div className="space-y-5 w-full">
       {/* Overview Banner */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 pb-2 border-b border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="font-extrabold text-sm text-zinc-900 flex items-center gap-2">
             <Layers className="w-4 h-4 text-[#78C841]" strokeWidth={2.5} />
-            <span>Chuyên Mục &amp; Các Loại Bài Báo Được Tiếp Nhận</span>
+            <span>Chuyên Mục Tạp Chí Này Được Tiếp Nhận</span>
           </h3>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Cấu hình danh mục thể loại bài báo mà tạp chí chấp nhận cùng các đề mục bắt buộc kiểm duyệt.
-          </p>
         </div>
 
         <button
@@ -128,7 +125,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
 
       {/* Add New Type Modal / Form */}
       {isAddingNew && (
-        <div className="bg-[#E4F8D5]/60 border border-[#D9F99D] rounded-3xl p-5 space-y-4">
+        <div className="bg-[#E4F8D5]/60 border border-[#D9F99D] rounded-[36px] p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-[#D9F99D] pb-2">
             <h4 className="font-extrabold text-xs text-[#14532D] uppercase tracking-wider">
               Khởi tạo thể loại bài báo mới
@@ -203,7 +200,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
       {/* Main Grid: List on Left, Editor on Right */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
         {/* Left column: List of Article Types */}
-        <div className="md:col-span-5 bg-white rounded-3xl border border-zinc-200/80 p-2.5 space-y-1.5 shadow-xs">
+        <div className="md:col-span-5 border-r border-zinc-200 p-2.5 space-y-1.5 shadow-xs">
           <div className="px-3 py-1.5 text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider flex justify-between">
             <span>Danh mục ({currentTypes.length})</span>
             <span>Trạng thái</span>
@@ -215,10 +212,10 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
               <div
                 key={type.id}
                 onClick={() => setSelectedTypeId(type.id)}
-                className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer flex items-center justify-between group ${
+                className={`w-full text-left p-3 border-b border-zinc-200 transition-all cursor-pointer flex items-center justify-between group ${
                   isSelected
-                    ? 'bg-zinc-900 text-white shadow-xs'
-                    : 'hover:bg-zinc-100/70 text-zinc-700'
+                    ? 'rounded-2xl ring-4 ring-blue-300 shadow-xs'
+                    : 'hover:bg-white text-zinc-700'
                 }`}
               >
                 <div className="min-w-0 pr-2">
@@ -227,7 +224,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                   </div>
                   <div
                     className={`text-[10.5px] truncate font-medium ${
-                      isSelected ? 'text-zinc-300' : 'text-zinc-500'
+                      isSelected ? 'text-zinc-500' : 'text-zinc-500'
                     }`}
                   >
                     {type.label?.en || type.id}
@@ -238,7 +235,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       isSelected
-                        ? 'bg-white/20 text-white'
+                        ? 'bg-zinc-200/70 text-zinc-600'
                         : 'bg-zinc-200/70 text-zinc-600'
                     }`}
                   >
@@ -267,12 +264,12 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
 
         {/* Right column: Selected Article Type Detail */}
         {selectedType && (
-          <div className="md:col-span-7 bg-white rounded-3xl border border-zinc-200/80 p-5 sm:p-6 space-y-4 shadow-xs">
-            <div className="border-b border-zinc-100 pb-3">
-              <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest block">
+          <div className="md:col-span-7 p-5 pl-1 space-y-4">
+            <div className="border-b border-zinc-200 pb-2">
+              {/* <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest block">
                 MÃ THỂ LOẠI: {selectedType.id}
-              </span>
-              <h4 className="text-sm sm:text-base font-extrabold text-zinc-900 mt-0.5">
+              </span> */}
+              <h4 className="text-sm sm:text-base font-extrabold text-zinc-900">
                 {selectedType.label?.vi || selectedType.id}
               </h4>
             </div>
@@ -290,7 +287,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                       label: { ...selectedType.label, vi: e.target.value },
                     })
                   }
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
                 />
               </div>
 
@@ -306,7 +303,7 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                       label: { ...selectedType.label, en: e.target.value },
                     })
                   }
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
                 />
               </div>
             </div>

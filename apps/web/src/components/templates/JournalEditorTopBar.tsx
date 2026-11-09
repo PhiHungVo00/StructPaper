@@ -21,7 +21,7 @@ export const JournalEditorTopBar: React.FC<JournalEditorTopBarProps> = ({
   const shortCode = profile.names?.short || profile.id?.toUpperCase() || 'JOURNAL';
 
   return (
-    <div className="w-full flex flex-col gap-1 pb-2 border-b border-zinc-200/80 px-0.5">
+    <div className="w-full flex flex-col gap-0 pb-2 border-b border-zinc-200/80 px-0.5">
       <div className="flex items-center gap-2 flex-wrap">
         <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-tight">
           {nameVi}

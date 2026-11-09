@@ -190,7 +190,7 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
 
       // Switch to Layout tab (Technical boxes removed)
       fireEvent.click(screen.getAllByText('Dàn trang')[0]);
-      expect(screen.getAllByText('Dàn Trang & Bố Cục Bản In (Page & Column Grid)').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Dàn Trang & Bố Cục Bản In').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Khổ giấy').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Số cột nội dung').length).toBeGreaterThanOrEqual(1);
     });

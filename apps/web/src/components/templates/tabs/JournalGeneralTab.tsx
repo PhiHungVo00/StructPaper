@@ -31,11 +31,11 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
   return (
     <div className="space-y-5 w-full">
       {/* 1. Basic Identifiers */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <BookMarked className="w-4 h-4 text-zinc-700" />
-          <h3 className="font-extrabold text-sm text-zinc-900">
-            Tên &amp; Mã Tạp chí (Bilingual Identifiers)
+          <h3 className="font-extrabold text-md text-zinc-900">
+            Tên &amp; Mã Tạp chí
           </h3>
         </div>
 
@@ -49,7 +49,7 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
               value={names.vi}
               onChange={(e) => handleNameChange('vi', e.target.value)}
               placeholder="VD: Tạp chí Phát triển KH&CN - Khoa học Sức khỏe"
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 outline-none transition-all"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 outline-none transition-all"
             />
           </div>
 
@@ -62,7 +62,7 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
               value={names.en}
               onChange={(e) => handleNameChange('en', e.target.value)}
               placeholder="VD: Science & Technology Development Journal - Health Sciences"
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 outline-none transition-all"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 outline-none transition-all"
             />
           </div>
 
@@ -75,7 +75,7 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
               value={names.short}
               onChange={(e) => handleNameChange('short', e.target.value)}
               placeholder="VD: VNUHCM-HS hoặc STDJ-HS"
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 outline-none transition-all"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] focus:ring-2 focus:ring-[#78C841]/20 outline-none transition-all"
             />
           </div>
 
@@ -101,19 +101,19 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
       </div>
 
       {/* 2. Brand Palette & Color Swatch with HERO PREVIEW AT TOP */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <Palette className="w-4 h-4 text-zinc-700" />
-          <h3 className="font-extrabold text-sm text-zinc-900">
+          <h3 className="font-extrabold text-md text-zinc-900">
             Màu Sắc Nhận Diện Thương Hiệu
           </h3>
         </div>
 
         {/* HERO PREVIEW BLOCK AT TOP */}
-        <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-4 rounded-[36px] bg-gray-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div
-              className="w-14 h-14 rounded-2xl shadow-sm border-2 border-white shrink-0 transition-all duration-300 flex items-center justify-center text-white"
+              className="w-14 h-14 rounded-3xl shadow-sm border-2 border-white shrink-0 transition-all duration-300 flex items-center justify-center text-white"
               style={{ backgroundColor: brandColor }}
             >
               <Check className="w-6 h-6 drop-shadow-sm" strokeWidth={3} />
@@ -144,7 +144,7 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
                 type="color"
                 value={brandColor}
                 onChange={(e) => onChange({ color: e.target.value })}
-                className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
+                className="w-7 h-7 rounded-full cursor-pointer border-0 p-0 bg-transparent"
                 title="Bấm để chọn màu"
               />
               <input
@@ -171,10 +171,10 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
                   key={pal.id}
                   type="button"
                   onClick={() => onChange({ color: pal.hex })}
-                  className={`p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-2xl flex flex-col items-center gap-1.5 transition-all cursor-pointer outline-none ${
                     isSelected
-                      ? 'border-zinc-900 bg-white ring-2 ring-zinc-900/15 shadow-sm scale-102'
-                      : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50/60'
+                      ? 'bg-white ring-4 ring-blue-300 shadow-sm scale-102 outline-none'
+                      : 'hover:border-zinc-300 bg-zinc-50/60'
                   }`}
                 >
                   <span
@@ -197,10 +197,10 @@ export const JournalGeneralTab: React.FC<JournalGeneralTabProps> = ({
       </div>
 
       {/* 3. Supported Languages */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4 pb-16">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <Globe className="w-4 h-4 text-zinc-700" />
-          <h3 className="font-extrabold text-sm text-zinc-900">
+          <h3 className="font-extrabold text-mds text-zinc-900">
             Ngôn Ngữ Bài Viết Chấp Nhận
           </h3>
         </div>

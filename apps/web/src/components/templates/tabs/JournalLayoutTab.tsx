@@ -38,11 +38,11 @@ export const JournalLayoutTab: React.FC<JournalLayoutTabProps> = ({
   return (
     <div className="space-y-5 w-full">
       {/* 1. Page & Columns Grid */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <Columns className="w-4 h-4 text-zinc-700" />
           <h3 className="font-extrabold text-sm text-zinc-900">
-            Dàn Trang &amp; Bố Cục Bản In (Page &amp; Column Grid)
+            Dàn Trang &amp; Bố Cục Bản In
           </h3>
         </div>
 
@@ -73,14 +73,14 @@ export const JournalLayoutTab: React.FC<JournalLayoutTabProps> = ({
 
           <div>
             <label className="block text-xs font-bold text-zinc-700 mb-1">
-              Khoảng cách cột (Column Gap - mm)
+              Khoảng cách cột nội dung (mm)
             </label>
             <input
               type="number"
               step={0.5}
               value={layout.columnGap ?? 6.0}
               onChange={(e) => updateLayout({ columnGap: parseFloat(e.target.value) || 0 })}
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
         </div>
@@ -105,7 +105,7 @@ export const JournalLayoutTab: React.FC<JournalLayoutTabProps> = ({
                       },
                     })
                   }
-                  className="w-full mt-1 bg-zinc-50 border border-zinc-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
+                  className="w-full mt-1 bg-white border border-zinc-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
                 />
               </div>
             ))}
