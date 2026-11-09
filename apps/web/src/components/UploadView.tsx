@@ -8,20 +8,14 @@ import {
   BookOpen,
   Layers,
   ArrowRight,
-  ShieldCheck,
-  Zap,
   Sparkles,
   Filter,
-  Bot,
-  Settings,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   FilePlus,
 } from 'lucide-react';
 import { CompletePaper, ALL_SAMPLE_PAPERS } from '@/lib/sample-papers';
 import { createEmptyPaper } from '@/types/paper';
-import { parseDocxFile, parseDocxFileWithAi } from '@/lib/docx-parser';
+import { parseDocxFile } from '@/lib/docx-parser';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
 import { usePaper } from '@/context/PaperContext';
 import { Select, SelectOption } from './ui/Select';
@@ -31,27 +25,6 @@ interface UploadViewProps {
   onPaperLoaded: (paper: CompletePaper) => void;
   currentPaper: CompletePaper;
 }
-
-const AI_MODEL_OPTIONS: SelectOption[] = [
-  {
-    value: 'gpt-5.4-mini',
-    label: 'gpt-5.4-mini',
-    description: 'Nhanh & Chính xác nhất',
-    badge: 'Khuyên dùng',
-  },
-  {
-    value: 'gpt-4o-mini',
-    label: 'gpt-4o-mini',
-    description: 'Mô hình dự phòng',
-    badge: 'Dự phòng',
-  },
-  {
-    value: 'gpt-4o',
-    label: 'gpt-4o',
-    description: 'Mô hình đầy đủ',
-    badge: 'Đầy đủ',
-  },
-];
 
 const JOURNAL_OPTIONS: SelectOption[] = Object.values(JOURNAL_TEMPLATES).map((tmpl) => ({
   value: tmpl.id,
@@ -71,11 +44,6 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
   const { currentJournal, setCurrentJournal } = usePaper();
   const activeTemplate = JOURNAL_TEMPLATES[currentJournal] || JOURNAL_TEMPLATES['VNUHCM-HS'];
 
-  // AI Extraction settings (default: disabled per user preference to save tokens and use fast local parsing)
-  const [useAi, setUseAi] = useState<boolean>(false);
-  const [aiModel, setAiModel] = useState<string>('gpt-4o-mini');
-  const [showAiSettings, setShowAiSettings] = useState<boolean>(false);
-
   const handleFile = async (file: File) => {
     if (!file.name.endsWith('.docx') && !file.name.endsWith('.doc')) {
       setErrorMsg('Vui lòng chọn file tài liệu định dạng Microsoft Word (.docx hoặc .doc)');
@@ -86,17 +54,8 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
     setParsingStatus('Đang đọc file Word...');
     try {
       const buffer = await file.arrayBuffer();
-      let parsed: CompletePaper;
-
-      if (useAi) {
-        parsed = await parseDocxFileWithAi(buffer, file.name, {
-          model: aiModel,
-          onProgress: (status) => setParsingStatus(status),
-        });
-      } else {
-        setParsingStatus('Đang phân tích cấu trúc OpenXML...');
-        parsed = await parseDocxFile(buffer, file.name);
-      }
+      setParsingStatus('Đang phân tích cấu trúc OpenXML...');
+      const parsed = await parseDocxFile(buffer, file.name);
 
       if (parsed.metadata.journalId) {
         setCurrentJournal(parsed.metadata.journalId);
@@ -184,86 +143,6 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
         </div>
       </div>
 
-      {/* AI Extraction Mode Switcher Card */}
-      <div className="soft-card p-4 sm:p-5 bg-white border border-zinc-200/80 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${useAi ? 'bg-[#1A1A1A] text-[#78C841] shadow-xs' : 'bg-zinc-100 text-zinc-500'
-                }`}
-            >
-              <Bot className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[#1A1A1A] text-sm sm:text-base">Chế độ trích xuất bằng AI</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EEF2FF] text-[#3730A3]">
-                  Mô hình: {aiModel}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#D9F99D] text-[#14532D]">
-                  OpenAI Active
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                {useAi
-                  ? 'Sử dụng mô hình ngôn ngữ lớn để bóc tách chính xác hơn cho cấu trúc bài báo, tác giả, tóm tắt và bảng biểu phức tạp.'
-                  : 'Sử dụng bộ bóc tách OpenXML truyền thống (cục bộ, tốc độ cao, không dùng token).'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-end sm:self-center">
-            {/* Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setUseAi(!useAi)}
-              className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${useAi ? 'bg-[#78C841]' : 'bg-zinc-200'
-                }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${useAi ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-              />
-            </button>
-
-            {/* Config Button */}
-            <button
-              type="button"
-              onClick={() => setShowAiSettings(!showAiSettings)}
-              className="p-1.5 rounded-xl border border-zinc-200 hover:bg-zinc-50 text-zinc-600 text-xs font-semibold flex items-center gap-1 shadow-2xs"
-              title="Cấu hình OpenAI API"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              {showAiSettings ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Collapsible AI Settings */}
-        {showAiSettings && (
-          <div className="mt-4 pt-4 border-t border-zinc-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center gap-2.5">
-              <ShieldCheck className="w-5 h-5 text-[#14532D] flex-shrink-0" />
-              <div className="text-xs text-zinc-600">
-                <span className="font-semibold text-zinc-800 block">Bảo mật máy chủ (Server-side)</span>
-                Khóa OpenAI API được bảo vệ tập trung và mã hóa an toàn trên máy chủ.
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-zinc-700 mb-1 flex items-center gap-1">
-                <Bot className="w-3 h-3 text-zinc-900" /> Mô hình AI (Model):
-              </label>
-              <Select
-                value={aiModel}
-                onChange={setAiModel}
-                options={AI_MODEL_OPTIONS}
-                size="sm"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Side-by-side Top Row: 70% Word Upload Dropzone on Left + 30% Blank Template Card on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-3 items-stretch">
         {/* Left Card: 70% width (lg:col-span-7) - Main Upload Dropzone */}
@@ -311,16 +190,12 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
           <h3 className="text-lg font-bold text-zinc-900 mb-1">
             {isParsing
               ? (parsingStatus || 'Đang xử lý tài liệu...')
-              : useAi
-                ? 'Kéo thả file .docx để AI tự động bóc tách'
-                : 'Kéo thả file .docx vào đây để trích xuất chuẩn'}
+              : 'Kéo thả file .docx vào đây để trích xuất chuẩn'}
           </h3>
           <p className="text-xs sm:text-sm text-zinc-500 max-w-md mx-auto mb-4">
             {isParsing
               ? 'Hệ thống đang trích xuất dữ liệu, bảo toàn công thức toán học và hình ảnh...'
-              : useAi
-                ? `Hỗ trợ bóc tách bản thảo khoa học cho tạp chí ${activeTemplate.shortName} (${activeTemplate.id}).`
-                : `Trích xuất OpenXML siêu tốc nội bộ, bảo toàn ảnh vector và công thức toán theo mẫu ${activeTemplate.shortName}.`}
+              : `Trích xuất OpenXML siêu tốc nội bộ, bảo toàn ảnh vector và công thức toán theo mẫu ${activeTemplate.shortName}.`}
           </p>
 
           {!isParsing && (
