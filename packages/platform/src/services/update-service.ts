@@ -33,4 +33,5 @@ export interface UpdateService {
   restart(): Promise<void>;
   skipVersion(version: string): void;
   remindLater(hours: number): void;
+  simulateUpdate?(info?: Partial<UpdateInfo>): void;
 }

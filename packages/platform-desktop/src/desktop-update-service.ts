@@ -447,4 +447,18 @@ export class DesktopUpdateService implements UpdateService {
       this.setState({ s: 'idle' });
     }
   }
+
+  simulateUpdate(mockInfo?: Partial<UpdateInfo>): void {
+    const info: UpdateInfo = {
+      version: mockInfo?.version ?? '1.0.8',
+      kind: 'app-binary',
+      notes:
+        mockInfo?.notes ??
+        '## StructPaper v1.0.8 (Bản thử nghiệm)\n\n- Tối ưu hóa hiệu năng biên dịch LaTeX\n- Cải thiện tốc độ mở ứng dụng\n- Tự động sửa lỗi hiển thị bảng biểu đa cột',
+      mandatory: false,
+      publishedAt: new Date().toISOString(),
+      ...mockInfo,
+    };
+    this.setState({ s: 'available', info });
+  }
 }

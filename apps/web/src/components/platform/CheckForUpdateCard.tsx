@@ -261,6 +261,30 @@ export function CheckForUpdateCard(): React.ReactElement {
           </button>
         </div>
       )}
+
+      {/* Dev Mode Testing Toolbar (Shown only during development) */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="pt-3 border-t border-zinc-200/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="text-zinc-500 font-medium">🧪 Kiểm thử Dev:</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="simulate-update-btn"
+              onClick={() => {
+                if (
+                  'simulateUpdate' in platform.updates &&
+                  typeof (platform.updates as any).simulateUpdate === 'function'
+                ) {
+                  (platform.updates as any).simulateUpdate();
+                }
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold border border-amber-300 transition-all active:scale-95"
+            >
+              Mô phỏng phát hiện bản mới v1.0.8
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

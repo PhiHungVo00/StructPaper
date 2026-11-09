@@ -630,6 +630,37 @@ describe('Settings Distribution Slot & Auto-Update Banner (Task 6)', () => {
         })
       );
     });
+
+    it('triggers simulateUpdate when dev testing button is clicked', () => {
+      const simulateUpdateMock = vi.fn();
+      const platform = createFakePlatform({
+        kind: 'desktop',
+        overrides: {
+          updates: {
+            channel: 'stable',
+            getState: () => ({ s: 'idle' }),
+            subscribe: () => () => {},
+            check: vi.fn(),
+            install: vi.fn(),
+            restart: vi.fn(),
+            skipVersion: vi.fn(),
+            remindLater: vi.fn(),
+            simulateUpdate: simulateUpdateMock,
+          },
+        },
+      });
+
+      render(
+        <PlatformProvider value={platform}>
+          <CheckForUpdateCard />
+        </PlatformProvider>
+      );
+
+      const simBtn = screen.getByTestId('simulate-update-btn');
+      expect(simBtn).toBeTruthy();
+      fireEvent.click(simBtn);
+      expect(simulateUpdateMock).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
