@@ -56,6 +56,50 @@ jobs:
           New-Item -ItemType Directory -Force -Path "apps/web/src-tauri/bin"
           Copy-Item "bin/tectonic.exe" "apps/web/src-tauri/bin/tectonic-x86_64-pc-windows-msvc.exe" -Force
 
+      - name: Cache Tauri NSIS dependencies (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\tauri
+          key: ${{ runner.os }}-tauri-nsis-v3.13-v0.5.3
+
+      - name: Setup NSIS toolchain with retry (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tauriDir = "$env:LOCALAPPDATA\tauri"
+          $nsisDir = "$tauriDir\NSIS"
+          New-Item -ItemType Directory -Force -Path $tauriDir | Out-Null
+          
+          if (-not (Test-Path "$nsisDir\makensis.exe")) {
+            Write-Host "Downloading NSIS 3.13 package with retry..."
+            $zipPath = "$env:TEMP\nsis-3.13.zip"
+            curl.exe --retry 5 --retry-delay 5 --retry-all-errors -fSL "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.13/nsis-3.13.zip" -o $zipPath
+            
+            Write-Host "Extracting NSIS..."
+            $extractTemp = "$env:TEMP\nsis_extracted"
+            if (Test-Path $extractTemp) { Remove-Item -Recurse -Force $extractTemp }
+            Expand-Archive -Path $zipPath -DestinationPath $extractTemp -Force
+            
+            if (Test-Path "$extractTemp\nsis-3.13") {
+              Move-Item -Path "$extractTemp\nsis-3.13" -Destination $nsisDir -Force
+            } else {
+              Move-Item -Path $extractTemp -Destination $nsisDir -Force
+            }
+            Remove-Item -Force $zipPath
+          }
+          
+          $pluginDir = "$nsisDir\Plugins\x86-unicode\additional"
+          New-Item -ItemType Directory -Force -Path $pluginDir | Out-Null
+          if (-not (Test-Path "$pluginDir\nsis_tauri_utils.dll")) {
+            Write-Host "Downloading nsis_tauri_utils.dll with retry..."
+            curl.exe --retry 5 --retry-delay 5 --retry-all-errors -fSL "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.5.3/nsis_tauri_utils.dll" -o "$pluginDir\nsis_tauri_utils.dll"
+          }
+          
+          Write-Host "NSIS setup verified:"
+          Test-Path "$nsisDir\makensis.exe"
+          Test-Path "$pluginDir\nsis_tauri_utils.dll"
+
       - name: Prepare Tectonic sidecar binary (macOS)
         if: runner.os == 'macOS'
         run: |
