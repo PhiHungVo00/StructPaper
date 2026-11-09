@@ -12,15 +12,16 @@ interface AppShellProps {
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const pathname = usePathname();
 
-  // The editor, authoring editor, and template builder are secondary/focused steps, so the main sidebar is hidden
+  // The editor, authoring editor, template builder, and journal template editor are secondary/focused steps, so the main sidebar is hidden
   const isEditorPage =
     pathname === '/editor' ||
     pathname.startsWith('/editor/') ||
     pathname === '/papers/editor' ||
     pathname.startsWith('/papers/editor/');
   const isBuilderPage = pathname === '/templates/builder' || pathname.startsWith('/templates/builder/');
+  const isJournalEditorPage = pathname.startsWith('/templates/journal/');
 
-  if (isEditorPage || isBuilderPage) {
+  if (isEditorPage || isBuilderPage || isJournalEditorPage) {
     return (
       <div className="h-screen w-full bg-[#F8F9FA] overflow-hidden p-2 sm:p-0 flex flex-col">
         {children}

@@ -19,6 +19,19 @@ vi.stubGlobal(
   })
 );
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/editor',
+  useParams: () => ({ id: 'hs630' }),
+}));
+
 // Mock framer-motion to prevent unhandled animation aborts in happy-dom
 vi.mock('framer-motion', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('framer-motion');

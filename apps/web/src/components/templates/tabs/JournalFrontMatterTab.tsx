@@ -2,12 +2,36 @@
 
 import React from 'react';
 import { JournalProfile } from '@structpaper/journal-profiles';
-import { FileText, KeyRound, Calendar, Quote, Hash } from 'lucide-react';
+import { FileText, KeyRound, Quote } from 'lucide-react';
+import { Select, SelectOption } from '@/components/ui/Select';
 
 interface JournalFrontMatterTabProps {
   profile: JournalProfile;
   onChange: (updated: Partial<JournalProfile>) => void;
 }
+
+const KEYWORD_SEPARATOR_OPTIONS: SelectOption<';' | ','>[] = [
+  { value: ';', label: 'Dấu chấm phẩy ( ; )', description: 'Chuẩn quy định ĐHQG-HCM & Quốc tế' },
+  { value: ',', label: 'Dấu phẩy ( , )', description: 'Phân cách bằng dấu phẩy đơn' },
+];
+
+const CITATION_INTEXT_OPTIONS: SelectOption<'bracket' | 'superscript'>[] = [
+  {
+    value: 'bracket',
+    label: 'Ngoặc vuông [1-3] - Chuẩn Vancouver STDJ',
+    description: 'Chỉ số trích dẫn đặt trong ngoặc vuông đồng dòng',
+  },
+  {
+    value: 'superscript',
+    label: 'Chỉ số trên ¹⁻³',
+    description: 'Chỉ số trích dẫn hiển thị dạng superscript',
+  },
+];
+
+const RANGE_DASH_OPTIONS: SelectOption<string>[] = [
+  { value: '-', label: 'Dấu gạch nối ngắn ( - )' },
+  { value: '–', label: 'Dấu En-dash ( – )' },
+];
 
 export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
   profile,
@@ -44,19 +68,19 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 w-full">
       {/* 1. Abstract Rules */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <FileText className="w-4 h-4 text-slate-700" />
-          <h3 className="font-extrabold text-sm text-slate-900">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+          <FileText className="w-4 h-4 text-zinc-700" />
+          <h3 className="font-extrabold text-sm text-zinc-900">
             Quy định Phần Tóm Tắt (Abstract Guidelines)
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Số từ tối thiểu (minWords)
             </label>
             <input
@@ -72,12 +96,12 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Số từ tối đa (maxWords)
             </label>
             <input
@@ -93,15 +117,15 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
           <div className="flex flex-col justify-center pt-3 md:pt-0">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-zinc-700">
               <input
                 type="checkbox"
-                checked={Boolean(frontMatter.abstract?.structured)}
+                checked={frontMatter.abstract?.structured ?? true}
                 onChange={(e) =>
                   updateFrontMatter({
                     abstract: {
@@ -112,27 +136,24 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                 }
                 className="rounded text-[#78C841] focus:ring-[#78C841]"
               />
-              <span>Tóm tắt có cấu trúc (Structured Abstract)</span>
+              <span>Yêu cầu tóm tắt có cấu trúc (Structured Abstract)</span>
             </label>
-            <span className="text-[10px] text-slate-400 mt-0.5">
-              Yêu cầu bóc tách rõ: Đặt vấn đề, Phương pháp, Kết quả, Kết luận.
-            </span>
           </div>
         </div>
       </div>
 
       {/* 2. Keywords Rules */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <KeyRound className="w-4 h-4 text-slate-700" />
-          <h3 className="font-extrabold text-sm text-slate-900">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+          <KeyRound className="w-4 h-4 text-zinc-700" />
+          <h3 className="font-extrabold text-sm text-zinc-900">
             Quy định Từ Khóa (Keywords Guidelines)
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Số lượng tối thiểu (min)
             </label>
             <input
@@ -148,12 +169,12 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Số lượng tối đa (max)
             </label>
             <input
@@ -169,90 +190,92 @@ export const JournalFrontMatterTab: React.FC<JournalFrontMatterTabProps> = ({
                   },
                 })
               }
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Dấu ngăn cách từ khóa
             </label>
-            <select
+            <Select<';' | ','>
+              options={KEYWORD_SEPARATOR_OPTIONS}
               value={frontMatter.keywords?.separator ?? ';'}
-              onChange={(e) =>
+              onChange={(val) =>
                 updateFrontMatter({
                   keywords: {
                     ...frontMatter.keywords,
-                    separator: e.target.value as ';' | ',',
+                    separator: val,
                   },
                 })
               }
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:border-[#78C841] outline-none"
-            >
-              <option value=";">Dấu chấm phẩy ( ; ) - Chuẩn ĐHQG</option>
-              <option value=",">Dấu phẩy ( , )</option>
-            </select>
+              size="sm"
+              variant="default"
+              fullWidth
+            />
           </div>
         </div>
       </div>
 
       {/* 3. Dates, DOI & Citations */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <Quote className="w-4 h-4 text-slate-700" />
-          <h3 className="font-extrabold text-sm text-slate-900">
-            Định dạng Ngày, Mẫu DOI &amp; Trích dẫn (Vancouver)
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
+          <Quote className="w-4 h-4 text-zinc-700" />
+          <h3 className="font-extrabold text-sm text-zinc-900">
+            Định dạng Ngày, Mẫu DOI &amp; Trích dẫn (Vancouver Standard)
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Định dạng ngày (Date Format)
             </label>
             <input
               type="text"
               value={frontMatter.dateFormat || 'YYYY-MM-DD'}
               onChange={(e) => updateFrontMatter({ dateFormat: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Quy tắc biểu thức DOI (Regex Pattern)
             </label>
             <input
               type="text"
               value={frontMatter.doiPattern || ''}
               onChange={(e) => updateFrontMatter({ doiPattern: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 focus:bg-white focus:border-[#78C841] outline-none"
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono text-zinc-800 focus:bg-white focus:border-[#78C841] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Kiểu hiển thị trích dẫn trong văn bản (In-text format)
             </label>
-            <select
+            <Select<'bracket' | 'superscript'>
+              options={CITATION_INTEXT_OPTIONS}
               value={citation.inText}
-              onChange={(e) => updateCitation({ inText: e.target.value as 'bracket' | 'superscript' })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:border-[#78C841] outline-none"
-            >
-              <option value="bracket">Ngoặc vuông [1-3] - Chuẩn Vancouver STDJ</option>
-              <option value="superscript">Chỉ số trên ¹⁻³</option>
-            </select>
+              onChange={(val) => updateCitation({ inText: val })}
+              size="sm"
+              variant="default"
+              fullWidth
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 mb-1">
               Ký tự dải số trích dẫn (Range Dash)
             </label>
-            <input
-              type="text"
+            <Select<string>
+              options={RANGE_DASH_OPTIONS}
               value={citation.rangeDash || '-'}
-              onChange={(e) => updateCitation({ rangeDash: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 focus:bg-white focus:border-[#78C841] outline-none"
+              onChange={(val) => updateCitation({ rangeDash: val })}
+              size="sm"
+              variant="default"
+              fullWidth
             />
           </div>
         </div>

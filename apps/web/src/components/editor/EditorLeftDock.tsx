@@ -3,9 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
+  ArrowLeft,
   Layers,
   Sliders,
   Save,
@@ -174,6 +176,13 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
   onDownloadTypst,
   isExportingTypst = false,
 }) => {
+  let router: any = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    // Fallback for headless testing environments where AppRouter is not mounted
+  }
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const downloadBtnRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -228,12 +237,20 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       className="hidden sm:flex flex-col items-center justify-between h-full w-12 sm:w-14 py-2 px-1 flex-shrink-0 select-none relative z-40"
       aria-label="Thanh công cụ trình biên tập"
     >
-      {/* TOP SECTION: HOME ICON */}
+      {/* TOP SECTION: BACK BUTTON */}
       <div className="relative z-10 flex flex-col items-center gap-2.5">
         <DockIconButton
-          href={homeHref}
-          label="Quay lại danh sách bài báo"
-          icon={<Home className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
+          onClick={() => {
+            if (homeHref && homeHref !== '/upload') {
+              if (router) router.push(homeHref);
+              else if (typeof window !== 'undefined') window.location.href = homeHref;
+            } else {
+              if (router) router.back();
+              else if (typeof window !== 'undefined' && window.history) window.history.back();
+            }
+          }}
+          label="Quay lại trang trước"
+          icon={<ArrowLeft className="w-5 h-5 text-zinc-700" strokeWidth={2.4} />}
         />
       </div>
 

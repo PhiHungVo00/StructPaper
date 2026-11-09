@@ -6,7 +6,7 @@ import {
   JournalArticleType,
   ALL_ARTICLE_TYPES,
 } from '@structpaper/journal-profiles';
-import { Layers, CheckCircle2, ShieldAlert, Sparkles, BookOpen } from 'lucide-react';
+import { Layers, Plus, Trash2, CheckCircle2, ShieldCheck, X } from 'lucide-react';
 
 interface JournalArticleTypesTabProps {
   profile: JournalProfile;
@@ -25,11 +25,16 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
   profile,
   onChange,
 }) => {
-  const currentTypes: JournalArticleType[] = profile.articleTypes && profile.articleTypes.length > 0
-    ? profile.articleTypes
-    : ALL_ARTICLE_TYPES;
+  const currentTypes: JournalArticleType[] =
+    profile.articleTypes && profile.articleTypes.length > 0
+      ? profile.articleTypes
+      : ALL_ARTICLE_TYPES;
 
   const [selectedTypeId, setSelectedTypeId] = useState<string>(currentTypes[0]?.id || 'research');
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newTypeId, setNewTypeId] = useState('');
+  const [newLabelVi, setNewLabelVi] = useState('');
+  const [newLabelEn, setNewLabelEn] = useState('');
 
   const selectedType = currentTypes.find((t) => t.id === selectedTypeId) || currentTypes[0];
 
@@ -52,39 +57,165 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
     handleUpdateType(typeId, { requiredSections: nextSections });
   };
 
+  const handleRemoveType = (typeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentTypes.length <= 1) {
+      alert('Tạp chí phải có tối thiểu 1 loại bài báo.');
+      return;
+    }
+    const updated = currentTypes.filter((t) => t.id !== typeId);
+    onChange({ articleTypes: updated });
+    if (selectedTypeId === typeId) {
+      setSelectedTypeId(updated[0]?.id || '');
+    }
+  };
+
+  const handleCreateNewType = () => {
+    const cleanId = newTypeId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    if (!cleanId || !newLabelVi.trim()) {
+      alert('Vui lòng nhập mã định danh và tên tiếng Việt.');
+      return;
+    }
+    if (currentTypes.some((t) => t.id === cleanId)) {
+      alert('Mã chuyên mục này đã tồn tại.');
+      return;
+    }
+
+    const newType: JournalArticleType = {
+      id: cleanId,
+      label: {
+        vi: newLabelVi.trim(),
+        en: newLabelEn.trim() || newLabelVi.trim(),
+      },
+      requiredSections: ['heading.abstract', 'h1', 'heading.references'],
+    };
+
+    const updated = [...currentTypes, newType];
+    onChange({ articleTypes: updated });
+    setSelectedTypeId(cleanId);
+    setIsAddingNew(false);
+    setNewTypeId('');
+    setNewLabelVi('');
+    setNewLabelEn('');
+  };
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 w-full">
       {/* Overview Banner */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-600" />
-            <span>8 Chuyên Mục &amp; Loại Bài Báo Học Thuật</span>
+          <h3 className="font-extrabold text-sm text-zinc-900 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-[#78C841]" strokeWidth={2.5} />
+            <span>Chuyên Mục &amp; Các Loại Bài Báo Được Tiếp Nhận</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Cấu hình các yêu cầu kiểm duyệt cấu trúc bắt buộc (IMRaD vs Tự do) cho từng thể loại bài báo theo quy định tạp chí.
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Cấu hình danh mục thể loại bài báo mà tạp chí chấp nhận cùng các đề mục bắt buộc kiểm duyệt.
           </p>
         </div>
-        <span className="text-xs font-mono font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-xl shrink-0">
-          {currentTypes.length} Thể loại
-        </span>
+
+        <button
+          type="button"
+          onClick={() => setIsAddingNew(true)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+        >
+          <Plus className="w-4 h-4 text-[#78C841]" />
+          <span>Thêm chuyên mục</span>
+        </button>
       </div>
 
+      {/* Add New Type Modal / Form */}
+      {isAddingNew && (
+        <div className="bg-[#E4F8D5]/60 border border-[#D9F99D] rounded-3xl p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#D9F99D] pb-2">
+            <h4 className="font-extrabold text-xs text-[#14532D] uppercase tracking-wider">
+              Khởi tạo thể loại bài báo mới
+            </h4>
+            <button
+              type="button"
+              onClick={() => setIsAddingNew(false)}
+              className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                Mã định danh (ID) *
+              </label>
+              <input
+                type="text"
+                value={newTypeId}
+                onChange={(e) => setNewTypeId(e.target.value)}
+                placeholder="VD: clinical-case"
+                className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-zinc-900 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                Tên tiếng Việt *
+              </label>
+              <input
+                type="text"
+                value={newLabelVi}
+                onChange={(e) => setNewLabelVi(e.target.value)}
+                placeholder="VD: Báo cáo ca lâm sàng"
+                className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-1.5 text-xs font-bold text-zinc-900 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-zinc-700 mb-1">
+                Tên tiếng Anh (International)
+              </label>
+              <input
+                type="text"
+                value={newLabelEn}
+                onChange={(e) => setNewLabelEn(e.target.value)}
+                placeholder="VD: Clinical Case Report"
+                className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-1.5 text-xs text-zinc-900 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setIsAddingNew(false)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 hover:bg-white"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateNewType}
+              className="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-[#14532D] text-white hover:bg-[#14532D]/90 shadow-xs"
+            >
+              Thêm chuyên mục này
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid: List on Left, Editor on Right */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-        {/* Left column: List of 8 Article Types */}
-        <div className="md:col-span-5 bg-white rounded-2xl border border-slate-200/80 p-2 space-y-1 shadow-xs">
+        {/* Left column: List of Article Types */}
+        <div className="md:col-span-5 bg-white rounded-3xl border border-zinc-200/80 p-2.5 space-y-1.5 shadow-xs">
+          <div className="px-3 py-1.5 text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider flex justify-between">
+            <span>Danh mục ({currentTypes.length})</span>
+            <span>Trạng thái</span>
+          </div>
+
           {currentTypes.map((type) => {
             const isSelected = type.id === selectedTypeId;
-            const hasAbstract = type.requiredSections.includes('heading.abstract');
             return (
-              <button
+              <div
                 key={type.id}
-                type="button"
                 onClick={() => setSelectedTypeId(type.id)}
-                className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between ${
+                className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer flex items-center justify-between group ${
                   isSelected
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'hover:bg-slate-50 text-slate-700'
+                    ? 'bg-zinc-900 text-white shadow-xs'
+                    : 'hover:bg-zinc-100/70 text-zinc-700'
                 }`}
               >
                 <div className="min-w-0 pr-2">
@@ -92,56 +223,61 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                     {type.label?.vi || type.id}
                   </div>
                   <div
-                    className={`text-[10.5px] truncate ${
-                      isSelected ? 'text-slate-300' : 'text-slate-400'
+                    className={`text-[10.5px] truncate font-medium ${
+                      isSelected ? 'text-zinc-300' : 'text-zinc-500'
                     }`}
                   >
                     {type.label?.en || type.id}
                   </div>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-1.5">
-                  {hasAbstract ? (
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold ${
-                        isSelected ? 'bg-[#D9F99D]/30 text-[#D9F99D]' : 'bg-[#D9F99D] text-[#14532D]'
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-zinc-200/70 text-zinc-600'
+                    }`}
+                  >
+                    {type.requiredSections?.length || 0} mục
+                  </span>
+
+                  {currentTypes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveType(type.id, e)}
+                      title="Xóa chuyên mục này khỏi tạp chí"
+                      className={`p-1 rounded-lg transition-colors ${
+                        isSelected
+                          ? 'hover:bg-white/20 text-zinc-400 hover:text-white'
+                          : 'hover:bg-rose-100 text-zinc-400 hover:text-rose-600'
                       }`}
                     >
-                      Abstract
-                    </span>
-                  ) : (
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                        isSelected ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      No Abs
-                    </span>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
 
-        {/* Right column: Detail & Section Requirements for Selected Type */}
+        {/* Right column: Selected Article Type Detail */}
         {selectedType && (
-          <div className="md:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
-                Cấu hình cho thể loại
+          <div className="md:col-span-7 bg-white rounded-3xl border border-zinc-200/80 p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="border-b border-zinc-100 pb-3">
+              <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest block">
+                MÃ THỂ LOẠI: {selectedType.id}
               </span>
-              <h4 className="font-black text-sm text-slate-900 mt-0.5">
+              <h4 className="text-sm sm:text-base font-extrabold text-zinc-900 mt-0.5">
                 {selectedType.label?.vi || selectedType.id}
               </h4>
-              <p className="text-xs text-slate-500 italic">{selectedType.label?.en}</p>
             </div>
 
-            {/* Bilingual Labels Editing */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Nhãn tiếng Việt
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Tên hiển thị tiếng Việt:
                 </label>
                 <input
                   type="text"
@@ -151,13 +287,13 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                       label: { ...selectedType.label, vi: e.target.value },
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:bg-white focus:border-[#78C841] outline-none"
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Nhãn tiếng Anh
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Tên hiển thị tiếng Anh:
                 </label>
                 <input
                   type="text"
@@ -167,43 +303,46 @@ export const JournalArticleTypesTab: React.FC<JournalArticleTypesTabProps> = ({
                       label: { ...selectedType.label, en: e.target.value },
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:bg-white focus:border-[#78C841] outline-none"
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:bg-white focus:border-[#78C841] outline-none"
                 />
               </div>
             </div>
 
             {/* Required Sections Selection */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-2">
-                Các khối nội dung bắt buộc (Preflight QC Rules):
-              </label>
+            <div className="pt-2 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-zinc-900">
+                <ShieldCheck className="w-4 h-4 text-[#78C841]" strokeWidth={2.5} />
+                <span>Các đề mục bắt buộc kiểm duyệt (Preflight Rules):</span>
+              </div>
+
               <div className="space-y-2">
                 {SECTION_OPTIONS.map((sec) => {
                   const isChecked = selectedType.requiredSections.includes(sec.id);
                   return (
                     <label
                       key={sec.id}
-                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
                         isChecked
-                          ? 'border-[#B4E50D]/60 bg-[#D9F99D]/20 text-slate-900'
-                          : 'border-slate-200/80 hover:bg-slate-50 text-slate-600'
+                          ? 'border-[#78C841] bg-[#E4F8D5]/30'
+                          : 'border-zinc-200/80 bg-zinc-50/50 hover:bg-zinc-50'
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleSection(selectedType.id, sec.id)}
-                        className="rounded text-[#78C841] focus:ring-[#78C841]"
-                      />
-                      <span className="font-semibold flex-1">{sec.label}</span>
-                      <span className="font-mono text-[10px] text-slate-400">{sec.id}</span>
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleSection(selectedType.id, sec.id)}
+                          className="rounded text-[#78C841] focus:ring-[#78C841] w-4 h-4"
+                        />
+                        <span className="text-xs font-bold text-zinc-800">{sec.label}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-400 font-semibold">
+                        {sec.id}
+                      </span>
                     </label>
                   );
                 })}
               </div>
-              <p className="text-[10.5px] text-slate-400 mt-2">
-                Hệ thống QC Engine sẽ kiểm tra sự hiện diện của các phần này trước khi xuất bản bản thảo.
-              </p>
             </div>
           </div>
         )}

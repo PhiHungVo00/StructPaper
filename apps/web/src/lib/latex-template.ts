@@ -113,7 +113,9 @@ const OFFICIAL_SIDEBOX_TEMPLATE: string = "\\newsavebox{\\temp}\n        \\sbox{
 export function generateFullJournalLatex(paper: CompletePaper, customSettings?: LayoutSettings): string {
   const { metadata, sections, references } = paper;
   const tmpl = getJournalTemplate(metadata.journalId);
-  const rgb = hexToRgb(tmpl.color);
+  const customColor = (customSettings as any)?.color || (paper as any)?.color || (metadata as any)?.journalColor;
+  const journalColor = customColor || tmpl.color;
+  const rgb = hexToRgb(journalColor);
 
   const settings = customSettings || paper.layoutSettings || DEFAULT_LAYOUT_SETTINGS;
   const isOneColumn = settings.columnLayout === '1-column';
@@ -283,13 +285,17 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
   const corrAff = escapeLatex(metadata.corresponding?.affiliation || rawAffiliations[0]?.name || 'Đại học Quốc gia TP.HCM');
   const corrEmail = escapeLatex((metadata.corresponding?.email || corrAuthorObj?.email || rawAuthors[0]?.email || 'tacgia@vnuhcm.edu.vn').replace(/\.+$/, ''));
 
-  const mainJournalName = 'Tạp chí Phát triển Khoa học và Công nghệ';
-  const subSeriesName = tmpl.name.replace(/^Tạp chí Phát triển (Khoa học &|KH&CN|Khoa học và) Công nghệ\s*[–-]?\s*/i, '').trim();
+  const customJournalName = metadata.journalName || tmpl.name;
+  const isVnuhcmMain = /^Tạp chí Phát triển (Khoa học &|KH&CN|Khoa học và) Công nghệ/i.test(customJournalName);
+  const mainJournalName = isVnuhcmMain ? 'Tạp chí Phát triển Khoa học và Công nghệ' : customJournalName;
+  const subSeriesName = isVnuhcmMain
+    ? customJournalName.replace(/^Tạp chí Phát triển (Khoa học &|KH&CN|Khoa học và) Công nghệ\s*[–-]?\s*/i, '').trim()
+    : '';
   const journalSuffix = subSeriesName ? ` -- ${subSeriesName}` : '';
 
   const rawAbbv = metadata.journalAbbv || tmpl.shortName;
   const subAbbv = rawAbbv.replace(/^Sci\.\s*Tech\.\s*Dev\.\s*J\.?\s*/i, '').trim();
-  const formattedAbbv = subAbbv ? ` - ${subAbbv.replace(/^-\s*/, '')}` : '';
+  const formattedAbbv = subAbbv ? ` - ${subAbbv.replace(/^-\s*/, '')}` : (rawAbbv && rawAbbv !== tmpl.shortName ? ` - ${rawAbbv}` : '');
 
   const metaBlock = `\\def\\cmDoi{${escapeLatex(metadata.doi || `https://doi.org/10.32508/${tmpl.id.toLowerCase()}.v${metadata.volume || '1'}i${metadata.issue || '1'}`)}}
 \\def\\cmVolume{${metadata.volume || '1'}}

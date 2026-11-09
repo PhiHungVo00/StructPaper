@@ -1,21 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Save,
-  RotateCcw,
-  Sparkles,
-  BookOpen,
-  CheckCircle2,
-  Sliders,
-  FileText,
-  Layers,
-  Layout,
-  Code2,
-} from 'lucide-react';
+import { ArrowLeft, RefreshCw, Save, Sliders, Eye } from 'lucide-react';
 import { JournalProfile } from '@structpaper/journal-profiles';
 import {
   ManagedJournalProfile,
@@ -23,34 +10,82 @@ import {
 } from '@/lib/templates/journal-storage';
 import { toast } from '@/components/DynamicIslandToast';
 import { useManagedJournals } from '@/hooks';
+import { JournalEditorDock } from './JournalEditorDock';
+import { JournalEditorTopBar } from './JournalEditorTopBar';
+import {
+  JournalEditorTabNav,
+  JournalEditorTabKey,
+} from './JournalEditorTabNav';
 import { JournalGeneralTab } from './tabs/JournalGeneralTab';
 import { JournalFrontMatterTab } from './tabs/JournalFrontMatterTab';
 import { JournalArticleTypesTab } from './tabs/JournalArticleTypesTab';
 import { JournalLayoutTab } from './tabs/JournalLayoutTab';
-import { JournalJsonInspectorTab } from './tabs/JournalJsonInspectorTab';
+import { ResizableSplitLayout } from '@/components/editor/ResizableSplitLayout';
+import { LivePreviewPane } from '@/components/editor/LivePreviewPane';
+import { generateSamplePaperForJournal } from '@/lib/templates/sample-template-paper';
+import { useEditorCompilation } from '@/components/editor/hooks';
+import { CompletePaper } from '@/types/paper';
 
 interface JournalDetailEditorProps {
   initialManaged: ManagedJournalProfile;
   isNew?: boolean;
 }
 
-type TabKey = 'general' | 'frontmatter' | 'article-types' | 'layout' | 'json';
+function getPrecompiledPdfForJournal(id: string): string | null {
+  const code = (id || '').toLowerCase();
+  if (code === 'std' || code === 'vnuhcm-std') return '/sample-pdfs/STD.pdf';
+  if (code === 'hs' || code === 'vnuhcm-hs') return '/sample-pdfs/HS.pdf';
+  if (code === 'arns' || code === 'vnuhcm-arns') return '/sample-pdfs/ARNS.pdf';
+  if (code === 'ebl' || code === 'vnuhcm-ebl') return '/sample-pdfs/EBL.pdf';
+  if (code === 'ees' || code === 'vnuhcm-ees') return '/sample-pdfs/EES.pdf';
+  if (code === 'et' || code === 'vnuhcm-et') return '/sample-pdfs/ET.pdf';
+  if (code === 'ssh' || code === 'vnuhcm-ssh') return '/sample-pdfs/SSH.pdf';
+  return null;
+}
 
 export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
   initialManaged,
   isNew = false,
 }) => {
   const router = useRouter();
-  const { saveProfile, resetProfile, createTestPaper } = useManagedJournals();
+  const { saveProfile, resetProfile } = useManagedJournals();
+
   const [managed, setManaged] = useState<ManagedJournalProfile>(initialManaged);
-  const [activeTab, setActiveTab] = useState<TabKey>('general');
+  const [activeTab, setActiveTab] = useState<JournalEditorTabKey>('general');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const brandColor = managed.profile.color || '#1e3a8a';
-  const nameVi = managed.profile.names?.vi || (isNew ? 'Hồ sơ Tạp chí Mới' : 'Tạp chí');
-  const shortCode = managed.profile.names?.short || managed.id.toUpperCase();
+  // Dynamic sample paper based on active in-memory profile
+  const samplePaper = useMemo(
+    () => generateSamplePaperForJournal(managed.profile),
+    [managed.profile]
+  );
+  const [livePaper, setLivePaper] = useState<CompletePaper>(samplePaper);
 
-  const handleUpdateProfile = (patch: Partial<JournalProfile>) => {
+  const {
+    compiledPdfUrl,
+    setCompiledPdfUrl,
+    isCompilingPdf,
+    compileStats,
+    compileErrorInfo,
+    setCompileErrorInfo,
+    compileLatexToPdf,
+  } = useEditorCompilation({
+    paper: livePaper,
+    formData: livePaper,
+    onUpdatePaper: setLivePaper,
+  });
+
+  // Preload official precompiled PDF if available for instant display on mount
+  useEffect(() => {
+    const precompiled = getPrecompiledPdfForJournal(managed.id);
+    if (precompiled && !compiledPdfUrl) {
+      setCompiledPdfUrl(precompiled);
+    }
+  }, [managed.id, compiledPdfUrl, setCompiledPdfUrl]);
+
+  const handleUpdateProfile = useCallback((patch: Partial<JournalProfile>) => {
     setManaged((prev) => ({
       ...prev,
       profile: {
@@ -58,23 +93,33 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
         ...patch,
       },
     }));
-  };
+    setIsDirty(true);
+  }, []);
 
-  const handleStatusChange = (status: JournalStatus) => {
-    setManaged((prev) => ({
-      ...prev,
-      status,
-    }));
-  };
+  const handleToggleStatus = useCallback(() => {
+    const nextStatus: JournalStatus =
+      managed.status === 'published' ? 'draft' : 'published';
+    setManaged((prev) => ({ ...prev, status: nextStatus }));
+    setIsDirty(true);
+    toast.info(
+      'Trạng thái mẫu',
+      nextStatus === 'published'
+        ? 'Chuyển sang: Đang phát hành (published)'
+        : 'Chuyển sang: Bản nháp (draft)'
+    );
+  }, [managed.status]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     setIsSaving(true);
     try {
       saveProfile(managed);
+      setIsDirty(false);
+      setSaveSuccess(true);
       toast.success(
         'Đã lưu thành công',
         `Đã lưu cấu hình hồ sơ tạp chí "${managed.profile.names?.short || managed.id}"`
       );
+      setTimeout(() => setSaveSuccess(false), 2500);
       if (isNew) {
         router.push(`/templates/journal/${managed.id}`);
       }
@@ -82,11 +127,11 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
       const msg = err instanceof Error ? err.message : 'Lỗi khi lưu dữ liệu';
       toast.error('Lưu thất bại', msg);
     } finally {
-      setTimeout(() => setIsSaving(false), 300);
+      setIsSaving(false);
     }
-  };
+  }, [managed, isNew, router, saveProfile]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (typeof window !== 'undefined') {
       const confirmed = window.confirm(
         'Bạn có chắc chắn muốn khôi phục về cấu hình Base mặc định của tạp chí này?'
@@ -95,6 +140,10 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
         try {
           const reset = resetProfile(managed.id);
           setManaged(reset);
+          setIsDirty(false);
+          const resetSample = generateSamplePaperForJournal(reset.profile);
+          setLivePaper(resetSample);
+          compileLatexToPdf(resetSample);
           toast.info('Đã khôi phục', 'Đã đặt lại thông số theo chuẩn gốc của hệ thống.');
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Không thể khôi phục';
@@ -102,123 +151,26 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
         }
       }
     }
-  };
+  }, [managed.id, resetProfile, compileLatexToPdf]);
 
-  const handleCreateTestPaper = () => {
-    createTestPaper(managed);
-  };
+  const handleRecompile = useCallback(async () => {
+    const updated = generateSamplePaperForJournal(managed.profile);
+    setLivePaper(updated);
+    await compileLatexToPdf(updated);
+  }, [managed.profile, compileLatexToPdf]);
 
-  const tabs: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { key: 'general', label: '1. Nhận diện & Thương hiệu', icon: Sliders },
-    { key: 'frontmatter', label: '2. Tóm tắt & Từ khóa', icon: FileText },
-    { key: 'article-types', label: '3. Chuyên mục & Loại bài', icon: Layers },
-    { key: 'layout', label: '4. Dàn trang & LaTeX', icon: Layout },
-    { key: 'json', label: '5. Resolved JSON Preview', icon: Code2 },
-  ];
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20">
-      {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/templates"
-            className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
-            title="Quay lại danh mục tạp chí"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="px-2.5 py-0.5 rounded-xl text-xs font-black"
-                style={{
-                  backgroundColor: `${brandColor}18`,
-                  color: brandColor,
-                  border: `1px solid ${brandColor}40`,
-                }}
-              >
-                {shortCode}
-              </span>
-              <h2 className="font-black text-base sm:text-lg text-slate-900 leading-tight">
-                {nameVi}
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 italic mt-0.5">
-              {managed.profile.names?.en || 'Science & Technology Development Journal'}
-            </p>
-          </div>
-        </div>
-
-        {/* Right Action Controls: Status dropdown, Reset, Save, Create paper */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <select
-            value={managed.status}
-            onChange={(e) => handleStatusChange(e.target.value as JournalStatus)}
-            className="bg-slate-50 border border-slate-200/90 text-xs font-bold rounded-xl px-2.5 py-2 text-slate-800 outline-none"
-          >
-            <option value="published">Đang phát hành (published)</option>
-            <option value="draft">Bản nháp (draft)</option>
-            <option value="validated">Đã kiểm duyệt (validated)</option>
-            <option value="archived">Lưu trữ (archived)</option>
-          </select>
-
-          {!isNew && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
-              title="Khôi phục cấu hình mặc định ban đầu"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Khôi phục Base</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleCreateTestPaper}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
-            title="Khởi tạo một bài báo mẫu để kiểm tra thực tế"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-[#78C841]" />
-            <span className="hidden sm:inline">Tạo bài mẫu</span>
-          </button>
-
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs hover:shadow-sm"
-          >
-            <Save className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}</span>
-          </button>
-        </div>
+  // Left Side: Editor Form Tabs
+  const leftEditorContent = (
+    <div className="h-full flex flex-col min-h-0 min-w-0 w-full overflow-hidden space-y-3">
+      <div className="flex-shrink-0">
+        <JournalEditorTabNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          articleTypesCount={managed.profile.articleTypes?.length}
+        />
       </div>
 
-      {/* Tabs Navigation Bar */}
-      <div className="flex items-center gap-1 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 overflow-x-auto shadow-2xs">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                isActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Active Tab Panel */}
-      <div className="pt-2">
+      <div className="flex-1 min-h-0 min-w-0 h-full w-full overflow-y-auto pr-1">
         {activeTab === 'general' && (
           <JournalGeneralTab
             profile={managed.profile}
@@ -244,9 +196,99 @@ export const JournalDetailEditor: React.FC<JournalDetailEditorProps> = ({
             onChange={handleUpdateProfile}
           />
         )}
-        {activeTab === 'json' && (
-          <JournalJsonInspectorTab profile={managed.profile} />
-        )}
+      </div>
+    </div>
+  );
+
+  // Right Side: Live XeLaTeX Preview
+  const rightPreviewContent = (
+    <div className="h-full flex flex-col min-h-0">
+      <LivePreviewPane
+        paper={livePaper}
+        compiledPdfUrl={compiledPdfUrl}
+        isCompilingPdf={isCompilingPdf}
+        compileStats={compileStats}
+        compileErrorInfo={compileErrorInfo}
+        onRecompile={handleRecompile}
+        onClearError={() => setCompileErrorInfo(null)}
+      />
+    </div>
+  );
+
+  return (
+    <div className="h-full w-full flex flex-row p-2 sm:p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden bg-[#F8F9FA]">
+      {/* Dedicated Left Toolbar Dock */}
+      <JournalEditorDock
+        status={managed.status}
+        onToggleStatus={handleToggleStatus}
+        onReset={handleReset}
+        onRecompile={handleRecompile}
+        isCompiling={isCompilingPdf}
+        onSave={handleSave}
+        isSaving={isSaving}
+        isDirty={isDirty}
+        saveSuccess={saveSuccess}
+      />
+
+      {/* Main Workspace Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative z-10 gap-2 sm:gap-3">
+        {/* Mobile Header Toolbar (Only visible on phones) */}
+        <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-zinc-200">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Quay lại danh mục tạp chí"
+            className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs"
+            title="Quay lại danh mục tạp chí"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleRecompile}
+              disabled={isCompilingPdf}
+              aria-label="Biên dịch lại xem thử (di động)"
+              className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 shadow-2xs"
+              title="Biên dịch lại xem thử"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isCompilingPdf ? 'animate-spin text-[#78C841]' : ''}`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              aria-label="Lưu thay đổi (di động)"
+              className="p-2 rounded-xl bg-[#78C841] text-zinc-950 font-bold shadow-2xs"
+              title="Lưu thay đổi"
+            >
+              <Save className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Clean Header Bar: Journal Name + Badge + Straight Subtitle */}
+        <JournalEditorTopBar
+          profile={managed.profile}
+          status={managed.status}
+          isNew={isNew}
+        />
+
+        {/* Split View: Left Forms & Right Live XeLaTeX Preview */}
+        <div className="flex-1 min-h-0 h-full w-full overflow-hidden">
+          <ResizableSplitLayout
+            className="h-full"
+            storageKey="structpaper_template_split_v2"
+            leftContent={leftEditorContent}
+            rightContent={rightPreviewContent}
+            defaultSplit={50}
+            minPercent={28}
+            maxPercent={72}
+          />
+        </div>
       </div>
     </div>
   );

@@ -34,7 +34,10 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
 
   return (
     <motion.div
-      onClick={() => router.push(`/templates/journal/${id}`)}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, a')) return;
+        router.push(`/templates/journal/${id}`);
+      }}
       whileHover={isTest ? undefined : { scale: 1.02 }}
       whileTap={isTest ? undefined : { scale: 0.98 }}
       transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
@@ -84,10 +87,13 @@ export const JournalProfileCard: React.FC<JournalProfileCardProps> = ({
         </Link>
 
         <button
+          type="button"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onCreatePaper(managed);
           }}
+          onPointerDown={(e) => e.stopPropagation()}
           className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 hover:text-zinc-950 transition-colors cursor-pointer"
         >
           <span>Tạo bài báo từ mẫu</span>
