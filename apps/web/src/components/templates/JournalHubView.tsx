@@ -1,13 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useManagedJournals } from '@/hooks';
 import { JournalFiltersBar } from './JournalFiltersBar';
 import { JournalProfilesList } from './JournalProfilesList';
 import { JournalProfileCardShimmer } from './JournalProfileCardShimmer';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
+import { ManagedJournalProfile } from '@/lib/templates/journal-storage';
+import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
 
 export const JournalHubView: React.FC = () => {
+  const [selectedJournalForPaper, setSelectedJournalForPaper] =
+    useState<ManagedJournalProfile | null>(null);
+
   const {
     journals,
     filteredJournals,
@@ -52,7 +57,7 @@ export const JournalHubView: React.FC = () => {
       ) : (
         <JournalProfilesList
           journals={filteredJournals}
-          onCreatePaper={createPaperFromTemplate}
+          onCreatePaper={(managed) => setSelectedJournalForPaper(managed)}
           onResetFilters={() => {
             setSearchQuery('');
             setStatusFilter('all');
@@ -72,6 +77,15 @@ export const JournalHubView: React.FC = () => {
           </div>
           <div className="h-[1px] bg-gradient-to-r from-transparent via-zinc-300 to-transparent w-24" />
         </div>
+      )}
+
+      {/* 5. Create Paper Modal with Preselected Template */}
+      {selectedJournalForPaper && (
+        <CreatePaperModal
+          isOpen={Boolean(selectedJournalForPaper)}
+          onClose={() => setSelectedJournalForPaper(null)}
+          preselectedManaged={selectedJournalForPaper}
+        />
       )}
     </div>
   );

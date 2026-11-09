@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 
 // Mock next/navigation
 const mockPush = vi.fn();
@@ -144,16 +144,27 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
       expect(screen.queryByText('VNUHCM-ARNS')).toBeNull();
     });
 
-    it('creates a new paper when clicking "Tạo bài báo từ mẫu" and redirects to editor', () => {
+    it('opens upload modal when clicking "Tạo bài báo từ mẫu" and redirects to editor on skip or upload', async () => {
       render(<JournalHubView />);
 
       const createButtons = screen.getAllByRole('button', { name: /Tạo bài báo từ mẫu/i });
       expect(createButtons.length).toBe(7);
 
-      // Click create on first journal
+      // Click create on first journal -> opens modal
       fireEvent.click(createButtons[0]);
 
-      expect(mockPush).toHaveBeenCalledWith('/editor');
+      // Verify modal is open with dropzone and skip button
+      const skipBtn = await screen.findByTestId('skip-to-blank-btn');
+      expect(skipBtn).toBeDefined();
+
+      // Click skip to create blank paper
+      await act(async () => {
+        fireEvent.click(skipBtn);
+      });
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/editor');
+      });
     });
   });
 

@@ -61,8 +61,10 @@ import {
   PaperTable,
   PaperTableShimmer,
   PaperQuickEditModal,
+  PaperDeleteConfirmModal,
   type FilterWorkflowStatus,
 } from '@/components/papers';
+import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
 import { PaperHubView } from '@/components/authoring/PaperHubView';
 import { SAMPLE_VNUHCM_RECORDS } from '@/lib/authoring/sample-records-seeder';
 import { defaultDatabase } from '@structpaper/storage';
@@ -223,6 +225,76 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
       // Verify 5 rows rendered
       const rows = tableShimmer.querySelectorAll('tbody tr');
       expect(rows.length).toBe(5);
+    });
+  });
+
+  describe('PaperDeleteConfirmModal Component', () => {
+    it('renders 3D warning header, paper details, and triggers deletion on confirm', async () => {
+      const targetPaper = SAMPLE_VNUHCM_RECORDS[0];
+      const handleClose = vi.fn();
+      const handleConfirm = vi.fn();
+
+      render(
+        <PaperDeleteConfirmModal
+          paper={targetPaper}
+          isOpen={true}
+          onClose={handleClose}
+          onConfirm={handleConfirm}
+        />
+      );
+
+      // Verify modal and heading
+      expect(screen.getByTestId('paper-delete-modal')).toBeDefined();
+      expect(screen.getByText('Xóa bài báo này?')).toBeDefined();
+      expect(screen.getByText(/bị xóa khỏi máy của bạn/i)).toBeDefined();
+
+      // Click cancel
+      const cancelBtn = screen.getByRole('button', { name: 'Hủy' });
+      fireEvent.click(cancelBtn);
+      expect(handleClose).toHaveBeenCalled();
+
+      // Click confirm delete
+      const confirmBtn = screen.getByTestId('confirm-delete-btn');
+      await act(async () => {
+        fireEvent.click(confirmBtn);
+      });
+      expect(handleConfirm).toHaveBeenCalledWith(targetPaper.info.id);
+    });
+  });
+
+  describe('CreatePaperModal Component', () => {
+    it('supports 2-step flow: step 1 dropzone / skip to blank -> step 2 compact templates -> editor', async () => {
+      const handleClose = vi.fn();
+
+      render(
+        <CreatePaperModal
+          isOpen={true}
+          onClose={handleClose}
+        />
+      );
+
+      expect(screen.getByTestId('create-paper-modal')).toBeDefined();
+      expect(screen.getByTestId('create-paper-dropzone')).toBeDefined();
+
+      // Click "Bỏ qua & Bắt đầu bằng bản thảo trắng" -> advances to Step 2
+      const skipBtn = screen.getByTestId('skip-to-blank-btn');
+      await act(async () => {
+        fireEvent.click(skipBtn);
+      });
+
+      // Step 2: verify compact template cards
+      expect(screen.getByText('7 Mẫu tạp chí ĐHQG-HCM')).toBeDefined();
+      const stdTemplateCard = screen.getByTestId('compact-template-std');
+      expect(stdTemplateCard).toBeDefined();
+
+      // Select STD template -> redirects to editor
+      await act(async () => {
+        fireEvent.click(stdTemplateCard);
+      });
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/editor');
+      });
     });
   });
 

@@ -4,6 +4,7 @@ export * from './PaperFiltersBar';
 export * from './PaperCard';
 export * from './PaperTable';
 export * from './PaperQuickEditModal';
+export * from './PaperDeleteConfirmModal';
 export * from './EmptyPapersState';
 export * from './PaperCardShimmer';
 export * from './PaperTableShimmer';

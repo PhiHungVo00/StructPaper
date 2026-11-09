@@ -1,14 +1,11 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   Search,
   LayoutGrid,
   List,
-  UploadCloud,
-  Sparkles,
   X,
 } from 'lucide-react';
 import {
@@ -102,10 +99,10 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Row 1: Eatzy-style Search & Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Row 1: Eatzy-style Search Bar */}
+      <div className="w-full">
         {/* Eatzy Search Input Box */}
-        <div className="flex-1 max-w-lg relative group">
+        <div className="w-full relative group">
           <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-3 z-10 pointer-events-none">
             <Search className="w-5 h-5 text-gray-400 group-hover:text-zinc-600 group-focus-within:text-[#78C841] transition-colors" />
             <div className="w-px h-4 bg-gray-200 group-hover:bg-zinc-300 transition-colors" />
@@ -134,36 +131,6 @@ export const PaperFiltersBar: React.FC<PaperFiltersBarProps> = ({
             >
               <X className="w-4 h-4 text-zinc-600 group-hover/close:rotate-90 transition-transform duration-300" />
             </button>
-          )}
-        </div>
-
-        {/* Action CTAs: Upload DOCX & Create from Template */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/upload"
-            style={{ boxShadow: 'inset 0 0 16px rgba(0, 0, 0, 0.08)' }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-semibold bg-slate-50/40 backdrop-blur-sm border-2 border-white text-zinc-700 hover:text-zinc-900 shadow-eatzy-inner hover:shadow-eatzy-inner-hover transition-all"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
-            <span>Tải file DOCX</span>
-          </Link>
-
-          {onCreateFromTemplate ? (
-            <button
-              onClick={onCreateFromTemplate}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Tạo từ mẫu</span>
-            </button>
-          ) : (
-            <Link
-              href="/templates"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-2xs transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Tạo từ mẫu</span>
-            </Link>
           )}
         </div>
       </div>

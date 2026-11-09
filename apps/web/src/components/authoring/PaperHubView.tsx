@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import { usePapersHub } from '@/hooks';
+import type { ManuscriptRecord } from '@structpaper/doc-model';
 import {
   RecentPapersRow,
   PaperFiltersBar,
@@ -12,11 +13,16 @@ import {
   PaperTable,
   PaperTableShimmer,
   PaperQuickEditModal,
+  PaperDeleteConfirmModal,
   EmptyPapersState,
 } from '@/components/papers';
+import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
 
 export const PaperHubView: React.FC = () => {
   const router = useRouter();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [deletingPaper, setDeletingPaper] = useState<ManuscriptRecord | null>(null);
+
   const {
     records,
     filteredPapers,
@@ -36,6 +42,7 @@ export const PaperHubView: React.FC = () => {
     setViewMode,
     setActiveMenuId,
     setEditingPaper,
+    loadRecords,
     handleOpenEditor,
     handleTogglePin,
     handleSaveQuickEdit,
@@ -57,7 +64,7 @@ export const PaperHubView: React.FC = () => {
       <RecentPapersRow
         papers={records}
         onOpenPaper={handleOpenEditor}
-        onCreateNew={() => router.push('/templates')}
+        onCreateNew={() => setIsCreateModalOpen(true)}
         isLoading={isLoading}
       />
 
@@ -76,7 +83,7 @@ export const PaperHubView: React.FC = () => {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           countsByStatus={countsByStatus}
-          onCreateFromTemplate={() => router.push('/templates')}
+          onCreateFromTemplate={() => setIsCreateModalOpen(true)}
         />
       </div>
 
@@ -102,7 +109,7 @@ export const PaperHubView: React.FC = () => {
             setStatusFilter('all');
             setJournalFilter('all');
           }}
-          onCreateFromTemplate={() => router.push('/templates')}
+          onCreateFromTemplate={() => setIsCreateModalOpen(true)}
         />
       ) : viewMode === 'grid' ? (
         <div
@@ -124,7 +131,14 @@ export const PaperHubView: React.FC = () => {
               onTogglePin={handleTogglePin}
               onDuplicate={handleDuplicate}
               onExportBackup={handleExportBackup}
-              onDelete={handleDelete}
+              onDelete={(id) => {
+                const target = records.find((r) => r.info.id === id);
+                if (target) {
+                  setDeletingPaper(target);
+                } else {
+                  handleDelete(id);
+                }
+              }}
             />
           ))}
         </div>
@@ -142,7 +156,14 @@ export const PaperHubView: React.FC = () => {
           onTogglePin={handleTogglePin}
           onDuplicate={handleDuplicate}
           onExportBackup={handleExportBackup}
-          onDelete={handleDelete}
+          onDelete={(id) => {
+            const target = records.find((r) => r.info.id === id);
+            if (target) {
+              setDeletingPaper(target);
+            } else {
+              handleDelete(id);
+            }
+          }}
         />
       )}
 
@@ -169,6 +190,23 @@ export const PaperHubView: React.FC = () => {
           onSave={handleSaveQuickEdit}
         />
       )}
+
+      {/* 6. Delete Confirmation Modal (matching Image 2) */}
+      {deletingPaper && (
+        <PaperDeleteConfirmModal
+          paper={deletingPaper}
+          isOpen={Boolean(deletingPaper)}
+          onClose={() => setDeletingPaper(null)}
+          onConfirm={handleDelete}
+        />
+      )}
+
+      {/* 7. 2-Step Create Paper Modal (Upload DOCX / Blank -> Select Template -> Editor) */}
+      <CreatePaperModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onPaperCreated={() => loadRecords()}
+      />
     </div>
   );
 };
