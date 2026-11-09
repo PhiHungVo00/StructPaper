@@ -6,25 +6,23 @@ import { Slot } from '@/platform';
 
 export default function SettingsPage() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      {/* Banner */}
-      <div className="bg-white/75 backdrop-blur-xl border border-white/80 rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#D9F99D] text-[#14532D] flex items-center justify-center">
-            <Settings className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
-              Cài Đặt Hệ Thống
+    <div className="w-full max-w-5xl mx-auto space-y-6 pb-16 px-4 sm:px-6 pt-2">
+      {/* 1. Header Minimalist matching Templates & Papers Page */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <Settings className="w-6 h-6 text-[#78C841]" strokeWidth={3} />
+              <span>Cài Đặt Hệ Thống</span>
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
-              Quản lý phiên bản ứng dụng, kiểm tra cập nhật tự động và cấu hình nền tảng.
-            </p>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E4F8D5] text-[#14532D]">
+              Cấu hình &amp; Nền tảng
+            </span>
           </div>
         </div>
       </div>
 
-      {/* App Distribution Slot (Web: DownloadDesktopCard; Desktop: CheckForUpdateCard) */}
+      {/* 2. App Distribution Slot (Web: DownloadDesktopCard; Desktop: CheckForUpdateCard) */}
       <Slot id="app-distribution" />
     </div>
   );

@@ -3,12 +3,8 @@
 import React from 'react';
 import {
   Monitor,
-  HardDrive,
-  Zap,
-  ArrowDownToLine,
-  Apple,
   ExternalLink,
-  ShieldCheck,
+  ArrowDownToLine,
 } from 'lucide-react';
 
 const WINDOWS_DOWNLOAD_URL =
@@ -19,112 +15,136 @@ const ALL_RELEASES_URL = 'https://github.com/StructPaper/StructPaper/releases/la
 
 export function DownloadDesktopCard(): React.ReactElement {
   return (
-    <div
-      data-testid="download-desktop-card"
-      className="bg-white/80 backdrop-blur-md border border-white/80 rounded-3xl p-6 sm:p-7 shadow-2xs space-y-5"
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#D9F99D] text-[#14532D] flex items-center justify-center shrink-0">
-            <Monitor className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100/70 text-emerald-800 text-[11px] font-bold tracking-wide uppercase mb-1">
-              Bản Cài Đặt Desktop Khuyên Dùng
-            </div>
-            <h2 className="text-base sm:text-lg font-bold text-zinc-900 tracking-tight">
-              Cài Đặt Ứng Dụng StructPaper Cho Máy Tính (Desktop App)
+    <div data-testid="download-desktop-card" className="space-y-4">
+      {/* 1. Header Toolbar Minimalist */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <Monitor className="w-5 h-5 text-[#78C841]" strokeWidth={2.5} />
+              <span>Cài Đặt Ứng Dụng StructPaper Cho Máy Tính (Desktop App)</span>
             </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#D9F99D] text-[#14532D]">
+              Khuyên dùng
+            </span>
           </div>
-        </div>
-      </div>
-
-      {/* Main highlight callout */}
-      <div className="bg-gradient-to-r from-emerald-50/80 to-lime-50/60 border border-emerald-200/60 rounded-2xl p-4 sm:p-4.5">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-white text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs border border-emerald-100">
-            <Zap className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-zinc-900 leading-snug">
-              Tích hợp sẵn Tectonic XeTeX biên dịch 100% ngoại tuyến siêu tốc, lưu trữ dữ liệu an toàn trên ổ cứng.
-            </p>
-            <p className="text-xs text-zinc-600 leading-relaxed">
-              Trải nghiệm xuất bản báo cáo khoa học mượt mà nhất mà không lo gián đoạn mạng hoặc rò rỉ bản thảo chưa công bố.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Features grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/70 space-y-1.5">
-          <div className="flex items-center gap-2 text-zinc-800 font-bold text-xs">
-            <Zap className="w-4 h-4 text-emerald-600" />
-            <span>Biên dịch XeTeX tức thì</span>
-          </div>
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
-            Biên dịch trực tiếp bằng Tectonic nhúng nội bộ, hoàn thành bản in PDF chuẩn trong chưa đầy 1.5 giây.
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Tích hợp sẵn Tectonic XeTeX biên dịch 100% ngoại tuyến siêu tốc, lưu trữ dữ liệu an toàn trên ổ cứng.
           </p>
         </div>
-
-        <div className="p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/70 space-y-1.5">
-          <div className="flex items-center gap-2 text-zinc-800 font-bold text-xs">
-            <HardDrive className="w-4 h-4 text-emerald-600" />
-            <span>Lưu trữ trên ổ cứng</span>
-          </div>
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
-            Bản thảo, hình vẽ và cơ sở dữ liệu BibTeX được mã hóa và lưu tại thư mục hệ thống cục bộ.
-          </p>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/70 space-y-1.5">
-          <div className="flex items-center gap-2 text-zinc-800 font-bold text-xs">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Tự động cập nhật bảo mật</span>
-          </div>
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
-            Hỗ trợ tự động kiểm tra và nâng cấp phiên bản với chữ ký số Ed25519 Minisign bảo vệ toàn vẹn.
-          </p>
-        </div>
-      </div>
-
-      {/* Download action buttons */}
-      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <a
-          href={WINDOWS_DOWNLOAD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="download-windows-btn"
-          className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-sm shadow-md transition-all active:scale-[0.98] group"
-        >
-          <Monitor className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>Tải bản Windows (.exe Setup)</span>
-          <ArrowDownToLine className="w-4 h-4 text-zinc-400 group-hover:translate-y-0.5 transition-transform shrink-0" />
-        </a>
-
-        <a
-          href={MACOS_DOWNLOAD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="download-macos-btn"
-          className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-800 font-semibold text-sm shadow-2xs transition-all active:scale-[0.98] group"
-        >
-          <Apple className="w-4 h-4 text-zinc-700 shrink-0" />
-          <span>Tải bản macOS (.dmg Apple Silicon)</span>
-          <ArrowDownToLine className="w-4 h-4 text-zinc-400 group-hover:translate-y-0.5 transition-transform shrink-0" />
-        </a>
 
         <a
           href={ALL_RELEASES_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="sm:ml-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition-colors py-2 px-1"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-500 hover:text-zinc-900 transition-colors shrink-0 py-1"
         >
           <span>Xem tất cả bản phát hành</span>
-          <ExternalLink className="w-3.5 h-3.5" />
+          <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
         </a>
+      </div>
+
+      {/* 2. Dual Platform Cards (Windows & macOS) matching Templates / Papers Card Style */}
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        {/* Card 1: Windows */}
+        <div
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px]"
+        >
+          <div>
+            {/* Top Badges */}
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs bg-[#0078D4]">
+                Windows x64
+              </span>
+              <span className="text-[10px] font-extrabold text-[#14532D] bg-[#D9F99D] px-2.5 py-0.5 rounded-full">
+                Khuyên dùng
+              </span>
+            </div>
+
+            {/* Title & Description */}
+            <h3 className="font-bold text-sm sm:text-base text-[#1A1A1A] line-clamp-1 mb-1 leading-snug">
+              StructPaper cho Windows
+            </h3>
+            <p className="text-[11px] text-zinc-500 line-clamp-1 mb-2.5 italic">
+              Bản cài đặt .exe Setup tự động cập nhật
+            </p>
+
+            {/* Specification Stats matching JournalProfileCard */}
+            <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2 flex-wrap">
+              <span>• Windows 10 / 11 64-bit</span>
+              <span>• Ngoại tuyến 100%</span>
+              <span>• Chữ ký số Ed25519</span>
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800">
+            <span className="text-[11px] text-zinc-500 font-medium">
+              Bản cài đặt NSIS (~85 MB)
+            </span>
+
+            <a
+              href={WINDOWS_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="download-windows-btn"
+              className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 hover:text-zinc-950 transition-colors cursor-pointer"
+            >
+              <span>Tải bản Windows (.exe Setup)</span>
+              <ArrowDownToLine className="w-3.5 h-3.5 text-[#78C841] group-hover:translate-y-0.5 transition-transform" />
+            </a>
+          </div>
+        </div>
+
+        {/* Card 2: macOS */}
+        <div
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px]"
+        >
+          <div>
+            {/* Top Badges */}
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs bg-[#1A1A1A]">
+                macOS Silicon
+              </span>
+              <span className="text-[10px] font-extrabold text-[#14532D] bg-[#E4F8D5] px-2.5 py-0.5 rounded-full">
+                Bản chính thức
+              </span>
+            </div>
+
+            {/* Title & Description */}
+            <h3 className="font-bold text-sm sm:text-base text-[#1A1A1A] line-clamp-1 mb-1 leading-snug">
+              StructPaper cho macOS
+            </h3>
+            <p className="text-[11px] text-zinc-500 line-clamp-1 mb-2.5 italic">
+              Gói đĩa cài đặt .dmg kéo thả tiện lợi cho Mac
+            </p>
+
+            {/* Specification Stats matching JournalProfileCard */}
+            <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-semibold mb-2 flex-wrap">
+              <span>• macOS 12+ Monterey</span>
+              <span>• Apple Silicon (M1 - M4)</span>
+              <span>• Tectonic XeTeX</span>
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800">
+            <span className="text-[11px] text-zinc-500 font-medium">
+              Gói đĩa DMG (~80 MB)
+            </span>
+
+            <a
+              href={MACOS_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="download-macos-btn"
+              className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 hover:text-zinc-950 transition-colors cursor-pointer"
+            >
+              <span>Tải bản macOS (.dmg Apple Silicon)</span>
+              <ArrowDownToLine className="w-3.5 h-3.5 text-[#78C841] group-hover:translate-y-0.5 transition-transform" />
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ export function CheckForUpdateCard(): React.ReactElement {
   return (
     <div
       data-testid="check-for-update-card"
-      className="bg-white/80 backdrop-blur-md border border-white/80 rounded-3xl p-6 sm:p-7 shadow-2xs space-y-5"
+      className="w-full bg-gray-200/40 border-8 border-gray-200 p-6 sm:p-7 rounded-[38px] transition-all duration-300 shadow-2xs space-y-5"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
