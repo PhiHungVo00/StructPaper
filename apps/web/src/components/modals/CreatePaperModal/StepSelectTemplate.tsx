@@ -52,7 +52,7 @@ export const StepSelectTemplate: React.FC<StepSelectTemplateProps> = ({
       </div>
 
       {/* Grid of Compact Template Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
+      <div className="p-1 px-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
         {journals.map((journal) => (
           <CompactTemplateCard
             key={journal.id}

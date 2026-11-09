@@ -111,7 +111,7 @@ export const PaperDeleteConfirmModal: React.FC<PaperDeleteConfirmModalProps> = (
         </h3>
 
         {/* Paper Info Preview Card */}
-        <div className="w-full bg-slate-50 border border-slate-200/70 rounded-2xl p-3.5 mb-3 flex items-center gap-3 shadow-inner">
+        <div className="w-full bg-slate-50 border border-slate-200/70 rounded-3xl p-3.5 mb-3 flex items-center gap-3 shadow-inner">
           <span
             className="shrink-0 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold text-white shadow-2xs"
             style={{ backgroundColor: journalColor }}

@@ -32,14 +32,10 @@ export const CompactTemplateCard: React.FC<CompactTemplateCardProps> = ({
       transition={isTest ? { duration: 0 } : { duration: 0.18, ease: 'easeOut' }}
       className={`w-full text-left p-3.5 sm:p-4 rounded-[24px] sm:rounded-[26px] transition-all duration-200 cursor-pointer flex flex-col justify-between relative overflow-hidden select-none group min-h-[92px] ${
         isSelected
-          ? 'bg-white border-4 border-[#78C841] ring-4 ring-[#78C841]/25 shadow-[0_8px_30px_rgba(120,200,65,0.18)]'
-          : 'bg-gray-200/40 border-4 border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-[0_8px_25px_rgba(0,0,0,0.08)]'
+          ? 'bg-white ring-4 ring-blue-300 shadow-[0_8px_30px_rgba(120,200,65,0.18)]'
+          : 'bg-gray-200/60 hover:bg-white hover:border-gray-300 hover:shadow-[0_8px_25px_rgba(0,0,0,0.08)]'
       }`}
     >
-      {/* Subtle thick watermark icon in top right - signature template card identity */}
-      <BookOpen
-        className="absolute -right-2 -top-2 w-16 h-16 stroke-[2.2] pointer-events-none text-zinc-900/[0.04] group-hover:text-zinc-900/[0.07] transition-colors"
-      />
 
       {/* Top Badges row */}
       <div className="flex items-center justify-between mb-2 relative z-10">

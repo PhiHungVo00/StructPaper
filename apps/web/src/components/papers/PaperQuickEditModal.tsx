@@ -149,19 +149,17 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
         className="bg-[#F8F9FA] w-full max-w-2xl rounded-[40px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-white/20 select-text"
       >
         {/* Header - Eatzy OrderDetailsModal Identity */}
-        <div className="bg-white px-7 sm:px-8 py-5 sm:py-6 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10 shadow-xs">
+        <div className="px-7 pt-6 pb-0 sm:px-8 flex items-center justify-between sticky top-0 z-10 shadow-xs">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-2xl bg-[#78C841]/15 text-[#14532D] flex items-center justify-center font-bold">
-                <Sliders className="w-4 h-4 text-[#14532D]" strokeWidth={2.5} />
-              </div>
+              
               <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                SỬA THÔNG TIN NHANH
+                Sửa thông tin nhanh 
               </h3>
             </div>
             <div className="flex items-center gap-2 mt-1 pl-0.5">
               <span className="text-xs font-semibold text-gray-400">ID:</span>
-              <span className="text-xs font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded-md font-mono">
+              <span className="text-xs font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded-md">
                 {submissionId || info.id.slice(0, 10)}
               </span>
               <span className="text-gray-300">•</span>
@@ -174,9 +172,8 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
           <div className="flex items-center gap-3">
             {/* Status pill badge */}
             <div
-              className={`px-3.5 py-1.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider border flex items-center gap-1.5 ${activeStatusCfg.chipBg} ${activeStatusCfg.chipText} ${activeStatusCfg.border}`}
+              className={`px-3.5 py-1.5 rounded-full text-[11px] font-extrabold uppercase border flex items-center gap-1.5 ${activeStatusCfg.chipBg} ${activeStatusCfg.chipText} ${activeStatusCfg.border}`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />
               {activeStatusCfg.label}
             </div>
 
@@ -201,7 +198,7 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
           )}
 
           {/* Card 1: Display Name */}
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/60 space-y-1.5">
+          <div className="p-3 px-5 space-y-1.5">
             <label className="text-xs font-extrabold text-slate-800 flex items-center justify-between">
               <span>
                 Tên hiển thị bài báo <span className="text-rose-500">*</span>
@@ -214,13 +211,13 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Nhập tên đại diện hoặc tiêu đề bài báo..."
-              className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all"
+              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all"
               required
             />
           </div>
 
           {/* Card 2: Submission ID & Workflow Status (Custom Select) */}
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-3 px-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-extrabold text-slate-800">
                 Mã định danh nộp bài (Submission ID)
@@ -231,7 +228,7 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
                 value={submissionId}
                 onChange={(e) => setSubmissionId(e.target.value)}
                 placeholder="VD: ID630_HS, STDJ_2026_01"
-                className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-2 text-xs sm:text-sm font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all"
+                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-xs sm:text-sm font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all"
               />
             </div>
 
@@ -265,7 +262,7 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
           </div>
 
           {/* Card 3: Tags */}
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/60 space-y-2">
+          <div className="p-3 px-5 space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-zinc-500" />
@@ -276,11 +273,11 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
               </span>
             </div>
 
-            <div className="min-h-[44px] p-2 bg-slate-50/60 border border-slate-200/90 rounded-2xl flex flex-wrap gap-1.5 items-center">
+            <div className="min-h-[44px] p-2 bg-white border border-slate-200/90 rounded-2xl flex flex-wrap gap-1.5 items-center">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-gray-200/50 border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs"
                 >
                   <span>#{tag}</span>
                   <button
@@ -306,7 +303,7 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
           </div>
 
           {/* Card 4: Note */}
-          <div className="bg-white rounded-[28px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/60 space-y-1.5">
+          <div className="p-3 px-5 space-y-1.5">
             <label className="text-xs font-extrabold text-slate-800">
               Ghi chú nội bộ / Tiến độ
             </label>
@@ -316,7 +313,7 @@ export const PaperQuickEditModal: React.FC<PaperQuickEditModalProps> = ({
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               placeholder="Ghi chú về tiến độ phản biện, ý kiến ban biên tập..."
-              className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all resize-none"
+              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none focus:bg-white focus:border-[#78C841] focus:ring-4 focus:ring-[#78C841]/10 transition-all resize-none"
             />
           </div>
 

@@ -74,7 +74,7 @@ export const StepUploadFile: React.FC<StepUploadFileProps> = ({
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => !isParsing && fileInputRef.current?.click()}
-        className={`w-full rounded-3xl p-8 sm:p-10 text-center cursor-pointer transition-all border-2 border-dashed flex flex-col items-center justify-center relative select-none ${
+        className={`w-full rounded-[36px] p-8 sm:p-10 text-center cursor-pointer transition-all border-2 border-dashed flex flex-col items-center justify-center relative select-none ${
           dragOver
             ? 'border-[#78C841] bg-[#78C841]/5 scale-[1.01]'
             : isParsing

@@ -138,33 +138,20 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
         className="bg-[#F8F9FA] w-full max-w-xl rounded-[40px] overflow-hidden shadow-2xl flex flex-col border border-white/20 select-text"
       >
         {/* Header - Eatzy OrderDetailsModal Identity */}
-        <div className="bg-white px-7 sm:px-8 py-5 border-b border-gray-100 flex items-center justify-between sticky top-0 z-10 shadow-xs">
+        <div className="px-7 sm:px-8 py-5 pb-0 flex items-center justify-between sticky top-0 z-10 shadow-xs">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-2xl bg-[#78C841]/15 text-[#14532D] flex items-center justify-center font-bold">
-                {step === 1 ? (
-                  <FileText className="w-4 h-4 text-[#14532D]" strokeWidth={2.5} />
-                ) : (
-                  <BookOpen className="w-4 h-4 text-[#14532D]" strokeWidth={2.5} />
-                )}
-              </div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                {step === 1 ? 'TẠO BÀI BÁO MỚI' : 'CHỌN MẪU TẠP CHÍ'}
+              
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight pl-3">
+                {step === 1 ? 'Tải lên bài báo hoặc bỏ qua!' : 'Chọn mẫu tạp chí?'}
               </h3>
             </div>
-            <p className="text-xs text-slate-500 mt-1 pl-0.5">
-              {step === 1
-                ? targetJournalName
-                  ? `Tải lên bản thảo DOCX cho ${targetJournalName}`
-                  : 'Tải lên bản thảo DOCX hoặc bắt đầu với trang trắng'
-                : 'Chọn 1 trong 7 mẫu định dạng chuẩn ĐHQG-HCM'}
-            </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-all cursor-pointer"
+            className="w-11 h-11 rounded-full bg-gray-200/70 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-all cursor-pointer"
             aria-label="Đóng"
           >
             <X className="w-5 h-5" />
