@@ -162,14 +162,22 @@ export class DesktopUpdateService implements UpdateService {
       return this.checkUpdater;
     }
     try {
+      const { invoke } = await import('@tauri-apps/api/core');
       const updaterMod = await import('@tauri-apps/plugin-updater');
       return (async (options?: any) => {
         try {
-          return await updaterMod.check(options);
+          if (options?.headers) {
+            options.headers = Array.from(new Headers(options.headers).entries());
+          }
+          const meta = await invoke<any>('plugin:updater|check', options ?? {});
+          if (!meta) {
+            return null;
+          }
+          // Tauri Rust returns Metadata without `available` property (Some(meta) implies available).
+          // Explicitly set available: true so Update instance and callers recognize it.
+          return new updaterMod.Update({ ...meta, available: true });
         } catch (err: unknown) {
           const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-          // Workaround for @tauri-apps/plugin-updater 2.0.0 bug:
-          // When Rust returns null (no update), JS tries meta.available on null
           if (
             msg.includes("reading 'available'") ||
             msg.includes('available of null') ||
