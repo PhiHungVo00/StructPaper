@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Monitor,
+  Apple,
   ExternalLink,
   ArrowDownToLine,
 } from 'lucide-react';
@@ -18,11 +19,29 @@ function getMacDownloadUrl(ver: string): string {
   return `https://github.com/StructPaper/StructPaper/releases/download/v${ver}/StructPaper_${ver}_aarch64.dmg`;
 }
 
+function WindowsGridIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+    </svg>
+  );
+}
+
 export function DownloadDesktopCard(): React.ReactElement {
   const [version, setVersion] = useState<string>(FALLBACK_VERSION);
 
   useEffect(() => {
-    // Optionally query latest release version from GitHub endpoint
     let isMounted = true;
     fetch('https://github.com/StructPaper/StructPaper/releases/latest/download/latest.json')
       .then((res) => (res.ok ? res.json() : null))
@@ -74,16 +93,18 @@ export function DownloadDesktopCard(): React.ReactElement {
         {/* Card 1: Windows */}
         <div
           onClick={() => handleCardClick(windowsUrl)}
-          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px] cursor-pointer"
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px] cursor-pointer relative overflow-hidden"
         >
-          <div>
-            {/* Top Badges */}
+          {/* Faint bold watermark icon top-right */}
+          <div className="absolute top-3 right-4 pointer-events-none select-none text-zinc-900/[0.08] group-hover:text-blue-600/[0.14] group-hover:scale-105 group-hover:-rotate-3 transition-all duration-300">
+            <WindowsGridIcon className="w-20 h-20" />
+          </div>
+
+          <div className="relative z-10">
+            {/* Top Badge */}
             <div className="flex items-center justify-between mb-2.5">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs bg-[#0078D4]">
                 Windows x64
-              </span>
-              <span className="text-[10px] font-extrabold text-[#14532D] bg-[#D9F99D] px-2.5 py-0.5 rounded-full">
-                Khuyên dùng
               </span>
             </div>
 
@@ -104,7 +125,7 @@ export function DownloadDesktopCard(): React.ReactElement {
           </div>
 
           {/* Action Footer */}
-          <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800">
+          <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800 relative z-10">
             <span className="text-[11px] text-zinc-500 font-medium">
               Bản cài đặt NSIS (~85 MB)
             </span>
@@ -126,16 +147,18 @@ export function DownloadDesktopCard(): React.ReactElement {
         {/* Card 2: macOS */}
         <div
           onClick={() => handleCardClick(macUrl)}
-          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px] cursor-pointer"
+          className="w-full bg-gray-200/40 border-8 border-gray-200 p-5 rounded-[38px] transition-all duration-300 flex flex-col justify-between hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group select-none min-h-[220px] cursor-pointer relative overflow-hidden"
         >
-          <div>
-            {/* Top Badges */}
+          {/* Faint bold watermark icon top-right */}
+          <div className="absolute top-3 right-4 pointer-events-none select-none text-zinc-900/[0.08] group-hover:text-zinc-950/[0.14] group-hover:scale-105 group-hover:-rotate-3 transition-all duration-300">
+            <Apple className="w-20 h-20" strokeWidth={2.7} />
+          </div>
+
+          <div className="relative z-10">
+            {/* Top Badge */}
             <div className="flex items-center justify-between mb-2.5">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white shadow-2xs bg-[#1A1A1A]">
                 macOS Silicon
-              </span>
-              <span className="text-[10px] font-extrabold text-[#14532D] bg-[#E4F8D5] px-2.5 py-0.5 rounded-full">
-                Bản chính thức
               </span>
             </div>
 
@@ -156,7 +179,7 @@ export function DownloadDesktopCard(): React.ReactElement {
           </div>
 
           {/* Action Footer */}
-          <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800">
+          <div className="mt-3 pt-2.5 border-t border-gray-300/50 flex items-center justify-between text-xs font-bold text-zinc-800 relative z-10">
             <span className="text-[11px] text-zinc-500 font-medium">
               Gói đĩa DMG (~80 MB)
             </span>
