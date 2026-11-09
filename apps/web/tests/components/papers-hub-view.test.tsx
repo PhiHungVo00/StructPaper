@@ -292,6 +292,9 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
         fireEvent.click(stdTemplateCard);
       });
 
+      // Verify selected tick icon is rendered without text
+      expect(screen.getByTestId('selected-tick-std')).toBeDefined();
+
       // Verify "Tiếp tục" button is present and click it -> redirects to editor
       const continueBtn = screen.getByTestId('continue-to-editor-btn');
       expect(continueBtn).toBeDefined();

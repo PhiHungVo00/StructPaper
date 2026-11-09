@@ -75,17 +75,12 @@ export const ModalPortal: React.FC<ModalPortalProps> = ({
           />
 
           {/* Modal Content Wrapper (pointer-events-auto) */}
-          <motion.div
-            key="modal-portal-content"
-            initial={isTest ? undefined : { opacity: 0 }}
-            animate={isTest ? undefined : { opacity: 1 }}
-            exit={isTest ? undefined : { opacity: 0 }}
-            transition={isTest ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+          <div
             onClick={(e) => e.stopPropagation()}
             className="relative z-10 w-full flex justify-center pointer-events-auto"
           >
             {children}
-          </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>,

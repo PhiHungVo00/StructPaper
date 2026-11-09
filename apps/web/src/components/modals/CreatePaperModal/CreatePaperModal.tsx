@@ -131,10 +131,10 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
     <ModalPortal isOpen={isOpen} onClose={onClose}>
       <motion.div
         data-testid="create-paper-modal"
-        initial={isTest ? undefined : { opacity: 0, scale: 0.94, y: 24 }}
+        initial={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
         animate={isTest ? undefined : { opacity: 1, scale: 1, y: 0 }}
-        exit={isTest ? undefined : { opacity: 0, scale: 0.94, y: 24 }}
-        transition={isTest ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        exit={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
+        transition={isTest ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
         className="bg-[#F8F9FA] w-full max-w-xl rounded-[40px] overflow-hidden shadow-2xl flex flex-col border border-white/20 select-text"
       >
         {/* Header - Eatzy OrderDetailsModal Identity */}
@@ -173,7 +173,7 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
 
         {/* Modal Content with Horizontal Step Slider */}
         <div className="p-6 sm:p-7">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             {step === 1 ? (
               <motion.div
                 key="create-paper-step-1"

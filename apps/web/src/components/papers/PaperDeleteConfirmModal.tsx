@@ -53,10 +53,10 @@ export const PaperDeleteConfirmModal: React.FC<PaperDeleteConfirmModalProps> = (
     <ModalPortal isOpen={isOpen} onClose={onClose}>
       <motion.div
         data-testid="paper-delete-modal"
-        initial={isTest ? undefined : { opacity: 0, scale: 0.94, y: 20 }}
+        initial={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
         animate={isTest ? undefined : { opacity: 1, scale: 1, y: 0 }}
-        exit={isTest ? undefined : { opacity: 0, scale: 0.94, y: 20 }}
-        transition={isTest ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        exit={isTest ? undefined : { opacity: 0, scale: 0.9, y: 30 }}
+        transition={isTest ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
         className="bg-white w-full max-w-[420px] rounded-[40px] p-7 shadow-2xl border border-slate-100 flex flex-col items-center relative overflow-hidden select-none"
       >
         {/* Top-Right Round Close Button */}
