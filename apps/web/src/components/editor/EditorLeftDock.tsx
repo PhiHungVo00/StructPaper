@@ -226,6 +226,32 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
   const currentStatusConfig = getWorkflowStatusConfig(workflowStatus);
 
+  const WORKFLOW_STATUS_THEMES: Record<WorkflowStatus, { innerShadow: string; border: string }> = {
+    draft: {
+      innerShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.28)',
+      border: 'border-slate-300/70',
+    },
+    'in-review': {
+      innerShadow: 'inset 0 0 20px rgba(217, 119, 6, 0.32)',
+      border: 'border-amber-300/70',
+    },
+    proofing: {
+      innerShadow: 'inset 0 0 20px rgba(2, 132, 199, 0.32)',
+      border: 'border-sky-300/70',
+    },
+    ready: {
+      innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.35)',
+      border: 'border-[#78C841]/70',
+    },
+    published: {
+      innerShadow: 'inset 0 0 20px rgba(99, 102, 241, 0.32)',
+      border: 'border-indigo-300/70',
+    },
+  };
+
+  const currentStatusTheme =
+    WORKFLOW_STATUS_THEMES[workflowStatus as WorkflowStatus] || WORKFLOW_STATUS_THEMES.draft;
+
   const springTransition = isTest
     ? { duration: 0 }
     : {
@@ -374,19 +400,6 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
         {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Spring Shared Element Morph */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
-          {/* Base dock button visible when popup is open so the dock slot is never empty */}
-          {isDownloadOpen && (
-            <button
-              type="button"
-              onClick={() => setIsDownloadOpen(false)}
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center select-none cursor-pointer relative bg-white/90 text-zinc-950 font-bold shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.95),0_0_16px_rgba(0,0,0,0.10),0_0_4px_rgba(0,0,0,0.06)] border border-white"
-              aria-label="Đóng tùy chọn tải xuống"
-              title="Đóng tùy chọn tải xuống"
-            >
-              <Download className="w-4 h-4 text-zinc-900" strokeWidth={2.8} />
-            </button>
-          )}
-
           <AnimatePresence>
             {!isDownloadOpen ? (
               <motion.button
@@ -593,22 +606,6 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
         {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Spring Shared Element Morph */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
-          {/* Base dock button visible when status popup is open so the dock slot is never empty */}
-          {isStatusOpen && (
-            <button
-              type="button"
-              onClick={() => setIsStatusOpen(false)}
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center select-none cursor-pointer relative bg-white/90 text-zinc-950 font-bold shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.95),0_0_16px_rgba(0,0,0,0.10),0_0_4px_rgba(0,0,0,0.06)] border border-white"
-              aria-label="Đóng trạng thái bản thảo"
-              title="Đóng trạng thái bản thảo"
-            >
-              <Tag className="w-4 h-4 text-zinc-900" strokeWidth={2.8} />
-              <span
-                className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${currentStatusConfig.dotBg} border border-white shadow-2xs`}
-              />
-            </button>
-          )}
-
           <AnimatePresence>
             {!isStatusOpen ? (
               <motion.button
@@ -625,12 +622,12 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                 transition={springTransition}
                 aria-label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
                 title={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
+                className={`w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md text-zinc-700 hover:text-zinc-950 border ${currentStatusTheme.border}`}
+                style={{
+                  boxShadow: `${currentStatusTheme.innerShadow}, inset 0 0 14px 6px rgba(255,255,255,0.85), 0 0 12px rgba(0,0,0,0.04), 0 0 4px rgba(0,0,0,0.03)`,
+                }}
               >
                 <Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
-                <span
-                  className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${currentStatusConfig.dotBg} border border-white shadow-2xs`}
-                />
               </motion.button>
             ) : (
               <motion.div
