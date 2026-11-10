@@ -226,6 +226,15 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
   const currentStatusConfig = getWorkflowStatusConfig(workflowStatus);
 
+  const springTransition = isTest
+    ? { duration: 0 }
+    : {
+        type: 'spring' as const,
+        stiffness: 150,
+        damping: 18,
+        mass: 0.8,
+      };
+
   useEffect(() => {
     if (!isDownloadOpen && !isStatusOpen) return;
 
@@ -358,7 +367,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
         {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Spring Shared Element Transition */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {!isDownloadOpen ? (
               <motion.button
                 key="download-trigger-btn"
@@ -370,6 +379,8 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                   setIsStatusOpen(false);
                   setIsDownloadOpen(true);
                 }}
+                initial={isTest ? false : undefined}
+                transition={springTransition}
                 aria-label={
                   isExportingDocx
                     ? 'Đang xuất Word...'
@@ -388,7 +399,8 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                         ? 'Đang nén ZIP...'
                         : 'Tải xuống bản thảo (Word, PDF, ZIP)'
                 }
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all duration-200 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950 hover:scale-105 active:scale-95"
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
+                style={{ transformOrigin: 'top left' }}
               >
                 {isAnyExporting ? (
                   <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" />
@@ -404,18 +416,9 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                 id="download-popup-menu"
                 data-testid="download-popup-menu"
                 initial={isTest ? false : undefined}
-                transition={
-                  isTest
-                    ? { duration: 0 }
-                    : {
-                        type: 'spring',
-                        stiffness: 150,
-                        damping: 18,
-                        mass: 0.8,
-                      }
-                }
+                transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-0 top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
+                className="absolute left-0 top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
@@ -571,7 +574,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
         {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Spring Shared Element */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {!isStatusOpen ? (
               <motion.button
                 key="status-trigger-btn"
@@ -583,9 +586,12 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                   setIsDownloadOpen(false);
                   setIsStatusOpen(true);
                 }}
+                initial={isTest ? false : undefined}
+                transition={springTransition}
                 aria-label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
                 title={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all duration-200 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950 hover:scale-105 active:scale-95"
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
+                style={{ transformOrigin: 'top left' }}
               >
                 <Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />
                 <span
@@ -600,18 +606,9 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                 id="status-popup-menu"
                 data-testid="status-popup-menu"
                 initial={isTest ? false : undefined}
-                transition={
-                  isTest
-                    ? { duration: 0 }
-                    : {
-                        type: 'spring',
-                        stiffness: 150,
-                        damping: 18,
-                        mass: 0.8,
-                      }
-                }
+                transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-0 top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
+                className="absolute left-0 top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
