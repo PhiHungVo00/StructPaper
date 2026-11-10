@@ -450,7 +450,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                 initial={isTest ? false : undefined}
                 transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-[64px] top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
+                className="absolute left-[64px] top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-3xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
@@ -639,7 +639,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                 initial={isTest ? false : undefined}
                 transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-[64px] top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
+                className="absolute left-[64px] top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-3xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">

@@ -148,7 +148,7 @@ export const PaperCard: React.FC<PaperCardProps> = ({
                           }
                     }
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-0 z-50 w-52 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
+                    className="absolute right-0 top-0 z-50 w-52 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-3xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
                     style={{
                       transformOrigin: 'top right',
                     }}
