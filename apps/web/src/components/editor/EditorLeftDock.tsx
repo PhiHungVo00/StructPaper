@@ -149,6 +149,8 @@ interface EditorLeftDockProps {
   warningCount?: number;
   onOpenQCTab?: () => void;
   homeHref?: string;
+  onBackClick?: () => void;
+  autosaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onDownloadTypst?: () => void;
   isExportingTypst?: boolean;
 }
@@ -176,6 +178,8 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
   warningCount = 0,
   onOpenQCTab,
   homeHref = '/upload',
+  onBackClick,
+  autosaveStatus = 'idle',
   onDownloadTypst,
   isExportingTypst = false,
 }) => {
@@ -244,6 +248,10 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       <div className="relative flex flex-col items-center gap-2.5">
         <DockIconButton
           onClick={() => {
+            if (onBackClick) {
+              onBackClick();
+              return;
+            }
             const destination = homeHref || '/papers';
             if (router) router.push(destination);
             else if (typeof window !== 'undefined') window.location.href = destination;
@@ -284,13 +292,27 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
         {/* Action 1: Save Changes */}
         <DockIconButton
           onClick={onSave}
-          label={saveSuccess ? 'Đã lưu thành công!' : 'Lưu thay đổi bản thảo'}
+          label={
+            saveSuccess || autosaveStatus === 'saved'
+              ? 'Đã lưu thành công!'
+              : autosaveStatus === 'saving'
+                ? 'Đang tự động lưu...'
+                : autosaveStatus === 'error'
+                  ? 'Lỗi tự động lưu'
+                  : isDirty
+                    ? 'Lưu thay đổi bản thảo (Ctrl+S)'
+                    : 'Lưu thay đổi bản thảo'
+          }
           icon={<Save className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
           badge={
-            saveSuccess ? (
+            saveSuccess || autosaveStatus === 'saved' ? (
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-2xs">
                 <CheckCircle2 className="w-2.5 h-2.5 text-white" />
               </span>
+            ) : autosaveStatus === 'saving' ? (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-indigo-500 border border-white animate-pulse" />
+            ) : autosaveStatus === 'error' ? (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white" />
             ) : isDirty ? (
               <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
             ) : null

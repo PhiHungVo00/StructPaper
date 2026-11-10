@@ -12,3 +12,11 @@ export {
   useEditorShortcuts,
   type UseEditorShortcutsOptions,
 } from './useEditorShortcuts';
+
+export {
+  useEditorAutoSave,
+  type UseEditorAutoSaveOptions,
+  type UseEditorAutoSaveReturn,
+  type AutosaveStatus,
+} from './useEditorAutoSave';
+

@@ -48,6 +48,7 @@ export interface UseEditorCompilationOptions {
   paper: CompletePaper;
   formData: CompletePaper;
   onUpdatePaper: (updated: CompletePaper) => void;
+  onSavePaper?: (paper: CompletePaper) => Promise<boolean | void>;
   setIsDirty?: (dirty: boolean) => void;
   router?: CompilerRouter;
   networkMonitor?: NetworkMonitor;
@@ -58,6 +59,7 @@ export function useEditorCompilation({
   paper,
   formData,
   onUpdatePaper,
+  onSavePaper,
   setIsDirty,
   router: customRouter,
   networkMonitor: customNetworkMonitor,
@@ -287,13 +289,20 @@ export function useEditorCompilation({
   }, [paper.id]);
 
   const handleRecompile = useCallback(
-    (customPaper?: CompletePaper) => {
+    async (customPaper?: CompletePaper) => {
       const target = customPaper || formData;
       onUpdatePaper(target);
+      if (onSavePaper) {
+        try {
+          await onSavePaper(target);
+        } catch (saveErr) {
+          console.warn('[useEditorCompilation] Failed to auto-save on recompile:', saveErr);
+        }
+      }
       setIsDirty?.(false);
       compileLatexToPdf(target);
     },
-    [formData, onUpdatePaper, setIsDirty, compileLatexToPdf]
+    [formData, onUpdatePaper, onSavePaper, setIsDirty, compileLatexToPdf]
   );
 
   return {

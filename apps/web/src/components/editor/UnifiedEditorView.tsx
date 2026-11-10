@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
 import { CompletePaper, PaperSection, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/paper';
 import { computePreflightCheck } from '@/lib/docx-extractor';
@@ -23,9 +24,15 @@ import { PreflightQCTab } from './PreflightQCTab';
 import { LivePreviewPane } from './LivePreviewPane';
 import { ResizableSplitLayout } from './ResizableSplitLayout';
 import { generateStandardCitation } from './sections/utils';
-import { useEditorCompilation, useEditorExport, useEditorShortcuts } from './hooks';
+import {
+  useEditorCompilation,
+  useEditorExport,
+  useEditorShortcuts,
+  useEditorAutoSave,
+} from './hooks';
 import { usePaperStorage, useEditorQuickEdit } from '@/hooks';
 import { PaperQuickEditModal } from '@/components/papers';
+import { ActionConfirmModal } from '@/components/modals/ActionConfirmModal';
 
 interface UnifiedEditorViewProps {
   paper: CompletePaper;
@@ -34,11 +41,13 @@ interface UnifiedEditorViewProps {
 }
 
 export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onUpdatePaper }) => {
+  const router = useRouter();
   const { currentJournal, setCurrentJournal } = usePaper();
   const { savePaper } = usePaperStorage();
   const [formData, setFormData] = useState<CompletePaper>(() => JSON.parse(JSON.stringify(paper)));
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isExitWarningOpen, setIsExitWarningOpen] = useState(false);
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
   const [isExtractedDrawerOpen, setIsExtractedDrawerOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<EditorTabKey>('metadata');
@@ -52,8 +61,27 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     handleSaveQuickEdit,
   } = useEditorQuickEdit(formData, setFormData);
 
+  // Auto-save debounced hook (1.5s background IndexedDB persistence + beforeunload protection)
+  const { autosaveStatus, flush } = useEditorAutoSave({
+    paperId: formData.id,
+    formData,
+    isDirty,
+    setIsDirty,
+    onSave: async (updated) => {
+      onUpdatePaper(updated);
+      return await savePaper(updated);
+    },
+    debounceMs: 1500,
+  });
+
   const { compiledPdfUrl, isCompilingPdf, compileStats, compileErrorInfo, setCompileErrorInfo, compileLatexToPdf, handleRecompile } =
-    useEditorCompilation({ paper, formData, onUpdatePaper, setIsDirty });
+    useEditorCompilation({
+      paper,
+      formData,
+      onUpdatePaper,
+      onSavePaper: savePaper,
+      setIsDirty,
+    });
 
   const { isExportingDocx, isExportingZip, isExportingPdf, handleDownloadDocx, handleDownloadZip, handleDownloadPdf } =
     useEditorExport({ formData, compiledPdfUrl, compileLatexToPdf });
@@ -66,6 +94,26 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     sileo.success({ title: 'Đã lưu thay đổi', description: 'Bản thảo bài báo đã được cập nhật thành công vào hệ thống' });
     setTimeout(() => setSaveSuccess(false), 2500);
   }, [formData, onUpdatePaper, savePaper]);
+
+  // Back Navigation Guard handlers
+  const handleRequestBack = useCallback(() => {
+    if (isDirty) {
+      setIsExitWarningOpen(true);
+    } else {
+      router.push('/papers');
+    }
+  }, [isDirty, router]);
+
+  const handleConfirmSaveAndExit = useCallback(async () => {
+    await handleSave();
+    setIsExitWarningOpen(false);
+    router.push('/papers');
+  }, [handleSave, router]);
+
+  const handleDiscardAndExit = useCallback(() => {
+    setIsExitWarningOpen(false);
+    router.push('/papers');
+  }, [router]);
 
   useEditorShortcuts({ onSave: handleSave });
   useEffect(() => { setFormData(JSON.parse(JSON.stringify(paper))); setIsDirty(false); }, [paper.id]);
@@ -152,6 +200,8 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
       <EditorLeftDock
         homeHref="/papers"
+        onBackClick={handleRequestBack}
+        autosaveStatus={autosaveStatus}
         onOpenQuickEdit={handleOpenQuickEdit}
         onOpenExtractedDrawer={() => setIsExtractedDrawerOpen(true)}
         onOpenLayoutSettings={() => setIsSettingsDrawerOpen(true)}
@@ -177,9 +227,14 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative z-10">
         <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 mb-1.5 bg-white/70 backdrop-blur-md rounded-2xl border border-zinc-200">
-          <Link href="/papers" className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs" title="Quay lại danh sách bài báo">
+          <button
+            type="button"
+            onClick={handleRequestBack}
+            className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer"
+            title="Quay lại danh sách bài báo"
+          >
             <Home className="w-4 h-4" />
-          </Link>
+          </button>
           <div className="flex items-center gap-1 bg-zinc-200/70 p-0.5 rounded-xl">
             <button type="button" onClick={() => setMobilePane('editor')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${mobilePane === 'editor' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}>Soạn thảo</button>
             <button type="button" onClick={() => setMobilePane('preview')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${mobilePane === 'preview' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}>PDF</button>
@@ -207,6 +262,25 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         isOpen={isQuickEditOpen}
         onClose={handleCloseQuickEdit}
         onSave={handleSaveQuickEdit}
+      />
+
+      {/* Unsaved Changes Confirmation Modal */}
+      <ActionConfirmModal
+        isOpen={isExitWarningOpen}
+        onClose={() => setIsExitWarningOpen(false)}
+        onConfirm={handleConfirmSaveAndExit}
+        secondaryAction={{
+          label: 'Rời đi không lưu',
+          onClick: handleDiscardAndExit,
+          testId: 'editor-discard-and-exit-btn',
+        }}
+        variant="warning"
+        title="Thay đổi chưa được lưu"
+        description="Bạn có chỉnh sửa chưa lưu trong bản thảo bài báo. Bạn có muốn lưu các thay đổi này trước khi rời khỏi trang soạn thảo không?"
+        confirmLabel="Lưu & Thoát"
+        cancelLabel="Ở lại"
+        testId="editor-exit-confirm-modal"
+        confirmTestId="editor-save-and-exit-btn"
       />
     </div>
   );

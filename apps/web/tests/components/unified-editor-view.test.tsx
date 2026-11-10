@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto';
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup, waitFor } from '@testing-library/react';
 
 // Stub global.fetch immediately
 vi.stubGlobal(
@@ -19,10 +19,14 @@ vi.stubGlobal(
   })
 );
 
+const { mockRouterPush } = vi.hoisted(() => ({
+  mockRouterPush: vi.fn(),
+}));
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockRouterPush,
     replace: vi.fn(),
     back: vi.fn(),
     prefetch: vi.fn(),
@@ -157,6 +161,7 @@ const mockPaper: CompletePaper = {
 describe('Task 4.2: UnifiedEditorView & Editor Shell', () => {
   afterEach(() => {
     cleanup();
+    mockRouterPush.mockClear();
   });
 
   it('renders layout shell: dock, split pane, tabs, and preview', async () => {
@@ -239,6 +244,89 @@ describe('Task 4.2: UnifiedEditorView & Editor Shell', () => {
     const extractedBtn = screen.getByRole('button', { name: /Nội dung trích xuất bản thảo/i });
     fireEvent.click(extractedBtn);
     expect(screen.getAllByText(/Nội Dung Trích Xuất Bản Thảo/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('navigates directly to /papers when back button is clicked without dirty changes', async () => {
+    const onUpdatePaper = vi.fn();
+
+    render(
+      <PaperProvider>
+        <UnifiedEditorView paper={mockPaper} onUpdatePaper={onUpdatePaper} />
+      </PaperProvider>
+    );
+
+    const backBtn = screen.getAllByRole('button', { name: /Quay lại danh sách bài báo/i })[0];
+    fireEvent.click(backBtn);
+
+    expect(mockRouterPush).toHaveBeenCalledWith('/papers');
+    expect(screen.queryByTestId('editor-exit-confirm-modal')).toBeNull();
+  });
+
+  it('intercepts back button when dirty, shows confirm modal, cancels or discards without saving', async () => {
+    const onUpdatePaper = vi.fn();
+
+    render(
+      <PaperProvider>
+        <UnifiedEditorView paper={mockPaper} onUpdatePaper={onUpdatePaper} />
+      </PaperProvider>
+    );
+
+    // Make dirty by editing title
+    const titleInput = screen.getAllByDisplayValue('Nghiên cứu cấu trúc tự động hóa bản thảo')[0];
+    fireEvent.change(titleInput, { target: { value: 'Tiêu đề đã chỉnh sửa' } });
+
+    // Click back button
+    const backBtn = screen.getAllByRole('button', { name: /Quay lại danh sách bài báo/i })[0];
+    fireEvent.click(backBtn);
+
+    // Modal should be open, router.push not called yet
+    expect(screen.getByTestId('editor-exit-confirm-modal')).toBeDefined();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+
+    // Click Cancel ("Ở lại")
+    const cancelBtn = screen.getByRole('button', { name: 'Ở lại' });
+    fireEvent.click(cancelBtn);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+
+    // Click back button again
+    fireEvent.click(backBtn);
+
+    // Click "Rời đi không lưu" (secondaryAction)
+    const discardBtn = screen.getByTestId('editor-discard-and-exit-btn');
+    fireEvent.click(discardBtn);
+
+    expect(mockRouterPush).toHaveBeenCalledWith('/papers');
+  });
+
+  it('saves changes and navigates when "Lưu & Thoát" is clicked in confirm modal', async () => {
+    const onUpdatePaper = vi.fn();
+
+    render(
+      <PaperProvider>
+        <UnifiedEditorView paper={mockPaper} onUpdatePaper={onUpdatePaper} />
+      </PaperProvider>
+    );
+
+    // Make dirty by editing title
+    const titleInput = screen.getAllByDisplayValue('Nghiên cứu cấu trúc tự động hóa bản thảo')[0];
+    fireEvent.change(titleInput, { target: { value: 'Tiêu đề lưu và thoát' } });
+
+    // Click back button
+    const backBtn = screen.getAllByRole('button', { name: /Quay lại danh sách bài báo/i })[0];
+    fireEvent.click(backBtn);
+
+    expect(screen.getByTestId('editor-exit-confirm-modal')).toBeDefined();
+
+    // Click "Lưu & Thoát"
+    const saveAndExitBtn = screen.getByTestId('editor-save-and-exit-btn');
+    await act(async () => {
+      fireEvent.click(saveAndExitBtn);
+    });
+
+    expect(onUpdatePaper).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith('/papers');
+    });
   });
 });
 

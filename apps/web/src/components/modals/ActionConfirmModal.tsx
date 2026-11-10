@@ -11,6 +11,11 @@ export interface ActionConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    testId?: string;
+  };
   variant?: ActionConfirmVariant;
   title: string;
   description: React.ReactNode;
@@ -30,6 +35,7 @@ export const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  secondaryAction,
   variant = 'warning',
   title,
   description,
@@ -222,22 +228,39 @@ export const ActionConfirmModal: React.FC<ActionConfirmModalProps> = ({
           {description}
         </div>
 
-        {/* Action Buttons: Cancel vs Confirm */}
-        <div className="w-full grid grid-cols-2 gap-3">
+        {/* Action Buttons: Cancel vs Confirm (with optional Secondary) */}
+        <div
+          className={`w-full ${
+            secondaryAction
+              ? 'flex flex-col-reverse sm:grid sm:grid-cols-3'
+              : 'grid grid-cols-2'
+          } gap-2.5`}
+        >
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="w-full py-3 rounded-full text-xs sm:text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer disabled:opacity-50"
           >
             {cancelLabel}
           </button>
+          {secondaryAction && (
+            <button
+              type="button"
+              data-testid={secondaryAction.testId || 'action-confirm-secondary-btn'}
+              onClick={secondaryAction.onClick}
+              disabled={isLoading}
+              className="w-full py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {secondaryAction.label}
+            </button>
+          )}
           <button
             type="button"
             data-testid={confirmTestId}
             onClick={onConfirm}
             disabled={isLoading}
-            className={`w-full py-3 rounded-full text-xs sm:text-sm font-bold hover:scale-102 active:scale-98 transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 ${getConfirmButtonClasses()}`}
+            className={`w-full py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold hover:scale-102 active:scale-98 transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50 ${getConfirmButtonClasses()}`}
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
