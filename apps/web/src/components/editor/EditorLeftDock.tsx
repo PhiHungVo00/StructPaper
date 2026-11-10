@@ -79,7 +79,7 @@ const DockIconButton: React.FC<DockIconButtonProps> = ({
       ref={containerRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="relative flex items-center justify-center"
+      className={`relative flex items-center justify-center ${showTooltip ? 'z-[100]' : ''}`}
     >
       <button
         id={id}
@@ -99,7 +99,7 @@ const DockIconButton: React.FC<DockIconButtonProps> = ({
       {/* Liquid Glass Tooltip matching the former "Quay lại trang chủ" button style */}
       <AnimatePresence>
         {showTooltip && !suppressTooltip && !active && (
-          <div className="absolute left-[62px] top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap">
+          <div className="absolute left-[62px] top-1/2 -translate-y-1/2 z-[100] pointer-events-none whitespace-nowrap">
             <motion.div
               initial={{ opacity: 0, x: -8, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -237,11 +237,11 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
 
   return (
     <aside
-      className="hidden sm:flex flex-col items-center justify-between h-full w-12 sm:w-14 py-2 px-1 flex-shrink-0 select-none relative z-40"
+      className="hidden sm:flex flex-col items-center justify-between h-full w-12 sm:w-14 py-2 px-1 flex-shrink-0 select-none relative z-50"
       aria-label="Thanh công cụ trình biên tập"
     >
       {/* TOP SECTION: BACK BUTTON */}
-      <div className="relative z-10 flex flex-col items-center gap-2.5">
+      <div className="relative flex flex-col items-center gap-2.5">
         <DockIconButton
           onClick={() => {
             const destination = homeHref || '/papers';
@@ -254,7 +254,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       </div>
 
       {/* MIDDLE SECTION: FEATURE CLUSTER + ACTION CLUSTER */}
-      <div className="relative z-10 flex flex-col items-center gap-2.5">
+      <div className="relative flex flex-col items-center gap-2.5">
         {/* Feature 0: Quick Edit Paper Info Modal */}
         {onOpenQuickEdit && (
           <DockIconButton
@@ -350,7 +350,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       </div>
 
       {/* BOTTOM SECTION: MANUSCRIPT QUALITY PERCENTAGE SCORE */}
-      <div className="relative z-10 flex flex-col items-center pt-1 w-full">
+      <div className="relative flex flex-col items-center pt-1 w-full">
         <div className="w-6 h-[1px] mb-2" />
         <DockIconButton
           onClick={onOpenQCTab}

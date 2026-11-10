@@ -99,7 +99,7 @@ const DockPillButton: React.FC<DockPillButtonProps> = ({
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="relative flex items-center"
+      className={`relative flex items-center ${showTooltip ? 'z-[100]' : ''}`}
     >
       <button
         id={id}
@@ -149,7 +149,7 @@ const DockPillButton: React.FC<DockPillButtonProps> = ({
       {/* Liquid Glass Tooltip matching EditorLeftDock */}
       <AnimatePresence>
         {showTooltip && !isExpanded && !active && tooltipText && (
-          <div className="absolute left-[64px] top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap">
+          <div className="absolute left-[64px] top-1/2 -translate-y-1/2 z-[100] pointer-events-none whitespace-nowrap">
             <motion.div
               initial={{ opacity: 0, x: -8, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -203,12 +203,12 @@ export const Sidebar: React.FC = () => {
     <>
       {/* DESKTOP & TABLET DOCK - NO WRAPPER BOX, EXPANDING PILLS WITH CHEVRON TOGGLE */}
       <aside
-        className={`hidden sm:flex flex-col items-start justify-between h-[calc(100vh-1.5rem)] sticky top-3 my-3 ml-3.5 flex-shrink-0 z-30 select-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'w-[280px]' : 'w-[58px]'
+        className={`hidden sm:flex flex-col items-start justify-between h-[calc(100vh-1.5rem)] sticky top-3 my-3 ml-3.5 flex-shrink-0 z-50 select-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'w-[280px]' : 'w-[58px]'
           }`}
         aria-label="Thanh điều hướng chính"
       >
         {/* TOP SECTION: TOGGLE EXPAND / COLLAPSE BUTTON WITH CHEVRON */}
-        <div className="relative z-10 flex flex-col items-start gap-3 w-full">
+        <div className="relative flex flex-col items-start gap-3 w-full">
           <DockPillButton
             onClick={() => setIsExpanded(!isExpanded)}
             isExpanded={isExpanded}
@@ -232,7 +232,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* MIDDLE SECTION: MAIN FLOW NAVIGATION PILLS */}
-        <div className={`relative z-10 flex flex-col items-start w-full transition-all duration-300 ${isExpanded ? 'space-y-1' : 'space-y-3'}`}>
+        <div className={`relative flex flex-col items-start w-full transition-all duration-300 ${isExpanded ? 'space-y-1' : 'space-y-3'}`}>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isNavActive(item.path);
@@ -259,7 +259,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* BOTTOM SECTION: LOGOUT BUTTON */}
-        <div className="relative z-10 flex flex-col items-start gap-3 w-full">
+        <div className="relative flex flex-col items-start gap-3 w-full">
           <DockPillButton
             onClick={handleLogout}
             isExpanded={isExpanded}
