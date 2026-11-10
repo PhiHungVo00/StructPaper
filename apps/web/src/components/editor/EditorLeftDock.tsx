@@ -239,19 +239,26 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
     if (!isDownloadOpen && !isStatusOpen) return;
 
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
         isDownloadOpen &&
         downloadMenuRef.current &&
-        !downloadMenuRef.current.contains(e.target as Node)
+        !downloadMenuRef.current.contains(target)
       ) {
-        setIsDownloadOpen(false);
+        const triggerBtn = document.getElementById('download-dock-btn');
+        if (!triggerBtn || !triggerBtn.contains(target)) {
+          setIsDownloadOpen(false);
+        }
       }
       if (
         isStatusOpen &&
         statusMenuRef.current &&
-        !statusMenuRef.current.contains(e.target as Node)
+        !statusMenuRef.current.contains(target)
       ) {
-        setIsStatusOpen(false);
+        const triggerBtn = document.getElementById('status-dock-btn');
+        if (!triggerBtn || !triggerBtn.contains(target)) {
+          setIsStatusOpen(false);
+        }
       }
     };
 
@@ -336,11 +343,11 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
                     ? 'Lưu thay đổi bản thảo (Ctrl+S)'
                     : 'Lưu thay đổi bản thảo'
           }
-          icon={<Save className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
+          icon={<Save className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />}
           badge={
             saveSuccess || autosaveStatus === 'saved' ? (
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-2xs">
-                <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-sm">
+                <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
               </span>
             ) : autosaveStatus === 'saving' ? (
               <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-indigo-500 border border-white animate-pulse" />
@@ -360,65 +367,51 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
           icon={
             <RefreshCw
               className={`w-4 h-4 text-zinc-700 ${isCompiling ? 'animate-spin text-[#78C841]' : ''}`}
-              strokeWidth={2.4}
+              strokeWidth={2.8}
             />
           }
         />
 
-        {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Spring Shared Element Transition */}
+        {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Flyout next to icon */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
+          <DockIconButton
+            id="download-dock-btn"
+            onClick={() => {
+              setIsStatusOpen(false);
+              setIsDownloadOpen(!isDownloadOpen);
+            }}
+            active={isDownloadOpen}
+            suppressTooltip={isDownloadOpen}
+            label={
+              isExportingDocx
+                ? 'Đang xuất Word...'
+                : isExportingPdf
+                  ? 'Đang xuất PDF...'
+                  : isExportingZip
+                    ? 'Đang nén ZIP...'
+                    : 'Tải xuống bản thảo (Word, PDF, ZIP)'
+            }
+            icon={
+              isAnyExporting ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" strokeWidth={2.8} />
+              ) : (
+                <Download className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
+              )
+            }
+          />
+
           <AnimatePresence>
-            {!isDownloadOpen ? (
-              <motion.button
-                key="download-trigger-btn"
-                layoutId="dock-download-menu"
-                id="download-dock-btn"
-                data-testid="download-dock-btn"
-                type="button"
-                onClick={() => {
-                  setIsStatusOpen(false);
-                  setIsDownloadOpen(true);
-                }}
-                initial={isTest ? false : undefined}
-                transition={springTransition}
-                aria-label={
-                  isExportingDocx
-                    ? 'Đang xuất Word...'
-                    : isExportingPdf
-                      ? 'Đang xuất PDF...'
-                      : isExportingZip
-                        ? 'Đang nén ZIP...'
-                        : 'Tải xuống bản thảo (Word, PDF, ZIP)'
-                }
-                title={
-                  isExportingDocx
-                    ? 'Đang xuất Word...'
-                    : isExportingPdf
-                      ? 'Đang xuất PDF...'
-                      : isExportingZip
-                        ? 'Đang nén ZIP...'
-                        : 'Tải xuống bản thảo (Word, PDF, ZIP)'
-                }
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
-                style={{ transformOrigin: 'top left' }}
-              >
-                {isAnyExporting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" />
-                ) : (
-                  <Download className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />
-                )}
-              </motion.button>
-            ) : (
+            {isDownloadOpen && (
               <motion.div
-                key="download-popup-menu"
-                layoutId="dock-download-menu"
                 ref={downloadMenuRef}
                 id="download-popup-menu"
                 data-testid="download-popup-menu"
-                initial={isTest ? false : undefined}
+                initial={isTest ? false : { opacity: 0, scale: 0.9, x: -10 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9, x: -8 }}
                 transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-0 top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
+                className="absolute left-[64px] top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
@@ -572,43 +565,37 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Spring Shared Element */}
+        {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Flyout next to icon */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
+          <DockIconButton
+            id="status-dock-btn"
+            onClick={() => {
+              setIsDownloadOpen(false);
+              setIsStatusOpen(!isStatusOpen);
+            }}
+            active={isStatusOpen}
+            suppressTooltip={isStatusOpen}
+            label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
+            icon={<Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />}
+            badge={
+              <span
+                className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${currentStatusConfig.dotBg} border border-white shadow-2xs`}
+              />
+            }
+          />
+
           <AnimatePresence>
-            {!isStatusOpen ? (
-              <motion.button
-                key="status-trigger-btn"
-                layoutId="dock-status-menu"
-                id="status-dock-btn"
-                data-testid="status-dock-btn"
-                type="button"
-                onClick={() => {
-                  setIsDownloadOpen(false);
-                  setIsStatusOpen(true);
-                }}
-                initial={isTest ? false : undefined}
-                transition={springTransition}
-                aria-label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
-                title={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
-                style={{ transformOrigin: 'top left' }}
-              >
-                <Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />
-                <span
-                  className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${currentStatusConfig.dotBg} border border-white shadow-2xs`}
-                />
-              </motion.button>
-            ) : (
+            {isStatusOpen && (
               <motion.div
-                key="status-popup-menu"
-                layoutId="dock-status-menu"
                 ref={statusMenuRef}
                 id="status-popup-menu"
                 data-testid="status-popup-menu"
-                initial={isTest ? false : undefined}
+                initial={isTest ? false : { opacity: 0, scale: 0.9, x: -10 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9, x: -8 }}
                 transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-0 top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
+                className="absolute left-[64px] top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
@@ -680,7 +667,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
               }
             }}
             label={isDesktop ? 'Mở PDF toàn màn hình' : 'Mở PDF toàn màn hình trong tab mới'}
-            icon={<Maximize2 className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
+            icon={<Maximize2 className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />}
           />
         )}
       </div>
