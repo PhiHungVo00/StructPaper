@@ -33,6 +33,11 @@ import {
 import { usePaperStorage, useEditorQuickEdit } from '@/hooks';
 import { PaperQuickEditModal } from '@/components/papers';
 import { ActionConfirmModal } from '@/components/modals/ActionConfirmModal';
+import { usePlatform } from '@structpaper/platform';
+import {
+  WORKFLOW_STATUS_CONFIG,
+  type WorkflowStatus,
+} from '@/components/papers/types';
 
 interface UnifiedEditorViewProps {
   paper: CompletePaper;
@@ -114,6 +119,43 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     setIsExitWarningOpen(false);
     router.push('/papers');
   }, [router]);
+
+  // Handler for updating paper workflow status
+  const handleUpdateWorkflowStatus = useCallback(
+    (newStatus: WorkflowStatus) => {
+      const updated: CompletePaper = {
+        ...formData,
+        status: newStatus as any,
+        workflowStatus: newStatus,
+      };
+      setFormData(updated);
+      setIsDirty(true);
+      onUpdatePaper(updated);
+      const label = WORKFLOW_STATUS_CONFIG[newStatus]?.label || newStatus;
+      sileo.success({
+        title: 'Đã cập nhật trạng thái',
+        description: `Bản thảo đã được chuyển sang trạng thái "${label}"`,
+      });
+    },
+    [formData, onUpdatePaper]
+  );
+
+  let isDesktop = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const platform = usePlatform();
+    isDesktop = platform.capabilities.kind === 'desktop';
+  } catch {
+    isDesktop = false;
+  }
+
+  const handleOpenFullscreenPdf = useCallback(() => {
+    if (isDesktop) {
+      router.push(`/preview?id=${formData.id}`);
+    } else if (compiledPdfUrl) {
+      window.open(compiledPdfUrl, '_blank', 'noreferrer');
+    }
+  }, [isDesktop, formData.id, router, compiledPdfUrl]);
 
   useEditorShortcuts({ onSave: handleSave });
   useEffect(() => { setFormData(JSON.parse(JSON.stringify(paper))); setIsDirty(false); }, [paper.id]);
@@ -200,8 +242,12 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
       <EditorLeftDock
         homeHref="/papers"
+        paperId={formData.id}
         onBackClick={handleRequestBack}
         autosaveStatus={autosaveStatus}
+        workflowStatus={formData.status || (formData as any).workflowStatus || 'draft'}
+        onUpdateWorkflowStatus={handleUpdateWorkflowStatus}
+        onOpenFullscreenPdf={handleOpenFullscreenPdf}
         onOpenQuickEdit={handleOpenQuickEdit}
         onOpenExtractedDrawer={() => setIsExtractedDrawerOpen(true)}
         onOpenLayoutSettings={() => setIsSettingsDrawerOpen(true)}

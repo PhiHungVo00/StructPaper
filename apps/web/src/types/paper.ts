@@ -548,6 +548,7 @@ export interface CompletePaper {
   templateName?: string;
   updatedAt?: string;
   createdAt?: string;
-  status?: 'draft' | 'review' | 'ready';
+  status?: 'draft' | 'review' | 'ready' | string;
+  workflowStatus?: string;
 }
 

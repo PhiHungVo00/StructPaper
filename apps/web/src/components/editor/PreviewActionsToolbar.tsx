@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { RefreshCw, FileText, Archive, Maximize2 } from 'lucide-react';
+import { usePlatform } from '@structpaper/platform';
 import { CompileStats } from './types';
 
 interface PreviewActionsToolbarProps {
@@ -13,6 +15,8 @@ interface PreviewActionsToolbarProps {
   compileStats: CompileStats | null;
   isExportingDocx: boolean;
   isExportingZip: boolean;
+  onOpenFullscreen?: () => void;
+  paperId?: string;
 }
 
 export const PreviewActionsToolbar: React.FC<PreviewActionsToolbarProps> = ({
@@ -24,7 +28,25 @@ export const PreviewActionsToolbar: React.FC<PreviewActionsToolbarProps> = ({
   compileStats,
   isExportingDocx,
   isExportingZip,
+  onOpenFullscreen,
+  paperId,
 }) => {
+  let router: any = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    // headless test fallback
+  }
+
+  let isDesktop = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const platform = usePlatform();
+    isDesktop = platform.capabilities.kind === 'desktop';
+  } catch {
+    isDesktop = false;
+  }
   return (
     <div className="p-2.5 sm:p-3 bg-white border border-[#E8E8EE] rounded-2xl flex flex-wrap items-center justify-between gap-2.5 shadow-2xs">
       {/* Left: Compile status & stats */}
@@ -96,15 +118,26 @@ export const PreviewActionsToolbar: React.FC<PreviewActionsToolbarProps> = ({
 
         {/* Toàn màn hình / Mở tab mới */}
         {compiledPdfUrl && (
-          <a
-            href={compiledPdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="p-1.5 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-            title="Mở toàn màn hình trong tab mới"
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenFullscreen) {
+                onOpenFullscreen();
+              } else if (isDesktop) {
+                const destination = paperId ? `/preview?id=${paperId}` : '/preview';
+                if (router) router.push(destination);
+                else if (typeof window !== 'undefined') window.location.href = destination;
+              } else {
+                if (typeof window !== 'undefined') {
+                  window.open(compiledPdfUrl, '_blank', 'noreferrer');
+                }
+              }
+            }}
+            className="p-1.5 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
+            title={isDesktop ? 'Mở PDF toàn màn hình' : 'Mở toàn màn hình trong tab mới'}
           >
             <Maximize2 className="w-3.5 h-3.5" />
-          </a>
+          </button>
         )}
       </div>
     </div>

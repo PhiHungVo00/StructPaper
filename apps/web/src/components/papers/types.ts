@@ -1,4 +1,5 @@
 import type { ManuscriptRecord, WorkflowStatus } from '@structpaper/doc-model';
+export type { WorkflowStatus };
 import {
   ALL_JOURNAL_IDS,
   JOURNAL_DEFINITIONS,
