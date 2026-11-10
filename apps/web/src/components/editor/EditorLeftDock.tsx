@@ -372,46 +372,72 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
           }
         />
 
-        {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Flyout next to icon */}
+        {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Spring Shared Element Morph */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
-          <DockIconButton
-            id="download-dock-btn"
-            onClick={() => {
-              setIsStatusOpen(false);
-              setIsDownloadOpen(!isDownloadOpen);
-            }}
-            active={isDownloadOpen}
-            suppressTooltip={isDownloadOpen}
-            label={
-              isExportingDocx
-                ? 'Đang xuất Word...'
-                : isExportingPdf
-                  ? 'Đang xuất PDF...'
-                  : isExportingZip
-                    ? 'Đang nén ZIP...'
-                    : 'Tải xuống bản thảo (Word, PDF, ZIP)'
-            }
-            icon={
-              isAnyExporting ? (
-                <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" strokeWidth={2.8} />
-              ) : (
-                <Download className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
-              )
-            }
-          />
+          {/* Base dock button visible when popup is open so the dock slot is never empty */}
+          {isDownloadOpen && (
+            <button
+              type="button"
+              onClick={() => setIsDownloadOpen(false)}
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center select-none cursor-pointer relative bg-white/90 text-zinc-950 font-bold shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.95),0_0_16px_rgba(0,0,0,0.10),0_0_4px_rgba(0,0,0,0.06)] border border-white"
+              aria-label="Đóng tùy chọn tải xuống"
+              title="Đóng tùy chọn tải xuống"
+            >
+              <Download className="w-4 h-4 text-zinc-900" strokeWidth={2.8} />
+            </button>
+          )}
 
           <AnimatePresence>
-            {isDownloadOpen && (
+            {!isDownloadOpen ? (
+              <motion.button
+                key="download-trigger-btn"
+                layoutId="dock-download-menu"
+                id="download-dock-btn"
+                data-testid="download-dock-btn"
+                type="button"
+                onClick={() => {
+                  setIsStatusOpen(false);
+                  setIsDownloadOpen(true);
+                }}
+                initial={isTest ? false : undefined}
+                transition={springTransition}
+                aria-label={
+                  isExportingDocx
+                    ? 'Đang xuất Word...'
+                    : isExportingPdf
+                      ? 'Đang xuất PDF...'
+                      : isExportingZip
+                        ? 'Đang nén ZIP...'
+                        : 'Tải xuống bản thảo (Word, PDF, ZIP)'
+                }
+                title={
+                  isExportingDocx
+                    ? 'Đang xuất Word...'
+                    : isExportingPdf
+                      ? 'Đang xuất PDF...'
+                      : isExportingZip
+                        ? 'Đang nén ZIP...'
+                        : 'Tải xuống bản thảo (Word, PDF, ZIP)'
+                }
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
+              >
+                {isAnyExporting ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" strokeWidth={2.8} />
+                ) : (
+                  <Download className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
+                )}
+              </motion.button>
+            ) : (
               <motion.div
+                key="download-popup-menu"
+                layoutId="dock-download-menu"
                 ref={downloadMenuRef}
                 id="download-popup-menu"
                 data-testid="download-popup-menu"
-                initial={isTest ? false : { opacity: 0, scale: 0.9, x: -10 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.9, x: -8 }}
+                initial={isTest ? false : undefined}
                 transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-[64px] top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
+                className="absolute left-[64px] top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
@@ -565,37 +591,58 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Flyout next to icon */}
+        {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Spring Shared Element Morph */}
         <div className="w-[52px] h-[52px] relative flex items-center justify-center">
-          <DockIconButton
-            id="status-dock-btn"
-            onClick={() => {
-              setIsDownloadOpen(false);
-              setIsStatusOpen(!isStatusOpen);
-            }}
-            active={isStatusOpen}
-            suppressTooltip={isStatusOpen}
-            label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
-            icon={<Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />}
-            badge={
+          {/* Base dock button visible when status popup is open so the dock slot is never empty */}
+          {isStatusOpen && (
+            <button
+              type="button"
+              onClick={() => setIsStatusOpen(false)}
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center select-none cursor-pointer relative bg-white/90 text-zinc-950 font-bold shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.95),0_0_16px_rgba(0,0,0,0.10),0_0_4px_rgba(0,0,0,0.06)] border border-white"
+              aria-label="Đóng trạng thái bản thảo"
+              title="Đóng trạng thái bản thảo"
+            >
+              <Tag className="w-4 h-4 text-zinc-900" strokeWidth={2.8} />
               <span
                 className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${currentStatusConfig.dotBg} border border-white shadow-2xs`}
               />
-            }
-          />
+            </button>
+          )}
 
           <AnimatePresence>
-            {isStatusOpen && (
+            {!isStatusOpen ? (
+              <motion.button
+                key="status-trigger-btn"
+                layoutId="dock-status-menu"
+                id="status-dock-btn"
+                data-testid="status-dock-btn"
+                type="button"
+                onClick={() => {
+                  setIsDownloadOpen(false);
+                  setIsStatusOpen(true);
+                }}
+                initial={isTest ? false : undefined}
+                transition={springTransition}
+                aria-label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
+                title={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
+              >
+                <Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
+                <span
+                  className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${currentStatusConfig.dotBg} border border-white shadow-2xs`}
+                />
+              </motion.button>
+            ) : (
               <motion.div
+                key="status-popup-menu"
+                layoutId="dock-status-menu"
                 ref={statusMenuRef}
                 id="status-popup-menu"
                 data-testid="status-popup-menu"
-                initial={isTest ? false : { opacity: 0, scale: 0.9, x: -10 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.9, x: -8 }}
+                initial={isTest ? false : undefined}
                 transition={springTransition}
                 onClick={(e) => e.stopPropagation()}
-                className="absolute left-[64px] top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none"
+                className="absolute left-[64px] top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
                 style={{ transformOrigin: 'top left' }}
               >
                 <div className="flex items-center justify-between px-2 py-1 select-none">
