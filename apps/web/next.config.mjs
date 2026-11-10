@@ -15,6 +15,7 @@ const nextConfig = {
     '@structpaper/qc-engine',
     '@structpaper/exporters',
     '@structpaper/compiler-client',
+    'framer-motion',
   ],
   eslint: {
     ignoreDuringBuilds: true,
