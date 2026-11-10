@@ -1,6 +1,7 @@
 {
   "name": "structpaper-monorepo",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build:web": "pnpm --filter @structpaper/web build",
     "dev:web": "pnpm --filter @structpaper/web dev",
