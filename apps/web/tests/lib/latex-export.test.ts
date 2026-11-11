@@ -141,7 +141,7 @@ describe('LaTeX equations', () => {
       { id: 'e', type: 'equation', content: '', equation: { latex: 'E = mc^2', numbered: true, num: 1 } },
     ];
     const tex = generateFullJournalLatex(p);
-    expect(tex).toContain('\\begin{equation}\nE = mc^2\n\\label{eq:1}\n\\end{equation}');
+    expect(tex).toContain('\\begin{equation}\nE = mc^2\\tag{1}\n\\label{eq:1}\n\\end{equation}');
   });
 
   it('unnumbered equation uses equation*', () => {

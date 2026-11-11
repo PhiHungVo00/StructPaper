@@ -96,7 +96,7 @@ export function enrichScriptRuns(sections: PaperSection[], paragraphs: ScriptPar
     if (s.type !== 'paragraph' || !s.content) continue;
     const p = byText.get(norm(s.content));
     if (!p) continue;
-    const rebuilt = runsToScriptedText(p.runs);
+    const rebuilt = runsToScriptedText(p.runs).replace(/\s+/g, ' ').trim();
     if (rebuilt && rebuilt !== s.content) {
       s.content = rebuilt;
       changed += 1;

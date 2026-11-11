@@ -18,7 +18,12 @@ export interface ExtractedEquation {
   omml: string;
   /** Text of the nearest preceding non-math paragraph (anchor). */
   prevText: string;
+  /** Number typed next to the equation in the source ("(4)"), when present. */
+  num?: number;
 }
+
+/** "(4)", "[12]", "(3a)" typed after an equation (usually after tabs). */
+const EQ_NUM_RE = /^[([]\s*(\d{1,3})[a-z]?\s*[)\]]$/i;
 
 const norm = (s: string) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
 
@@ -30,14 +35,19 @@ export function extractDisplayEquations(paragraphs: MathCapableParagraph[]): Ext
       if (p.text.trim()) prevText = p.text;
       continue;
     }
+    const rest = (p.text || '').replace(/\s+/g, ' ').trim();
     const para = p.rawXml.match(/<m:oMathPara\b[\s\S]*?<\/m:oMathPara>/i);
-    const single = p.rawXml.match(/<m:oMath\b[\s\S]*?<\/m:oMath>/i);
-    // Display math: an oMathPara, or an oMath alone in its paragraph (no surrounding text).
-    const omml = para ? para[0] : !p.text.trim() && single ? single[0] : null;
-    if (!omml) continue; // inline math inside prose: not representable by the text pipeline
+    const singles = p.rawXml.match(/<m:oMath\b[\s\S]*?<\/m:oMath>/gi) || [];
+    const numMatch = rest.match(EQ_NUM_RE);
+    // Display math: an oMathPara, or one oMath alone in its paragraph, optionally followed by its number "(n)".
+    const omml = para ? para[0] : singles.length === 1 && (!rest || numMatch) ? singles[0] : null;
+    if (!omml) {
+      if (rest) prevText = p.text; // inline math inside prose still anchors the next equation
+      continue;
+    }
     const latex = ommlToLatex(omml);
-    if (latex) out.push({ latex, omml, prevText });
-    if (p.text.trim()) prevText = p.text;
+    if (latex) out.push({ latex, omml, prevText, ...(numMatch ? { num: parseInt(numMatch[1], 10) } : {}) });
+    if (rest && !numMatch) prevText = p.text; // never anchor on a bare "(1)"
   }
   return out;
 }
@@ -75,16 +85,29 @@ export function insertEquations(
       type: 'equation',
       content: '',
       // The LaTeX is the source of truth; the (large) raw OMML is not persisted.
-      equation: { latex: eq.latex, numbered: true },
+      equation: { latex: eq.latex, numbered: true, ...(eq.num ? { num: eq.num } : {}) },
     });
     searchFrom = at + 2; // keep original order of consecutive equations
     placed += 1;
   });
 
-  // Number in document order.
+  // Number in document order, keeping a number typed in the source ("(4)").
   let counter = 0;
-  const numbered = result.map((s) =>
-    s.type === 'equation' && s.equation?.numbered ? { ...s, equation: { ...s.equation, num: ++counter } } : s
-  );
+  const numbered = result.map((s) => {
+    if (s.type !== 'equation' || !s.equation?.numbered) return s;
+    const num = s.equation.num ?? counter + 1;
+    counter = num;
+    return { ...s, equation: { ...s.equation, num } };
+  });
   return { sections: numbered, placed, unplaced };
+}
+
+/** A short "n là số lượng mẫu" line under "Trong đó: F_i là …" (kept although shorter than a paragraph). */
+export function isWhereDefinitionLine(line: string, prev: PaperSection | undefined): boolean {
+  return (
+    line.length >= 6 &&
+    /^[\p{L}\p{N}_$\\{}]{1,10}\s+(?:là|=|:|is|are|denotes)\s+\S/iu.test(line) &&
+    prev?.type === 'paragraph' &&
+    /^(trong đó|where|với)\b|\s(là|is)\s/i.test((prev.content || '').trim())
+  );
 }

@@ -126,7 +126,8 @@ class Parser {
   private parseItem(): MathComponent[] {
     const startTok = this.peek();
     const isNary = startTok?.t === 'cmd' && startTok.v in NARY;
-    const base = this.parseAtom();
+    // A braced base ("{(F_i-O_i)}^2") is the whole group, not an empty atom.
+    const base = startTok?.t === '{' ? this.parseGroupOrAtom() : this.parseAtom();
     let sub: MathComponent[] | undefined;
     let sup: MathComponent[] | undefined;
     while (this.peek() && (this.peek().t === '^' || this.peek().t === '_')) {
@@ -137,7 +138,12 @@ class Parser {
     }
     if (!sub && !sup) return base;
     if (isNary && NARY[startTok!.v] === '∑') {
-      return [new MathSum({ children: [], ...(sub ? { subScript: sub } : {}), ...(sup ? { superScript: sup } : {}) })];
+      // The summand runs to the end of the current group (or to a relation sign).
+      const body: MathComponent[] = [];
+      while (this.i < this.toks.length && this.peek().t !== '}' && !(this.peek().t === 'char' && /^[=<>]$/.test(this.peek().v))) {
+        body.push(...this.parseItem());
+      }
+      return [new MathSum({ children: body, ...(sub ? { subScript: sub } : {}), ...(sup ? { superScript: sup } : {}) })];
     }
     if (sub && sup) return [new MathSubSuperScript({ children: base, subScript: sub, superScript: sup })];
     if (sup) return [new MathSuperScript({ children: base, superScript: sup })];

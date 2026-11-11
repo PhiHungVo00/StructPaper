@@ -360,7 +360,9 @@ ${isOneColumn
     } else if (sec.type === 'equation' && sec.equation && sec.equation.latex.trim()) {
       const env = sec.equation.numbered ? 'equation' : 'equation*';
       const label = sec.equation.numbered ? `\n\\label{eq:${sec.equation.num ?? secIdx + 1}}` : '';
-      bodyLatex += `\n\\begin{${env}}\n${sanitizeMathForLatex(sec.equation.latex)}${label}\n\\end{${env}}\n`;
+      // Keep the number typed in the source ("(4)") so references in the text stay right.
+      const tag = sec.equation.numbered && sec.equation.num ? `\\tag{${sec.equation.num}}` : '';
+      bodyLatex += `\n\\begin{${env}}\n${sanitizeMathForLatex(sec.equation.latex)}${tag}${label}\n\\end{${env}}\n`;
     } else if (sec.type === 'figure' && sec.figure) {
       const figNum = sec.figure.num || (secIdx + 1);
       let imgName = `fig${figNum}.png`;

@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "generator": "legacy-docx-parser",
-  "generatedAt": "2026-11-11T06:58:51.028Z",
+  "generatedAt": "2026-11-11T12:28:23.064Z",
   "totalFiles": 11,
   "templatesCount": 4,
   "papersCount": 7,
@@ -20,7 +20,7 @@
         "sectionsLength": 28,
         "tablesLength": 1,
         "figuresLength": 1,
-        "referencesLength": 8
+        "referencesLength": 9
       }
     },
     "templates/Template_VI.docx": {
@@ -37,7 +37,7 @@
         "sectionsLength": 36,
         "tablesLength": 1,
         "figuresLength": 1,
-        "referencesLength": 8
+        "referencesLength": 9
       }
     },
     "templates/Bài mẫu template tiếng Anh.docx": {
@@ -68,10 +68,10 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 2279,
-        "sectionsLength": 75,
+        "sectionsLength": 71,
         "tablesLength": 5,
         "figuresLength": 0,
-        "referencesLength": 36
+        "referencesLength": 34
       }
     },
     "papers/ID630_HS-2026-10-02-06-42.docx": {
@@ -136,10 +136,10 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 1746,
-        "sectionsLength": 59,
+        "sectionsLength": 67,
         "tablesLength": 5,
         "figuresLength": 2,
-        "referencesLength": 13
+        "referencesLength": 26
       }
     },
     "papers/tranhien05,+Journal+editor,+VNUHCM+-+HS+ID+722+copyedited.docx": {
@@ -187,7 +187,7 @@
         "affiliationsLength": 4,
         "hasAbstract": true,
         "abstractLength": 1907,
-        "sectionsLength": 83,
+        "sectionsLength": 85,
         "tablesLength": 1,
         "figuresLength": 7,
         "referencesLength": 27
