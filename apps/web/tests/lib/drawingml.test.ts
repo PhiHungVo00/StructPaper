@@ -26,6 +26,11 @@ describe('DrawingML redraw', () => {
     expect(r.svg).toContain('marker-end');
   });
 
+  it('does not turn a lone decorative arrow into a figure', () => {
+    const xml = '<w:drawing><wp:inline><wp:extent cx="747000" cy="122000"/><a:graphic><a:graphicData><wps:wsp><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="747000" cy="122000"/></a:xfrm><a:prstGeom prst="line"/></wps:spPr></wps:wsp></a:graphicData></a:graphic></wp:inline></w:drawing>';
+    expect(drawingToSvg(xml)).toBeNull();
+  });
+
   it('pairs Figure 1 of the real fixture with its shape drawing and renders it', async () => {
     const zip = await JSZip.loadAsync(fs.readFileSync(FIXTURE));
     const doc = await zip.file('word/document.xml')!.async('text');

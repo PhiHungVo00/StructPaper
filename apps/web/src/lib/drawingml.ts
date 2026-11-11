@@ -280,11 +280,13 @@ export function drawingToSvg(drawingXml: string, themeXml?: string): SvgDrawing 
   const widthEmu = num(attrs(extent || {}).cx);
   const heightEmu = num(attrs(extent || {}).cy);
   if (!widthEmu || !heightEmu) return null;
+  // A lone arrow / line / small badge is decoration, not a figure.
+  if (widthEmu < 1270000 || heightEmu < 635000) return null;
 
   const ctx: Ctx = { colors: parseThemeColors(themeXml), defs: new Set(), out: [] };
   walk(drawing, IDENTITY, ctx);
   const shapes = ctx.out.filter((s) => !s.startsWith('<defs'));
-  if (!shapes.length) return null;
+  if (shapes.length < 2) return null;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${widthEmu / EMU_PER_PT} ${heightEmu / EMU_PER_PT}" width="${Math.round(widthEmu / 9525)}" height="${Math.round(heightEmu / 9525)}">` +
     `<rect width="100%" height="100%" fill="#FFFFFF"/>${ctx.out.join('')}</svg>`;
