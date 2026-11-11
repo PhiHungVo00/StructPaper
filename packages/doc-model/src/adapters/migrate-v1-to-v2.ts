@@ -470,6 +470,7 @@ export function migrateV1toV2(
     assets,
     layoutOverrides: {
       layoutSettings: v1Paper.layoutSettings,
+      sectionExtras: collectSectionExtras(v1Paper.sections),
       publication: (v1Paper.metadata as any)?.publication,
       titleOriginal: (v1Paper.metadata as any)?.titleOriginal,
       templateId: v1Paper.templateId,
@@ -477,4 +478,21 @@ export function migrateV1toV2(
       status: v1Paper.status,
     },
   };
+}
+
+/**
+ * Per-section options the v2 tree has no slot for (page-layout markers, page break, the number and
+ * width of a formula). Stored by section id in `layoutOverrides.sectionExtras`, restored by adaptV2toV1.
+ */
+function collectSectionExtras(sections: V1PaperSection[] | undefined): Record<string, Record<string, unknown>> | undefined {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const sec of sections || []) {
+    const e: Record<string, unknown> = {};
+    if (sec.pageLayout) e.pageLayout = sec.pageLayout;
+    if (sec.pageBreakAfter) e.pageBreakAfter = true;
+    if (sec.equation?.num !== undefined) e.eqNum = sec.equation.num;
+    if (sec.equation?.columnSpan) e.eqSpan = sec.equation.columnSpan;
+    if (Object.keys(e).length > 0) out[sec.id] = e;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }

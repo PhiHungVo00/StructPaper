@@ -98,6 +98,14 @@ export interface V1PaperEquation {
   num?: number;
   numbered: boolean;
   omml?: string;
+  /** '2-column': the formula is set on one unbroken line across both columns. */
+  columnSpan?: '1-column' | '2-column';
+}
+
+/** Page layout that starts at a section: a new page with these columns / orientation until the next marker. */
+export interface V1SectionPageLayout {
+  columns?: '1-column' | '2-column';
+  orientation?: 'portrait' | 'landscape';
 }
 
 export interface V1PaperSection {
@@ -109,6 +117,7 @@ export interface V1PaperSection {
   figure?: V1PaperFigure;
   table?: V1PaperTable;
   pageBreakAfter?: boolean;
+  pageLayout?: V1SectionPageLayout;
 }
 
 export interface V1PaperReference {

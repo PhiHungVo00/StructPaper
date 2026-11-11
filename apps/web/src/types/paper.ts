@@ -1,6 +1,5 @@
-import type { ThemeSettings, PaperEquation, PublicationInfo } from './paper-extensions';
-export type { ThemeSettings, PaperEquation, PublicationInfo };
-
+import type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout } from './paper-extensions';
+export type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout };
 import type { Cell } from '@structpaper/doc-model';
 
 export interface Author {
@@ -388,7 +387,6 @@ export function normalizeCompletePaper(paper: CompletePaper): CompletePaper {
   };
 }
 
-
 export interface PaperSection {
   id: string;
   type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation' | 'equation';
@@ -398,6 +396,7 @@ export interface PaperSection {
   figure?: PaperFigure;
   table?: PaperTable;
   pageBreakAfter?: boolean;
+  pageLayout?: SectionPageLayout; // new page here with these columns/orientation, until the next marker
 }
 
 export function createEmptyPaper(journalId: string = 'VNUHCM-HS'): CompletePaper {
@@ -534,6 +533,7 @@ export interface LayoutSettings {
   paperSize: 'custom' | 'a4' | 'letter' | 'b5';
   theme?: ThemeSettings;
   columnLayout: '1-column' | '2-column';
+  orientation?: 'portrait' | 'landscape'; // whole body; the first page (title block) stays portrait
   fontSize?: '9pt' | '10pt' | '11pt';
   columnSep?: '1pc' | '1.5pc' | '2pc';
   lineSpacing?: '1.13' | '1.2' | '1.3';

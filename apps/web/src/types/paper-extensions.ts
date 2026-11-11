@@ -36,6 +36,22 @@ export interface PaperEquation {
   numbered: boolean;
   /** Optional original OMML kept for lossless DOCX round-trips. */
   omml?: string;
+  /**
+   * '2-column': in a two-column layout the formula is set on one unbroken line across both columns
+   * (like a full-width table or figure). Default '1-column': set inside the column, broken if too wide.
+   */
+  columnSpan?: '1-column' | '2-column';
+}
+
+/**
+ * Page layout that starts at a section: the section begins a new page with these columns and
+ * orientation, which stay in force until the next section that carries a marker. A field that is
+ * left out falls back to the document default (the column layout of the layout settings, portrait).
+ * An empty marker therefore means "new page, back to the default layout".
+ */
+export interface SectionPageLayout {
+  columns?: '1-column' | '2-column';
+  orientation?: 'portrait' | 'landscape';
 }
 
 /**

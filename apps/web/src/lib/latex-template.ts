@@ -3,7 +3,8 @@ import { CompletePaper, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/
 import { getJournalTemplate } from './templates';
 import { resolveTheme, hexToRgb as themeHexToRgb } from './theme-config';
 import { sanitizeMathForLatex } from './math-text';
-import { breakLongEquation } from './latex-equation-break';
+import { equationToLatex } from './latex-equation';
+import { PageLayoutTracker } from './latex-page-layout';
 import { escapeLatex } from './latex-escape';
 import { tableToLatex } from './latex-table';
 import { SIZE9_PREAMBLE } from './latex-size9';
@@ -333,6 +334,7 @@ ${isOneColumn
 `;
 
   let bodyLatex = '';
+  const layoutTracker = new PageLayoutTracker(isOneColumn, settings.orientation === 'landscape');
   sections.forEach((sec, secIdx) => {
     const title = sec.title?.trim() || '';
     const content = sec.content?.trim() || '';
@@ -345,6 +347,9 @@ ${isOneColumn
       if (/^(không steroid|thuốc ức chế)/i.test(content) && content.length < 80) return;
       if (rawAuthors.some((a) => a.name === content || (content.includes(a.name) && content.length < 80))) return;
     }
+
+    bodyLatex += layoutTracker.enter(sec, secIdx);
+    const oneCol = layoutTracker.oneColumn; // columns in force here (a page-layout marker may change them)
 
     if (sec.type === 'h1' && sec.title) {
       const displayTitle = displayHeading(sec.title, theme.keepSectionNumbers).toUpperCase().replace(/TÁ\s+TRÀNG/g, 'TÁ~TRÀNG');
@@ -363,11 +368,7 @@ ${isOneColumn
 {\\footnotesize\\textbf{\\color{journalBlue}Trích dẫn bài báo này: }\\textit{${escapeLatex(sec.content)}}}
 \\end{mdframed}\n`;
     } else if (sec.type === 'equation' && sec.equation && sec.equation.latex.trim()) {
-      const env = sec.equation.numbered ? 'equation' : 'equation*';
-      const label = sec.equation.numbered ? `\n\\label{eq:${sec.equation.num ?? secIdx + 1}}` : '';
-      // Keep the number typed in the source ("(4)") so references in the text stay right.
-      const tag = sec.equation.numbered && sec.equation.num ? `\\tag{${sec.equation.num}}` : '';
-      bodyLatex += `\n\\begin{${env}}\n${breakLongEquation(sanitizeMathForLatex(sec.equation.latex), isOneColumn ? 90 : 40)}${tag}${label}\n\\end{${env}}\n`;
+      bodyLatex += equationToLatex(sec, secIdx, oneCol);
     } else if (sec.type === 'figure' && sec.figure) {
       const figNum = sec.figure.num || (secIdx + 1);
       let imgName = `fig${figNum}.png`;
@@ -381,7 +382,7 @@ ${isOneColumn
       }
 
       // Column layout for figure: 1-column vs 2-column
-      const isFigOneCol = isOneColumn || sec.figure.columnSpan === '1-column' || sec.figure.isFullWidth === false;
+      const isFigOneCol = oneCol || sec.figure.columnSpan === '1-column' || sec.figure.isFullWidth === false;
       const figEnv = isFigOneCol ? 'figure' : 'figure*';
 
       // Placement: auto -> !htbp, top -> t, here -> !h, bottom -> b
@@ -419,7 +420,8 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
 \\end{${figEnv}}
 \\egroup\n`;
     } else if (sec.type === 'table' && sec.table) {
-      bodyLatex += tableToLatex(sec.table, { isOneColumn, theme });
+      // a rotated table inside a landscape page is already sideways
+      bodyLatex += tableToLatex(layoutTracker.landscape ? { ...sec.table, isRotated: false } : sec.table, { isOneColumn: oneCol, theme });
     }
 
     if (sec.pageBreakAfter) {
@@ -433,7 +435,7 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
 
   let bibLatex = '';
   if (references.length > 0) {
-    const balanceCmd = isOneColumn ? '' : '\\beforepage{\\balance} \n\n';
+    const balanceCmd = layoutTracker.oneColumn ? '' : '\\beforepage{\\balance} \n\n';
     // polyglossia resets \refname to "References" at \begin{document}; set the printed heading here
     bibLatex = `\n${balanceCmd}{\\sffamily\\fontsize{7}{8}\\selectfont \n\n\\renewcommand{\\refname}{Tài liệu tham khảo}\n\\begin{thebibliography}{10}\n\n` +
       references
@@ -467,7 +469,7 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
         })
       : null;
 
-  return `${preamblePart1}${metaBlock}${OFFICIAL_PREAMBLE_PART2}${titleBlock}${bodyLatex}${bibLatex}${englishPage ?? ''}\n\\end{document}\n`;
+  return `${preamblePart1}${metaBlock}${OFFICIAL_PREAMBLE_PART2}${titleBlock}${bodyLatex}${bibLatex}${layoutTracker.close()}${englishPage ?? ''}\n\\end{document}\n`;
 }
 
 export const exportToLatex = generateFullJournalLatex;

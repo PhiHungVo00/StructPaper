@@ -391,6 +391,18 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
   // publication data ("?"/blank semantics) is kept in layoutOverrides
   const publication = v2Doc.layoutOverrides?.publication as Record<string, string> | undefined;
   if (publication) (metadata as any).publication = publication;
+  // Restore the per-section options kept aside by migrateV1toV2 (page layout, page break, formula number/width)
+  const extras = (v2Doc.layoutOverrides?.sectionExtras || {}) as Record<string, Record<string, any>>;
+  for (const sec of sections) {
+    const e = extras[sec.id];
+    if (!e) continue;
+    if (e.pageLayout) sec.pageLayout = e.pageLayout;
+    if (e.pageBreakAfter) sec.pageBreakAfter = true;
+    if (sec.equation) {
+      if (e.eqNum !== undefined && sec.equation.numbered) sec.equation.num = e.eqNum;
+      if (e.eqSpan) sec.equation.columnSpan = e.eqSpan;
+    }
+  }
   const titleOriginal = v2Doc.layoutOverrides?.titleOriginal as string | undefined;
   if (titleOriginal) (metadata as any).titleOriginal = titleOriginal;
 
