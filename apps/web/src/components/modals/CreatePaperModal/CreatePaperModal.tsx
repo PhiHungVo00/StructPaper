@@ -13,6 +13,9 @@ import { usePaper } from '@/context/PaperContext';
 import { usePaperStorage, usePaperDuplicateWarning } from '@/hooks';
 import { toast } from '@/components/DynamicIslandToast';
 import { DuplicatePaperWarningModal } from '@/components/modals/DuplicatePaperWarningModal';
+import { ImportValidationModal } from '@/components/documents/ValidationModals';
+import { validateForImport, type ValidationReport } from '@/lib/validation/validators';
+import { renumberPaper } from '@/lib/validation/numbering';
 
 interface CreatePaperModalProps {
   isOpen: boolean;
@@ -44,6 +47,13 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
   const [step, setStep] = useState<1 | 2>(1);
   const [parsedPaper, setParsedPaper] = useState<CompletePaper | null>(null);
   const [isBlank, setIsBlank] = useState<boolean>(false);
+  const [docName, setDocName] = useState<string>('');
+  // GATE 1: report shown after importing a Word file, before the editor opens.
+  const [importGate, setImportGate] = useState<{
+    paper: CompletePaper;
+    managed: ManagedJournalProfile;
+    report: ValidationReport;
+  } | null>(null);
 
   const {
     duplicatePrompt,
@@ -69,6 +79,8 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
       setStep(1);
       setParsedPaper(null);
       setIsBlank(false);
+      setDocName('');
+      setImportGate(null);
       handleCloseDuplicate();
     }
   }, [isOpen, handleCloseDuplicate]);
@@ -124,8 +136,13 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
                 journalAbbv: managed.profile.names?.short || managed.id.toUpperCase(),
               },
             };
-            (finalPaper as any).displayName = resolvedTitle;
-            await executeSaveAndRedirect(finalPaper, managed);
+            (finalPaper as any).displayName = docName.trim() || resolvedTitle;
+            const report = validateForImport(finalPaper);
+            if (report.issues.length === 0) {
+              await executeSaveAndRedirect(finalPaper, managed);
+            } else {
+              setImportGate({ paper: finalPaper, managed, report });
+            }
           },
         });
       } else {
@@ -135,7 +152,7 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
         finalPaper.metadata.journalAbbv =
           managed.profile.names?.short || managed.id.toUpperCase();
 
-        const uniqueTitle = await getAutoUniqueTitle('Bản thảo bài báo');
+        const uniqueTitle = docName.trim() || (await getAutoUniqueTitle('Bản thảo bài báo'));
         finalPaper.metadata.title = uniqueTitle;
         (finalPaper as any).displayName = uniqueTitle;
 
@@ -237,6 +254,17 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
 
         {/* Modal Content with Horizontal Step Slider */}
         <div className="p-6 sm:p-7">
+          <label className="block mb-4">
+            <span className="block text-[11px] font-bold text-slate-500 mb-1 pl-1">Tên tài liệu</span>
+            <input
+              value={docName}
+              onChange={(e) => setDocName(e.target.value)}
+              maxLength={200}
+              placeholder="Đặt tên tài liệu (để trống sẽ lấy theo tiêu đề bài báo)"
+              data-testid="new-document-name"
+              className="w-full rounded-2xl bg-white border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-900 outline-none focus:ring-2 focus:ring-lime-300"
+            />
+          </label>
           <AnimatePresence mode="wait" initial={false}>
             {step === 1 ? (
               <motion.div
@@ -287,6 +315,24 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
         </div>
       </motion.div>
     </ModalPortal>
+
+    <ImportValidationModal
+      isOpen={importGate !== null}
+      report={importGate?.report ?? null}
+      fileLabel={importGate?.paper.metadata.title}
+      onClose={() => setImportGate(null)}
+      onAutoFix={() => {
+        if (!importGate) return;
+        const fixed = renumberPaper(importGate.paper);
+        setImportGate({ ...importGate, paper: fixed, report: validateForImport(fixed) });
+      }}
+      onContinue={async () => {
+        if (!importGate) return;
+        const { paper: toSave, managed } = importGate;
+        setImportGate(null);
+        await executeSaveAndRedirect(toSave, managed);
+      }}
+    />
 
     <DuplicatePaperWarningModal
       isOpen={Boolean(duplicatePrompt?.isOpen)}

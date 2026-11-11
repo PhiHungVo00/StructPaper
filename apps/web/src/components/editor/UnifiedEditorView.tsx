@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { CompletePaper, PaperSection, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/paper';
 import { computePreflightCheck } from '@/lib/docx-extractor';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
@@ -23,6 +24,14 @@ import { PreflightQCTab } from './PreflightQCTab';
 import { LivePreviewPane } from './LivePreviewPane';
 import { ResizableSplitLayout } from './ResizableSplitLayout';
 import { generateStandardCitation } from './sections/utils';
+import { assignEquationNumbers, renumberPaper } from '@/lib/validation/numbering';
+import { validateForExport, type ValidationReport } from '@/lib/validation/validators';
+import { DocumentMenuBar, type ExportFormat } from '@/components/documents/DocumentMenuBar';
+import { OpenDocumentDialog, type OpenListItem } from '@/components/documents/OpenDocumentDialog';
+import { ExportGateModal } from '@/components/documents/ValidationModals';
+import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
+import { useDocumentAutosave } from '@/hooks/useDocumentAutosave';
+import { DocumentApi } from '@/lib/documents/document-api';
 import { useEditorCompilation, useEditorExport, useEditorShortcuts } from './hooks';
 import { usePaperStorage, useEditorQuickEdit } from '@/hooks';
 import { PaperQuickEditModal } from '@/components/papers';
@@ -34,8 +43,9 @@ interface UnifiedEditorViewProps {
 }
 
 export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onUpdatePaper }) => {
-  const { currentJournal, setCurrentJournal } = usePaper();
-  const { savePaper } = usePaperStorage();
+  const { currentJournal, setCurrentJournal, setPaper } = usePaper();
+  const router = useRouter();
+  const { savePaper, loadPaper } = usePaperStorage();
   const [formData, setFormData] = useState<CompletePaper>(() => JSON.parse(JSON.stringify(paper)));
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -43,6 +53,9 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const [isExtractedDrawerOpen, setIsExtractedDrawerOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<EditorTabKey>('metadata');
   const [mobilePane, setMobilePane] = useState<'editor' | 'preview'>('editor');
+  const [exportGate, setExportGate] = useState<{ format: ExportFormat; report: ValidationReport } | null>(null);
+  const [isOpenDialog, setIsOpenDialog] = useState(false);
+  const [isNewDialog, setIsNewDialog] = useState(false);
 
   const {
     isQuickEditOpen,
@@ -55,17 +68,122 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const { compiledPdfUrl, isCompilingPdf, compileStats, compileErrorInfo, setCompileErrorInfo, compileLatexToPdf, handleRecompile } =
     useEditorCompilation({ paper, formData, onUpdatePaper, setIsDirty });
 
-  const { isExportingDocx, isExportingZip, isExportingPdf, handleDownloadDocx, handleDownloadZip, handleDownloadPdf } =
-    useEditorExport({ formData, compiledPdfUrl, compileLatexToPdf });
+  const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+  const remoteSync = !isTestEnv && process.env.NEXT_PUBLIC_DISABLE_SYNC !== '1';
+
+  // Auto-save: every edit is persisted locally (IndexedDB) and pushed to the backend (DB + MinIO).
+  const { state: saveState, savedAt, saveNow, flush, resolveKeepMine, sync } = useDocumentAutosave({
+    paper: formData,
+    documentId: paper.id,
+    remote: remoteSync,
+    saveLocal: async (p) => {
+      onUpdatePaper(p);
+      return savePaper(p);
+    },
+  });
+
+  useEffect(() => {
+    if (saveState === 'saved' || saveState === 'saved-local') setIsDirty(false);
+    else if (saveState === 'dirty') setIsDirty(true);
+  }, [saveState]);
+
+  // Archive each produced deliverable on the server (best-effort; the download already happened).
+  const handleExported = useCallback(
+    (format: ExportFormat, blob: Blob, fileName: string) => {
+      if (!remoteSync) return;
+      new DocumentApi().uploadExport(formData.id, blob, format, fileName).catch(() => undefined);
+    },
+    [formData.id, remoteSync]
+  );
+
+  const { isExportingDocx, isExportingZip, isExportingPdf, isExportingXml, handleDownloadDocx, handleDownloadZip, handleDownloadPdf, handleDownloadXml } =
+    useEditorExport({ formData, compiledPdfUrl, compileLatexToPdf, onExported: handleExported });
 
   const handleSave = useCallback(async () => {
     onUpdatePaper(formData);
-    await savePaper(formData);
-    setIsDirty(false);
+    await saveNow(formData);
+    sileo.success({ title: 'Đã lưu tài liệu', description: 'Nội dung đã được lưu và tạo phiên bản mới' });
     setSaveSuccess(true);
-    sileo.success({ title: 'Đã lưu thay đổi', description: 'Bản thảo bài báo đã được cập nhật thành công vào hệ thống' });
     setTimeout(() => setSaveSuccess(false), 2500);
-  }, [formData, onUpdatePaper, savePaper]);
+  }, [formData, onUpdatePaper, saveNow]);
+
+  // ---- GATE 2: validate before producing the deliverable ----
+  const runExport = useCallback(
+    async (format: ExportFormat) => {
+      if (format === 'docx') return handleDownloadDocx();
+      if (format === 'xml') return handleDownloadXml();
+      const url = await compileLatexToPdf(formData);
+      if (!url) {
+        setExportGate({ format, report: validateForExport(formData, { format, pdfCompiled: false }) });
+        return;
+      }
+      return handleDownloadPdf(url);
+    },
+    [formData, handleDownloadDocx, handleDownloadXml, handleDownloadPdf, compileLatexToPdf]
+  );
+
+  const requestExport = useCallback(
+    async (format: ExportFormat) => {
+      await flush();
+      const report = validateForExport(formData, { format });
+      if (report.issues.length === 0) {
+        await runExport(format);
+        return;
+      }
+      setExportGate({ format, report });
+    },
+    [flush, formData, runExport]
+  );
+
+  const handleGateAutoFix = useCallback(() => {
+    if (!exportGate) return;
+    const fixed = renumberPaper({ ...formData, sections: assignEquationNumbers(formData.sections) });
+    setFormData(fixed);
+    setIsDirty(true);
+    setExportGate({ format: exportGate.format, report: validateForExport(fixed, { format: exportGate.format }) });
+  }, [exportGate, formData]);
+
+  const handleGateFix = useCallback((issue: { fixTab?: string }) => {
+    if (issue.fixTab) setActiveSubTab(issue.fixTab as EditorTabKey);
+    setExportGate(null);
+  }, []);
+
+  const handleConfirmExport = useCallback(async () => {
+    if (!exportGate) return;
+    const { format } = exportGate;
+    setExportGate(null);
+    await runExport(format);
+  }, [exportGate, runExport]);
+
+  // ---- Open: pick a previously saved document (local + server) ----
+  const handleOpenItem = useCallback(
+    async (item: OpenListItem) => {
+      await flush();
+      let loaded = await loadPaper(item.id);
+      if (!loaded && sync) {
+        try {
+          loaded = await sync.pull(item.id);
+          await savePaper(loaded);
+        } catch {
+          loaded = null;
+        }
+      }
+      if (!loaded) {
+        sileo.error({ title: 'Không mở được tài liệu', description: 'Không tìm thấy nội dung tài liệu này.' });
+        return;
+      }
+      setPaper(loaded);
+      if (loaded.metadata?.journalId) setCurrentJournal(loaded.metadata.journalId);
+      setIsOpenDialog(false);
+      router.replace(`/editor?id=${encodeURIComponent(loaded.id)}`);
+    },
+    [flush, loadPaper, sync, savePaper, setPaper, setCurrentJournal, router]
+  );
+
+  const documentName = ((formData as any).displayName as string | undefined) || formData.metadata.title || 'Bản thảo bài báo';
+  const handleRename = useCallback((name: string) => {
+    setFormData((p) => ({ ...p, displayName: name } as CompletePaper));
+  }, []);
 
   useEditorShortcuts({ onSave: handleSave });
   useEffect(() => { setFormData(JSON.parse(JSON.stringify(paper))); setIsDirty(false); }, [paper.id]);
@@ -126,7 +244,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         )}
         {activeSubTab === 'authors' && <AuthorsTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
         {activeSubTab === 'abstract' && <AbstractTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
-        {activeSubTab === 'sections' && <SectionsTab sections={formData.sections} onChange={(s) => { setFormData((p) => ({ ...p, sections: s })); setIsDirty(true); }} metadata={formData.metadata} references={formData.references} />}
+        {activeSubTab === 'sections' && <SectionsTab sections={formData.sections} onChange={(s) => { setFormData((p) => ({ ...p, sections: assignEquationNumbers(s) })); setIsDirty(true); }} metadata={formData.metadata} references={formData.references} />}
         {activeSubTab === 'refs' && <ReferencesTab references={formData.references} onChange={(r) => { setFormData((p) => ({ ...p, references: r })); setIsDirty(true); }} />}
         {activeSubTab === 'citation' && <CitationTab citationText={citationText} onChange={handleUpdateCitation} metadata={formData.metadata} />}
         {activeSubTab === 'preflight' && <PreflightQCTab preflight={preflight} onNavigateTab={setActiveSubTab} />}
@@ -160,11 +278,11 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         isDirty={isDirty}
         onRecompile={() => handleRecompile(formData)}
         isCompiling={isCompilingPdf}
-        onDownloadDocx={handleDownloadDocx}
+        onDownloadDocx={() => requestExport('docx')}
         isExportingDocx={isExportingDocx}
         onDownloadZip={handleDownloadZip}
         isExportingZip={isExportingZip}
-        onDownloadPdf={handleDownloadPdf}
+        onDownloadPdf={() => requestExport('pdf')}
         isExportingPdf={isExportingPdf}
         compiledPdfUrl={compiledPdfUrl}
         qcScore={preflight.score}
@@ -176,6 +294,18 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
       />
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative z-10">
+        <DocumentMenuBar
+          name={documentName}
+          onRename={handleRename}
+          saveState={saveState}
+          savedAt={savedAt}
+          onNew={() => setIsNewDialog(true)}
+          onOpen={() => setIsOpenDialog(true)}
+          onSave={handleSave}
+          onExport={requestExport}
+          onKeepMine={resolveKeepMine}
+          exporting={{ docx: isExportingDocx, pdf: isExportingPdf, xml: isExportingXml }}
+        />
         <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 mb-1.5 bg-white/70 backdrop-blur-md rounded-2xl border border-zinc-200">
           <Link href="/papers" className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs" title="Quay lại danh sách bài báo">
             <Home className="w-4 h-4" />
@@ -202,6 +332,17 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
 
       <ExtractedContentDrawer isOpen={isExtractedDrawerOpen} onClose={() => setIsExtractedDrawerOpen(false)} paper={formData} />
       <LayoutSettingsDrawer isOpen={isSettingsDrawerOpen} onClose={() => setIsSettingsDrawerOpen(false)} settings={formData.layoutSettings || DEFAULT_LAYOUT_SETTINGS} journalId={formData.metadata.journalId || currentJournal} onApplySettings={handleApplyLayoutSettings} isCompiling={isCompilingPdf} />
+      <OpenDocumentDialog isOpen={isOpenDialog} onClose={() => setIsOpenDialog(false)} onOpen={handleOpenItem} />
+      <ExportGateModal
+        isOpen={exportGate !== null}
+        report={exportGate?.report ?? null}
+        format={exportGate?.format ?? 'docx'}
+        onClose={() => setExportGate(null)}
+        onAutoFix={handleGateAutoFix}
+        onFix={handleGateFix}
+        onExport={handleConfirmExport}
+      />
+      <CreatePaperModal isOpen={isNewDialog} onClose={() => setIsNewDialog(false)} />
       <PaperQuickEditModal
         paper={quickEditRecord}
         isOpen={isQuickEditOpen}

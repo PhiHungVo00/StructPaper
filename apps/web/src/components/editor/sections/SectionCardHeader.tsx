@@ -69,6 +69,7 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
   const isTable = sec.type === 'table';
   const isFigure = sec.type === 'figure';
   const isCitation = sec.type === 'citation';
+  const isEquation = sec.type === 'equation';
 
   const secId = sec.id || `sec_${idx}`;
   const isCardSettingsOpen = activeSettings?.secIndex === idx;
@@ -126,6 +127,12 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200/80 text-zinc-800 flex items-center gap-1">
             <ImageIcon className="w-3 h-3" />
             Hình minh họa {sec.figure?.num ? `(Hình ${sec.figure.num})` : ''}
+          </span>
+        )}
+
+        {isEquation && (
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 flex items-center gap-1">
+            Công thức {sec.equation?.numbered && sec.equation.num ? `(${sec.equation.num})` : ''}
           </span>
         )}
 

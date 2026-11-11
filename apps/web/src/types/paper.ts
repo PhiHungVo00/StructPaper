@@ -1,3 +1,6 @@
+import type { ThemeSettings, PaperEquation } from './paper-extensions';
+export type { ThemeSettings, PaperEquation };
+
 import type { Cell } from '@structpaper/doc-model';
 
 export interface Author {
@@ -80,6 +83,8 @@ export interface PaperTable {
   id: string;
   num: number;
   caption: string;
+  /** Source line shown under the table, e.g. "Nguồn: Kết quả của nhóm tác giả". */
+  source?: string;
   headers: string[];
   rows: string[][];
   headerRows?: TableCell[][];
@@ -383,7 +388,8 @@ export function normalizeCompletePaper(paper: CompletePaper): CompletePaper {
 
 export interface PaperSection {
   id: string;
-  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation';
+  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation' | 'equation';
+  equation?: PaperEquation;
   title?: string;
   content: string;
   figure?: PaperFigure;
@@ -522,6 +528,7 @@ export const DEFAULT_PAGE_NUMBERING: PageNumberingSettings = {
 
 export interface LayoutSettings {
   paperSize: 'custom' | 'a4' | 'letter' | 'b5';
+  theme?: ThemeSettings;
   columnLayout: '1-column' | '2-column';
   fontSize?: '9pt' | '10pt' | '11pt';
   columnSep?: '1pc' | '1.5pc' | '2pc';

@@ -1,4 +1,6 @@
 import mammoth from 'mammoth';
+import { ommlToLatex } from './omml';
+import { extractDisplayEquations, insertEquations } from './docx-equations';
 import JSZip from 'jszip';
 import { Author, Affiliation, PaperSection, PaperReference, PreflightCheck, StructuralIssue, CompletePaper, PaperMetadata, TableCell } from '@/types/paper';
 import { JOURNAL_TEMPLATES, getJournalTemplate } from './templates';
@@ -42,57 +44,7 @@ export function normalizeVietnameseWordSpacing(name: string): string {
   return s.replace(/\s+/g, ' ').trim();
 }
 
-/**
- * Convert Office Math Markup Language (OMML) to LaTeX math syntax
- */
-export function ommlToLatex(ommlXml: string): string {
-  let s = ommlXml;
-
-  // Fraction <m:f>: <m:num>...</m:num><m:den>...</m:den> -> \frac{num}{den}
-  s = s.replace(
-    /<m:f\b[\s>][\s\S]*?<m:num\b[\s>]([\s\S]*?)<\/m:num>[\s\S]*?<m:den\b[\s>]([\s\S]*?)<\/m:den>[\s\S]*?<\/m:f>/gi,
-    (_, num, den) => `\\frac{${ommlToLatex(num)}}{${ommlToLatex(den)}}`
-  );
-
-  // Superscript <m:sSup>: <m:e>...</m:e><m:sup>...</m:sup> -> {base}^{sup}
-  s = s.replace(
-    /<m:sSup\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<m:sup\b[\s>]([\s\S]*?)<\/m:sup>[\s\S]*?<\/m:sSup>/gi,
-    (_, e, sup) => `{${ommlToLatex(e)}}^{${ommlToLatex(sup)}}`
-  );
-
-  // Subscript <m:sSub>: <m:e>...</m:e><m:sub>...</m:sub> -> {base}_{sub}
-  s = s.replace(
-    /<m:sSub\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<m:sub\b[\s>]([\s\S]*?)<\/m:sub>[\s\S]*?<\/m:sSub>/gi,
-    (_, e, sub) => `{${ommlToLatex(e)}}_{${ommlToLatex(sub)}}`
-  );
-
-  // Sub-Superscript <m:sSubSup>
-  s = s.replace(
-    /<m:sSubSup\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<m:sub\b[\s>]([\s\S]*?)<\/m:sub>[\s\S]*?<m:sup\b[\s>]([\s\S]*?)<\/m:sup>[\s\S]*?<\/m:sSubSup>/gi,
-    (_, e, sub, sup) => `{${ommlToLatex(e)}}_{${ommlToLatex(sub)}}^{${ommlToLatex(sup)}}`
-  );
-
-  // Radical/sqrt <m:rad>
-  s = s.replace(
-    /<m:rad\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<\/m:rad>/gi,
-    (_, e) => `\\sqrt{${ommlToLatex(e)}}`
-  );
-
-  // Delimiter/parentheses <m:d>
-  s = s.replace(
-    /<m:d\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<\/m:d>/gi,
-    (_, e) => `\\left(${ommlToLatex(e)}\\right)`
-  );
-
-  // Text inside <m:t>
-  const tMatches = s.match(/<m:t\b[^>]*>([\s\S]*?)<\/m:t>/gi);
-  if (tMatches) {
-    return tMatches.map((m) => m.replace(/<[^>]+>/g, '')).join('');
-  }
-
-  // Strip remaining XML tags
-  return s.replace(/<[^>]+>/g, '').trim();
-}
+export { ommlToLatex };
 
 /**
  * Journal auto-detector prioritizing specific series before fallback STDJ
@@ -1442,6 +1394,20 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
         },
       });
     }
+  }
+
+  // Recover Word equations (OMML) that the text pipeline cannot see.
+  try {
+    const eqs = extractDisplayEquations(openXmlParagraphs);
+    if (eqs.length) {
+      const res = insertEquations(sections, eqs);
+      sections.splice(0, sections.length, ...res.sections);
+      if (res.unplaced > 0) {
+        console.warn(`[docx-parser] ${res.unplaced} công thức không xác định được vị trí chèn`);
+      }
+    }
+  } catch (eqErr) {
+    console.warn('[docx-parser] Không thể trích xuất công thức Word:', eqErr);
   }
 
   if (!title) {

@@ -374,6 +374,7 @@ export function migrateV1toV2(
           type: 'table',
           id: tbl.id || sec.id || gen.nextId('tbl'),
           caption,
+          source: tbl.source ? parseTextWithCitations(tbl.source, refIdMap, gen) : undefined,
           grid,
           headerRows: headerRowsCount,
           layout: {
@@ -387,6 +388,17 @@ export function migrateV1toV2(
           },
         };
         addBlockToCurrent(tableBlock);
+        break;
+      }
+      case 'equation': {
+        addBlockToCurrent({
+          type: 'equation',
+          id: sec.id || gen.nextId('eq'),
+          latex: sec.equation?.latex || '',
+          omml: sec.equation?.omml,
+          numbered: sec.equation?.numbered ?? true,
+          status: 'ok',
+        });
         break;
       }
       case 'quote': {

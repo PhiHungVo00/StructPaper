@@ -77,6 +77,7 @@ export interface V1PaperTable {
   id: string;
   num: number;
   caption: string;
+  source?: string;
   headers: string[];
   rows: string[][];
   headerRows?: V1TableCell[][];
@@ -90,9 +91,17 @@ export interface V1PaperTable {
   placement?: 'auto' | 'top' | 'here' | 'bottom';
 }
 
+export interface V1PaperEquation {
+  latex: string;
+  num?: number;
+  numbered: boolean;
+  omml?: string;
+}
+
 export interface V1PaperSection {
   id: string;
-  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation';
+  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation' | 'equation';
+  equation?: V1PaperEquation;
   title?: string;
   content: string;
   figure?: V1PaperFigure;

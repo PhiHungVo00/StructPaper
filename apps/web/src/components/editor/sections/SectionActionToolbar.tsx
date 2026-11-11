@@ -8,6 +8,7 @@ import {
   Heading,
   AlignLeft,
   Layers,
+  Sigma,
 } from 'lucide-react';
 
 export interface SectionActionToolbarProps {
@@ -18,6 +19,7 @@ export interface SectionActionToolbarProps {
   onAddParagraph: () => void;
   onAddTable: () => void;
   onAddFigure: () => void;
+  onAddEquation?: () => void;
   counts: {
     all: number;
     headings: number;
@@ -35,6 +37,7 @@ export const SectionActionToolbar: React.FC<SectionActionToolbarProps> = ({
   onAddParagraph,
   onAddTable,
   onAddFigure,
+  onAddEquation,
   counts,
 }) => {
   return (
@@ -89,6 +92,18 @@ export const SectionActionToolbar: React.FC<SectionActionToolbarProps> = ({
             <ImageIcon className="w-3 h-3 text-amber-500" />
             <span>+ Hình</span>
           </button>
+
+          {onAddEquation && (
+            <button
+              type="button"
+              onClick={() => onAddEquation()}
+              className="px-2.5 py-1 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 hover:bg-violet-100 text-[11px] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+              title="Thêm công thức toán học"
+            >
+              <Sigma className="w-3 h-3 text-violet-500" />
+              <span>+ Công thức</span>
+            </button>
+          )}
         </div>
       </div>
 

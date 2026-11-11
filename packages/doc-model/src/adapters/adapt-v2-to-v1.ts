@@ -204,6 +204,7 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
 
   // 7. Flatten Body Sections
   const sections: V1PaperSection[] = [];
+  let equationCounter = 0;
 
   function flattenSection(sec: Section) {
     const titleText = inlineToPlainText(sec.title, numbering, refMap);
@@ -315,6 +316,7 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
               id: block.id,
               num: tblNum,
               caption,
+              source: block.source ? inlineToPlainText(block.source, numbering, refMap) : undefined,
               headers,
               rows,
               headerRows: headerRows.length > 0 ? headerRows : undefined,
@@ -361,8 +363,14 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
         case 'equation': {
           sections.push({
             id: block.id,
-            type: 'paragraph',
-            content: `$${block.latex}$`,
+            type: 'equation',
+            content: '',
+            equation: {
+              latex: block.latex,
+              omml: block.omml,
+              numbered: block.numbered,
+              num: block.numbered ? ++equationCounter : undefined,
+            },
           });
           break;
         }

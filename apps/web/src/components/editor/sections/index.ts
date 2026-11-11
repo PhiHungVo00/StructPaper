@@ -13,6 +13,7 @@ export * from './HeadingSectionItem';
 export * from './ParagraphSectionItem';
 export * from './TableSectionItem';
 export * from './FigureSectionItem';
+export * from './EquationSectionItem';
 export * from './CitationSectionItem';
 export * from './SectionInsertDivider';
 export * from './utils';

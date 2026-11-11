@@ -196,6 +196,16 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     handleInsertSection(insertAfterIndex, newSection);
   };
 
+  const handleAddEquation = (insertAfterIndex?: number) => {
+    const newSection: PaperSection = {
+      id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'equation',
+      content: '',
+      equation: { latex: '', numbered: true },
+    };
+    handleInsertSection(insertAfterIndex, newSection);
+  };
+
   // Conversions between Paragraph and Heading
   const handleConvertToHeading = (index: number, level: 'h1' | 'h2' | 'h3') => {
     const sec = sections[index];
@@ -274,6 +284,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         onAddParagraph={handleAddParagraph}
         onAddTable={handleAddTable}
         onAddFigure={handleAddFigure}
+        onAddEquation={() => handleAddEquation()}
         counts={{
           all: regularSections.length,
           headings: sections.filter((s) => s.type === 'h1' || s.type === 'h2' || s.type === 'h3').length,
@@ -321,6 +332,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         onAddParagraph={handleAddParagraph}
         onAddTable={handleAddTable}
         onAddFigure={handleAddFigure}
+        onAddEquation={handleAddEquation}
         setFileInputRef={(i, el) => {
           mediaHandlers.fileInputRefs.current[i] = el;
         }}

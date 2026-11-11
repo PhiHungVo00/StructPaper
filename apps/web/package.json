@@ -36,6 +36,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.2",
+    "katex": "0.16.11",
     "latex.js": "^0.12.6",
     "lucide-react": "^1.52.0",
     "mammoth": "^1.13.0",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.2.0",
+    "@types/katex": "0.16.7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

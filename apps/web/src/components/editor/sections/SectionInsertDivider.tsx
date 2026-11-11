@@ -7,6 +7,7 @@ import {
   Table as TableIcon,
   Image as ImageIcon,
   Bookmark,
+  Sigma,
 } from 'lucide-react';
 
 interface SectionInsertDividerProps {
@@ -16,6 +17,7 @@ interface SectionInsertDividerProps {
   onAddTable: (afterIndex: number) => void;
   onAddFigure: (afterIndex: number) => void;
   onAddCitation?: (afterIndex: number) => void;
+  onAddEquation?: (afterIndex?: number) => void;
 }
 
 export const SectionInsertDivider: React.FC<SectionInsertDividerProps> = ({
@@ -24,6 +26,7 @@ export const SectionInsertDivider: React.FC<SectionInsertDividerProps> = ({
   onAddParagraph,
   onAddTable,
   onAddFigure,
+  onAddEquation,
 }) => {
   return (
     <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out pointer-events-none group-hover:pointer-events-auto">
@@ -69,6 +72,17 @@ export const SectionInsertDivider: React.FC<SectionInsertDividerProps> = ({
               <ImageIcon className="w-2.5 h-2.5 text-amber-500" />
               <span>+ Hình</span>
             </button>
+            {onAddEquation && (
+              <button
+                type="button"
+                onClick={() => onAddEquation(idx)}
+                className="px-2 py-0.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 text-[10px] font-bold flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                title="Thêm công thức toán học ngay bên dưới"
+              >
+                <Sigma className="w-2.5 h-2.5 text-violet-500" />
+                <span>+ Công thức</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

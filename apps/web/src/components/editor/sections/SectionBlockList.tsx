@@ -9,6 +9,7 @@ import {
   ParagraphSectionItem,
   TableSectionItem,
   FigureSectionItem,
+  EquationSectionItem,
   SectionInsertDivider,
 } from './index';
 import { FileText, Scissors, X } from 'lucide-react';
@@ -53,6 +54,7 @@ export interface SectionBlockListProps {
   onAddParagraph: (insertAfterIndex?: number) => void;
   onAddTable: (insertAfterIndex?: number) => void;
   onAddFigure: (insertAfterIndex?: number) => void;
+  onAddEquation?: (insertAfterIndex?: number) => void;
   setFileInputRef: (idx: number, el: HTMLInputElement | null) => void;
   references?: PaperReference[];
 }
@@ -94,6 +96,7 @@ export const SectionBlockList: React.FC<SectionBlockListProps> = ({
   onAddParagraph,
   onAddTable,
   onAddFigure,
+  onAddEquation,
   setFileInputRef,
 }) => {
   const regularSections = sections.filter((s) => s.type !== 'citation');
@@ -145,6 +148,7 @@ export const SectionBlockList: React.FC<SectionBlockListProps> = ({
         const isHeading = sec.type === 'h1' || sec.type === 'h2' || sec.type === 'h3';
         const isTable = sec.type === 'table';
         const isFigure = sec.type === 'figure';
+        const isEquation = sec.type === 'equation';
         const isParagraph = sec.type === 'paragraph';
         const isNewlyAdded = sec.id === newlyAddedId;
         const isDeleting = deletingIds.has(secId);
@@ -243,6 +247,11 @@ export const SectionBlockList: React.FC<SectionBlockListProps> = ({
                   />
                 )}
 
+                {/* 5. EQUATION */}
+                {isEquation && (
+                  <EquationSectionItem sec={sec} idx={idx} onUpdateSection={onUpdateSection} />
+                )}
+
                 {/* Quick Add Bar below section */}
                 <SectionInsertDivider
                   idx={idx}
@@ -250,6 +259,7 @@ export const SectionBlockList: React.FC<SectionBlockListProps> = ({
                   onAddParagraph={onAddParagraph}
                   onAddTable={onAddTable}
                   onAddFigure={onAddFigure}
+                  onAddEquation={onAddEquation}
                 />
               </div>
             </div>

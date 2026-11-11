@@ -1,61 +1,12 @@
 import JSZip from 'jszip';
 import { CompletePaper, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/paper';
 import { getJournalTemplate } from './templates';
+import { resolveTheme, hexToRgb as themeHexToRgb } from './theme-config';
+import { sanitizeMathForLatex } from './math-text';
+import { escapeLatex } from './latex-escape';
+import { tableToLatex } from './latex-table';
 
-/**
- * Escapes characters that have special meaning in LaTeX, while safely preserving math equations
- */
-export function escapeLatex(text: string): string {
-  if (!text) return '';
-
-  // Strip zero-width and invisible unicode characters
-  let clean = text.replace(/[\u200B\u200C\u200D\uFEFF\u200E\u200F]/g, '');
-
-  // Protect LaTeX math segments: $$...$$ and $...$
-  const mathSegments: string[] = [];
-  const textWithPlaceholders = clean.replace(/(\$\$[\s\S]*?\$\$|\$[^\$]+?\$)/g, (match) => {
-    mathSegments.push(match);
-    return `___MATH_TOKEN_${mathSegments.length - 1}___`;
-  });
-
-  let escaped = textWithPlaceholders
-    // Replace % with \%
-    .replace(/(?<!\\)%/g, () => '\\%')
-    // Replace & with \&
-    .replace(/(?<!\\)&/g, () => '\\&')
-    // Replace _ with \_
-    .replace(/(?<!\\)_/g, () => '\\_')
-    // Replace # with \#
-    .replace(/(?<!\\)#/g, () => '\\#')
-    // Greek characters outside math mode
-    .replace(/β/g, '$\\beta$')
-    .replace(/α/g, '$\\alpha$')
-    .replace(/γ/g, '$\\gamma$')
-    .replace(/δ/g, '$\\delta$')
-    .replace(/λ/g, '$\\lambda$')
-    .replace(/μ/g, '$\\mu$')
-    .replace(/π/g, '$\\pi$')
-    .replace(/σ/g, '$\\sigma$')
-    .replace(/θ/g, '$\\theta$')
-    // Common math symbols outside math mode
-    .replace(/≥/g, '$\\ge$')
-    .replace(/≤/g, '$\\le$')
-    .replace(/≠/g, '$\\ne$')
-    .replace(/±/g, '$\\pm$')
-    .replace(/→/g, '$\\to$')
-    .replace(/←/g, '$\\gets$')
-    .replace(/↔/g, '$\\leftrightarrow$')
-    .replace(/⇒/g, '$\\Rightarrow$')
-    .replace(/≈/g, '$\\approx$')
-    .replace(/°/g, '$^\\circ$');
-
-  // Restore math blocks untouched
-  mathSegments.forEach((math, idx) => {
-    escaped = escaped.replace(`___MATH_TOKEN_${idx}___`, math);
-  });
-
-  return escaped;
-}
+export { escapeLatex };
 
 /**
  * Converts inline citation brackets like [1] or [1, 2] to native LaTeX natbib citations
@@ -115,9 +66,12 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
   const tmpl = getJournalTemplate(metadata.journalId);
   const customColor = (customSettings as any)?.color || (paper as any)?.color || (metadata as any)?.journalColor;
   const journalColor = customColor || tmpl.color;
-  const rgb = hexToRgb(journalColor);
 
   const settings = customSettings || paper.layoutSettings || DEFAULT_LAYOUT_SETTINGS;
+  const theme = resolveTheme(settings, journalColor);
+  const rgb = themeHexToRgb(theme.titleColor);
+  const headRgb = themeHexToRgb(theme.tableHeaderColor);
+  const zebraRgb = themeHexToRgb(theme.tableZebraColor);
   const isOneColumn = settings.columnLayout === '1-column';
 
   let paperWidthStr = '8.51in';
@@ -203,6 +157,9 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
     .replace('TITLE_COLOR_R', String(rgb.r))
     .replace('TITLE_COLOR_G', String(rgb.g))
     .replace('TITLE_COLOR_B', String(rgb.b))
+    .replace('\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee}', '\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee,supertabular,array}')
+    .replace('\\definecolor{tableheadrcolor}{RGB}{229, 229, 229}', `\\definecolor{tableheadrcolor}{RGB}{${headRgb.r}, ${headRgb.g}, ${headRgb.b}}\n\\definecolor{tablezebracolor}{RGB}{${zebraRgb.r}, ${zebraRgb.g}, ${zebraRgb.b}}`)
+    .replace('left=1.7cm,headsep=.2cm,right=1.3cm,top=1.8cm]', `left=${theme.margins.left}cm,headsep=.2cm,right=${theme.margins.right}cm,top=${theme.margins.top}cm,bottom=${theme.margins.bottom}cm]`)
     .replace('\\documentclass[9pt,twocolumn]{article}', `\\documentclass[${fontSize},${docClassCols}]{article}`)
     .replace('paperheight=11in,paperwidth=8.51in', `paperheight=${paperHeightStr},paperwidth=${paperWidthStr}`)
     .replace('\\setlength{\\paperwidth}{8.51in}', `\\setlength{\\paperwidth}{${paperWidthStr}}`)
@@ -225,6 +182,12 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
 
   // Inject page numbering format and startNumber at end of preamble
   preamblePart1 += `\n${pageFormatCmd}\n${startPageCmd}\n`;
+  if (theme.bodyFont !== 'Times New Roman') {
+    preamblePart1 += `\\IfFontExistsTF{${theme.bodyFont}}{\\setmainfont{${theme.bodyFont}}}{}\n`;
+  }
+  if (theme.headingFont !== 'Calibri') {
+    preamblePart1 += `\\IfFontExistsTF{${theme.headingFont}}{\\setsansfont{${theme.headingFont}}}{}\n`;
+  }
 
   const safeTitle = (metadata.title || '').trim() || 'TIÊU ĐỀ BÀI BÁO (BẢN THẢO)';
   const safeAbstract = (metadata.abstract || '').trim() || 'Tóm tắt bài báo chưa được nhập. Vui lòng cập nhật tóm tắt tại mục Tóm tắt để hoàn thiện bản thảo.';
@@ -328,7 +291,7 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
 \\author{{\\bfseries\\sffamily ${authorsFormatted}}}
 
 ${sidebox}
-\\newgeometry{left=15.4pc,right=3.1pc,footskip=0cm,bottom=3.4cm,paperheight=${paperHeightStr},paperwidth=${paperWidthStr},headsep=.2cm,top=1.8cm}    
+\\newgeometry{left=15.4pc,right=3.1pc,footskip=0cm,bottom=${(theme.margins.bottom + 1.4).toFixed(1)}cm,paperheight=${paperHeightStr},paperwidth=${paperWidthStr},headsep=.2cm,top=${theme.margins.top}cm}    
 ${isOneColumn
   ? `\\onecolumn \\maketitle {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}\\IfFileExists{qr-code.png}{\\includegraphics[scale=.014]{qr-code}}{\\IfFileExists{article-qr.png}{\\includegraphics[scale=.014]{article-qr}}{\\vspace*{1.5cm}}}\\\\\n\\vspace*{-.35pc}{\\fontsize{8pt}{9pt}\\selectfont\\hspace*{-.75pc}\\color{gray}{Use your smartphone to scan~this}\\\\\n\\vspace*{-.15pc}\\hspace*{-.75pc}\\color{gray}{QR code and download this article}}\\end{center}\\end{textblock*}\\begin{onecolabstract}\\def\\baselinestretch{1.06}\\fontsize{9.5pt}{9.5pt}\\selectfont ${escapeLatex(safeAbstract)}\\def\\keywordstitle{Keywords}
 
@@ -369,6 +332,10 @@ ${isOneColumn
       bodyLatex += `\n\\begin{mdframed}[backgroundcolor=unitednationsblue,linecolor=journalBlue,linewidth=0.5pt,innerleftmargin=0.8pc,innerrightmargin=0.8pc,innertopmargin=0.5pc,innerbottommargin=0.5pc]
 {\\footnotesize\\textbf{\\color{journalBlue}Trích dẫn bài báo này: }\\textit{${escapeLatex(sec.content)}}}
 \\end{mdframed}\n`;
+    } else if (sec.type === 'equation' && sec.equation && sec.equation.latex.trim()) {
+      const env = sec.equation.numbered ? 'equation' : 'equation*';
+      const label = sec.equation.numbered ? `\n\\label{eq:${sec.equation.num ?? secIdx + 1}}` : '';
+      bodyLatex += `\n\\begin{${env}}\n${sanitizeMathForLatex(sec.equation.latex)}${label}\n\\end{${env}}\n`;
     } else if (sec.type === 'figure' && sec.figure) {
       const figNum = sec.figure.num || (secIdx + 1);
       let imgName = `fig${figNum}.png`;
@@ -420,62 +387,7 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
 \\end{${figEnv}}
 \\egroup\n`;
     } else if (sec.type === 'table' && sec.table) {
-      const rawHeaders = sec.table.headers && sec.table.headers.length > 0 ? sec.table.headers : ['Cột 1'];
-      const rawRows = sec.table.rows || [];
-      const maxCols = Math.max(rawHeaders.length, ...rawRows.map((r) => r.length), 1);
-      const colFmt = Array(maxCols).fill('L').join('');
-      const headers = Array(maxCols).fill('').map((_, idx) => rawHeaders[idx] || '');
-      const paddedRows = rawRows.map((row) => Array(maxCols).fill('').map((_, idx) => row[idx] || ''));
-
-      // Check rotated vs 1-col vs 2-col
-      const isRotated = !!sec.table.isRotated;
-      const isTabOneCol = isOneColumn || sec.table.columnSpan === '1-column' || sec.table.isFullWidth === false;
-      const tabEnv = isRotated
-        ? (isTabOneCol ? 'sidewaystable' : 'sidewaystable*')
-        : (isTabOneCol ? 'table' : 'table*');
-
-      let placement = '!htbp';
-      if (sec.table.placement === 'top') placement = 't';
-      else if (sec.table.placement === 'here') placement = '!h';
-      else if (sec.table.placement === 'bottom') placement = 'b';
-
-      const tblFontSize = sec.table.fontSize || '8pt';
-      const tblLineHeight = tblFontSize === '7pt' ? '9pt' : tblFontSize === '9pt' ? '11pt' : tblFontSize === '10pt' ? '12pt' : '10pt';
-      const tblArrayStretch = sec.table.rowStretch || 1.4;
-      const hasZebra = sec.table.hasZebraStripes !== false;
-
-      bodyLatex += `\n\\begin{${tabEnv}}[${placement}]
-\\caption{{\\textbf{${escapeLatex(sec.table.caption)}}}}
-\\label{tab:${sec.table.num || 1}}
-\\centering
-{\\fontsize{${tblFontSize}}{${tblLineHeight}}\\selectfont
-\\def\\arraystretch{${tblArrayStretch}}
-\\begin{tabulary}{\\linewidth}{${colFmt}}
-\\hline \\rowcolor{tableheadrcolor}
-${headers.map((h) => `\\textbf{${escapeLatex(h)}}`).join(' & ')} \\\\ \\hline
-${(sec.table.bodyRows && sec.table.bodyRows.length > 0
-            ? sec.table.bodyRows
-            : paddedRows.map((r) => r.map((c) => ({ text: c }))))
-            .map(
-              (row, rI) =>
-                `${hasZebra && rI % 2 === 0 ? '\\rowcolor{unitednationsblue}\n' : ''}${row
-                  .map((cell: any) => {
-                    const rawText = cell.text !== undefined ? cell.text : String(cell || '');
-                    let escaped = escapeLatex(rawText);
-                    escaped = escaped.replace(/•/g, '$\\bullet$~');
-                    escaped = escaped.replace(/\r?\n/g, ' \\newline ');
-                    if (cell.colSpan && cell.colSpan > 1) {
-                      const alignChar = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
-                      return `\\multicolumn{${cell.colSpan}}{${alignChar}}{${escaped}}`;
-                    }
-                    return escaped;
-                  })
-                  .join(' & ')} \\\\`
-            )
-            .join('\n')}
-\\hline
-\\end{tabulary}}
-\\end{${tabEnv}}\n`;
+      bodyLatex += tableToLatex(sec.table, { isOneColumn, theme });
     }
 
     if (sec.pageBreakAfter) {

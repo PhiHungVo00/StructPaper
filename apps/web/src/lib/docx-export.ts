@@ -10,22 +10,34 @@ import {
   WidthType,
   AlignmentType,
   ShadingType,
+  TabStopType,
 } from 'docx';
 import { CompletePaper } from '@/types/paper';
+import { latexToDocxMath, splitTextWithMath } from './docx-math';
+import { resolveTheme } from './theme-config';
+import { buildDocxTable } from './docx-table';
 
 // Official font families matching ID630_HS-2026-10-02-06-42.docx & VNUHCMJ-HS-Vi.dotx
 const FONT_SERIF = 'Times New Roman';
 const FONT_SANS = 'Calibri';
 const FONT_AFFIL = 'Palatino Linotype';
-const COLOR_TITLE = '2B74B7'; // Official journal title color
 const COLOR_MUTED = '555555';
 const COLOR_GRAY = '7F7F7F';
+
+/** Text with inline $…$ formulas -> TextRuns + native Word equations. */
+function runsWithMath(text: string, font: string, size: number) {
+  return splitTextWithMath(text).map((c) =>
+    c.kind === 'text' ? new TextRun({ text: c.value, font, size }) : c.math
+  );
+}
 
 /**
  * Exports complete paper into DOCX format conforming to VNUHCM journal styles.
  */
 export async function exportPaperToDocx(paper: CompletePaper): Promise<Blob> {
   const { metadata, sections, references } = paper;
+  const theme = resolveTheme(paper.layoutSettings);
+  const COLOR_TITLE = theme.titleColor.slice(1);
 
   const docParagraphs: (Paragraph | Table)[] = [];
 
@@ -483,97 +495,33 @@ function formatJournalDate(dateStr?: string): string {
           })
         );
       }
+    } else if (sec.type === 'equation' && sec.equation?.latex.trim()) {
+      // Native Word equation, centred, with the "(n)" number flush right.
+      const eqChildren: any[] = [new TextRun({ text: '	' }), latexToDocxMath(sec.equation.latex)];
+      if (sec.equation.numbered) {
+        eqChildren.push(new TextRun({ text: `	(${sec.equation.num ?? ''})`, font: FONT_SERIF, size: 20 }));
+      }
+      docParagraphs.push(
+        new Paragraph({
+          children: eqChildren,
+          tabStops: [
+            { type: TabStopType.CENTER, position: 4500 },
+            { type: TabStopType.RIGHT, position: 9000 },
+          ],
+          spacing: { before: 120, after: 120 },
+        })
+      );
     } else if (sec.type === 'paragraph' && sec.content) {
       docParagraphs.push(
         new Paragraph({
-          children: [
-            new TextRun({
-              text: sec.content,
-              font: FONT_SERIF,
-              size: 20, // 10pt
-            }),
-          ],
+          children: runsWithMath(sec.content, FONT_SERIF, 20),
           alignment: AlignmentType.JUSTIFIED,
           indent: { firstLine: 360 },
           spacing: { after: 120 },
         })
       );
     } else if (sec.type === 'table' && sec.table) {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Bảng ${sec.table.num}: `,
-              font: FONT_SANS,
-              size: 17, // 8.5pt
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-            new TextRun({
-              text: sec.table.caption,
-              font: FONT_SANS,
-              size: 17,
-              bold: true,
-            }),
-          ],
-          spacing: { before: 200, after: 100 },
-        })
-      );
-
-      const tableRows: TableRow[] = [
-        new TableRow({
-          children: sec.table.headers.map(
-            (h) =>
-              new TableCell({
-                shading: { type: ShadingType.CLEAR, fill: 'E5E5E5' },
-                children: [
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: h,
-                        font: FONT_SANS,
-                        size: 16, // 8pt
-                        bold: true,
-                      }),
-                    ],
-                  }),
-                ],
-              })
-          ),
-        }),
-      ];
-
-      sec.table.rows.forEach((row, rIdx) => {
-        const fill = rIdx % 2 === 0 ? 'E7ECF7' : 'FFFFFF';
-        tableRows.push(
-          new TableRow({
-            children: row.map(
-              (cell) =>
-                new TableCell({
-                  shading: { type: ShadingType.CLEAR, fill },
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: cell,
-                          font: FONT_SERIF,
-                          size: 16, // 8pt
-                        }),
-                      ],
-                    }),
-                  ],
-                })
-            ),
-          })
-        );
-      });
-
-      docParagraphs.push(
-        new Table({
-          rows: tableRows,
-          width: { size: 100, type: WidthType.PERCENTAGE },
-        })
-      );
+      docParagraphs.push(...buildDocxTable(sec.table, theme));
     } else if (sec.type === 'figure' && sec.figure) {
       docParagraphs.push(
         new Paragraph({

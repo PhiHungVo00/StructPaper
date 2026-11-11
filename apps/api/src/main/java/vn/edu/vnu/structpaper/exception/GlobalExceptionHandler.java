@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import vn.edu.vnu.structpaper.ai.InvalidActionException;
 import vn.edu.vnu.structpaper.ai.PayloadTooLargeException;
 import vn.edu.vnu.structpaper.dto.response.ErrorResponse;
@@ -173,6 +174,23 @@ public class GlobalExceptionHandler {
                 ""
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /** Keep the status chosen by services that throw ResponseStatusException (e.g. 400 validation). */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
+        log.warn("Yêu cầu bị từ chối ({}): {}", status.value(), ex.getReason());
+        ErrorResponse error = ErrorResponse.of(
+                status.value(),
+                status.name(),
+                ex.getReason(),
+                "Request",
+                ex.getReason(),
+                ""
+        );
+        return ResponseEntity.status(status).body(error);
     }
 
     @ExceptionHandler(Exception.class)
