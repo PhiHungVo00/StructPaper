@@ -27,6 +27,7 @@ import { JOURNAL_TEMPLATES } from '@/lib/templates';
 import { Select, SelectOption } from '../ui/Select';
 import { ThemeSettingsSection } from './ThemeSettingsSection';
 import { formatSamplePage } from './page-number-format';
+import { PageOrientationSetting } from './PageOrientationSetting';
 
 interface LayoutSettingsDrawerProps {
   isOpen: boolean;
@@ -470,6 +471,11 @@ export const LayoutSettingsDrawer: React.FC<LayoutSettingsDrawerProps> = ({
                   </button>
                 </div>
               </div>
+
+              <PageOrientationSetting
+                value={localSettings.orientation}
+                onChange={(orientation) => setLocalSettings((prev) => ({ ...prev, orientation }))}
+              />
 
               {/* 4. KÍCH THƯỚC KHỔ GIẤY */}
               <div className="space-y-3">

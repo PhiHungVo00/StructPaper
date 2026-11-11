@@ -97,7 +97,7 @@ export const JournalSectionRenderer: React.FC<JournalSectionRendererProps> = ({
         // Equation (KaTeX) with right-aligned number
         if (sec.type === 'equation' && sec.equation && sec.equation.latex.trim()) {
           return (
-            <div key={sec.id || idx} className="break-inside-avoid my-2 flex items-center justify-between gap-3" data-testid="preview-equation">
+            <div key={sec.id || idx} className="break-inside-avoid my-2 flex items-center justify-between gap-3" style={{ columnSpan: sec.equation.columnSpan === '2-column' ? 'all' : undefined }} data-testid="preview-equation">
               <div className="flex-1 text-center overflow-x-auto">
                 <MathFormula latex={sec.equation.latex} display />
               </div>

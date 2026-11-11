@@ -4,6 +4,7 @@ import React from 'react';
 import { PaperSection, PaperTable, PaperFigure } from '@/types/paper';
 import { FigureSettingsModal } from '../FigureSettingsModal';
 import { TableSettingsModal } from '../TableSettingsModal';
+import { PageLayoutBadge, PageLayoutControl } from './PageLayoutControl';
 import { AnimatePresence } from 'framer-motion';
 import {
   Table as TableIcon,
@@ -143,6 +144,8 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
           </span>
         )}
 
+        <PageLayoutBadge layout={sec.pageLayout} />
+
         {/* Heading Level Switcher & Convert to Paragraph */}
         {isHeading && (
           <div className="flex items-center gap-1 bg-white/80 p-0.5 rounded-lg text-[10px]">
@@ -219,6 +222,8 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
 
       {/* Right Action Icons (Reorder, Page Break & Delete) */}
       <div className="flex items-center gap-1.5 ml-auto">
+        <PageLayoutControl sec={sec} idx={idx} onUpdateSection={onUpdateSection} />
+
         {/* Page Break Toggle */}
         <button
           type="button"

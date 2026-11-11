@@ -14,6 +14,8 @@ export * from './ParagraphSectionItem';
 export * from './TableSectionItem';
 export * from './FigureSectionItem';
 export * from './EquationSectionItem';
+export * from './PageLayoutControl';
+export * from './SegmentedOptions';
 export * from './CitationSectionItem';
 export * from './SectionInsertDivider';
 export * from './utils';
