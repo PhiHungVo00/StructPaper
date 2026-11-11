@@ -51,7 +51,7 @@ Khởi chạy MinIO: `docker compose -f docker-compose.minio.yml up -d`, rồi c
 
 Trong hộp thoại **Tạo bài báo mới**, chọn (hoặc kéo thả) **2 tệp .docx trở lên**: mỗi tệp thành một bài báo, hệ thống đọc, lưu và biên dịch PDF **song song**, người dùng không phải chờ hay thao tác từng bài. Một tệp thì giữ nguyên quy trình cũ (mục 3).
 
-1. Chọn tệp → chọn **mẫu tạp chí một lần** cho cả lô (nếu mở từ trang Mẫu tạp chí thì bỏ qua bước này).
+1. Chọn tệp → chọn mẫu tạp chí. Hai chế độ: **Một mẫu cho tất cả** (mặc định) hoặc **Mỗi tệp một mẫu** (mỗi tệp có ô chọn riêng, kèm "Đặt cùng một mẫu cho tất cả"; dùng khi lô gồm bài của nhiều tạp chí). Mỗi dòng trong bảng tiến độ hiện mẫu thực sự được áp dụng; Thử lại giữ đúng mẫu của từng tệp. Mở từ trang Mẫu tạp chí thì mẫu đã chọn sẵn, bỏ qua bước này. Không có tuỳ chọn "tự nhận mẫu": bộ đoán tạp chí của bộ đọc Word chỉ dò từ khoá và mặc định về HS nên không đủ tin cậy.
 2. Bảng tiến độ: mỗi tệp một dòng với trạng thái *Đang chờ → Đang đọc tệp Word → Đang lưu → Chờ tới lượt biên dịch → Đang biên dịch PDF → Hoàn tất* (hoặc *Không tạo được* / *Đã hủy*), thanh tiến độ chung, số lỗi/cảnh báo của cổng kiểm tra đầu vào cho từng bài.
 3. Giới hạn song song: **2 tệp đọc cùng lúc** (CPU trình duyệt), **3 PDF biên dịch cùng lúc** (CPU máy chủ); phần còn lại xếp hàng theo thứ tự. Tối đa **100 tệp** mỗi lần; tệp không phải Word bị bỏ qua và được báo.
 4. Mỗi dòng có **Mở** (vào `/editor?id=…`, mở được ngay khi bài đã lưu dù PDF còn đang biên dịch) và **tải PDF**; cuối lô có **Tải tất cả PDF (.zip)**, **Thử lại** và **Xong**.
@@ -215,6 +215,8 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | Commit | Thay đổi |
 | --- | --- |
 | `1e35fa0` | Nhập hàng loạt (mục 2b): chọn nhiều .docx, mỗi tệp thành một bài, đọc/lưu/biên dịch PDF song song với bảng tiến độ, hủy, thử lại, mở, tải PDF/zip. Đã kiểm chứng bằng 7 tệp mẫu thật trên trình duyệt (~57 s, so với ~150 s nếu làm lần lượt) và một đợt rà soát độc lập; sửa theo đó: lưu thất bại không còn báo thành công, hủy được cả bước đọc/lưu bị kẹt, giải phóng bộ nhớ, thử lại riêng phần PDF, lưu PDF máy chủ sau khi bài đã có, tên tệp zip an toàn trên Windows. `savePaperToIndexedDb` giờ trả về `true/false`. |
+
+| (commit kế tiếp) | Nhập hàng loạt: mỗi tệp có thể dùng cùng một mẫu hoặc mẫu khác nhau (bước chọn mẫu có hai chế độ, dòng tiến độ hiện mẫu đã áp dụng, thử lại giữ đúng mẫu từng tệp). |
 
 ### Còn lại / giới hạn đã biết
 * Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).

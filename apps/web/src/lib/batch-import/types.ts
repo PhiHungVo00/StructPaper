@@ -20,6 +20,8 @@ export interface BatchItem {
   compileError?: string;
   paperId?: string;
   title?: string;
+  /** Journal template this paper was made with (abbreviation), e.g. 'HS'. */
+  journalAbbv?: string;
   /** Import checks (same rules as the single-file import gate). */
   errors: number;
   warnings: number;
@@ -55,7 +57,10 @@ export interface BatchDeps {
 
 export interface BatchOptions {
   files: File[];
+  /** Template for every file that has no entry in `journals`. */
   journal: BatchJournal;
+  /** Template per file (same order as `files`); a file may use a different journal than the others. */
+  journals?: BatchJournal[];
   deps: BatchDeps;
   /** Word files read at the same time (browser CPU). Default 2. */
   parseLimit?: number;

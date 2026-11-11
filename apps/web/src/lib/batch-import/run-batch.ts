@@ -36,7 +36,7 @@ const quietly = (fn: (() => Promise<unknown> | undefined) | undefined): Promise<
  * comes (when `deps.load` exists), so files waiting for a typesetting slot do not hold their pictures.
  */
 export async function runBatchImport(opts: BatchOptions): Promise<BatchItem[]> {
-  const { files, journal, deps, signal } = opts;
+  const { files, deps, signal } = opts;
   const parseLimiter = createLimiter(opts.parseLimit ?? 2);
   const compileLimiter = createLimiter(opts.compileLimit ?? 3);
   const items = initialItems(files);
@@ -78,6 +78,7 @@ export async function runBatchImport(opts: BatchOptions): Promise<BatchItem[]> {
   await Promise.all(
     files.map(async (file, i) => {
       if (signal?.aborted) return patch(i, { stage: 'cancelled' });
+      const journal = opts.journals?.[i] ?? opts.journal;
       let paper: CompletePaper | null;
       try {
         const parsed = await parseLimiter.run(async () => {
@@ -115,7 +116,7 @@ export async function runBatchImport(opts: BatchOptions): Promise<BatchItem[]> {
       }
       const id = paper.id;
       const title = paper.metadata.title;
-      patch(i, { stage: 'saving', paperId: id, title, ...checks });
+      patch(i, { stage: 'saving', paperId: id, title, journalAbbv: journal.journalAbbv, ...checks });
       try {
         if (!(await raceAbort(deps.save(paper), signal))) throw new Error('Không lưu được bài báo');
       } catch (e) {
@@ -178,6 +179,7 @@ export async function retryFailed(prev: BatchItem[], files: File[], opts: RetryO
   const redo = full.length
     ? runBatchImport({
         ...opts,
+        journals: opts.journals && full.map((i) => opts.journals![i]), // each retried file keeps ITS template
         files: full.map((i) => files[i]),
         onUpdate: (sub) => {
           sub.forEach((it, k) => (merged[full[k]] = { ...it, key: prev[full[k]].key }));

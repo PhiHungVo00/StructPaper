@@ -19,6 +19,7 @@ export function useBatchImport({ onFinished, createDeps = createBatchDeps }: Use
   const [skipped, setSkipped] = useState(0);
   const filesRef = useRef<File[]>([]);
   const journalRef = useRef<BatchJournal | null>(null);
+  const journalsRef = useRef<BatchJournal[] | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
   const latestRef = useRef<BatchItem[]>([]);
   const finishedRef = useRef(onFinished);
@@ -57,14 +58,15 @@ export function useBatchImport({ onFinished, createDeps = createBatchDeps }: Use
   );
 
   const start = useCallback(
-    (files: File[], journal: BatchJournal, skippedCount = 0) => {
+    (files: File[], journal: BatchJournal, skippedCount = 0, journals?: BatchJournal[]) => {
       if (abortRef.current) return Promise.resolve(); // a run is already going
       filesRef.current = files;
       journalRef.current = journal;
+      journalsRef.current = journals;
       setSkipped(skippedCount);
       latestRef.current = initialItems(files);
       setItems(latestRef.current);
-      return execute((signal, onUpdate) => runBatchImport({ files, journal, deps: createDeps(), signal, onUpdate }));
+      return execute((signal, onUpdate) => runBatchImport({ files, journal, journals, deps: createDeps(), signal, onUpdate }));
     },
     [execute, createDeps]
   );
@@ -73,7 +75,7 @@ export function useBatchImport({ onFinished, createDeps = createBatchDeps }: Use
     const journal = journalRef.current;
     if (abortRef.current || !journal) return Promise.resolve();
     const prev = items;
-    return execute((signal, onUpdate) => retryFailed(prev, filesRef.current, { journal, deps: createDeps(), signal, onUpdate }));
+    return execute((signal, onUpdate) => retryFailed(prev, filesRef.current, { journal, journals: journalsRef.current, deps: createDeps(), signal, onUpdate }));
   }, [execute, createDeps, items]);
 
   const cancel = useCallback(() => abortRef.current?.abort(), []);

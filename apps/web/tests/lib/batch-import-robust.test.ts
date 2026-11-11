@@ -153,3 +153,37 @@ describe('safeFileName hardening', () => {
     expect(safeFileName(long, 'x')).not.toMatch(/[\ud800-\udbff](?![\udc00-\udfff])/);
   });
 });
+
+describe('a different template per file', () => {
+  const hs = { journalId: 'VNUHCM-HS', journalName: 'Sức khỏe', journalAbbv: 'HS' };
+  const ebl = { journalId: 'VNUHCM-EBL', journalName: 'Kinh tế', journalAbbv: 'EBL' };
+  const std = { journalId: 'VNUHCM-STD', journalName: 'KH&CN', journalAbbv: 'STD' };
+
+  it('each paper gets the journal chosen for its own file, and the row shows it', async () => {
+    const saved: CompletePaper[] = [];
+    const d = deps({ save: async (p) => (saved.push(p), true) });
+    const out = await runBatchImport({ files: [file('a.docx'), file('b.docx'), file('c.docx')], journal: hs, journals: [hs, ebl, std], deps: d });
+    expect(saved.map((p) => p.metadata.journalId)).toEqual(['VNUHCM-HS', 'VNUHCM-EBL', 'VNUHCM-STD']);
+    expect(saved.map((p) => p.metadata.journalAbbv)).toEqual(['HS', 'EBL', 'STD']);
+    expect(saved[1].metadata.journalName).toBe('Kinh tế');
+    expect(out.map((i) => i.journalAbbv)).toEqual(['HS', 'EBL', 'STD']);
+  });
+
+  it('files without an entry use the fallback journal', async () => {
+    const saved: CompletePaper[] = [];
+    await runBatchImport({ files: [file('a.docx'), file('b.docx')], journal: std, journals: [ebl], deps: deps({ save: async (p) => (saved.push(p), true) }) });
+    expect(saved.map((p) => p.metadata.journalId)).toEqual(['VNUHCM-EBL', 'VNUHCM-STD']);
+  });
+
+  it('retry keeps the template of each retried file (not the first one)', async () => {
+    const files = [file('a.docx'), file('b.docx'), file('c.docx')];
+    const out1 = await runBatchImport({ files, journal: hs, journals: [hs, ebl, std], deps: deps({ parse: async (f) => (f.name === 'c.docx' ? Promise.reject(new Error('hỏng')) : deps().parse(f)) }) });
+    expect(out1[2].stage).toBe('error');
+    const saved: CompletePaper[] = [];
+    const out2 = await retryFailed(out1, files, { journal: hs, journals: [hs, ebl, std], deps: deps({ save: async (p) => (saved.push(p), true) }) });
+    expect(saved).toHaveLength(1);
+    expect(saved[0].metadata.journalId).toBe('VNUHCM-STD'); // c.docx's own choice, not the first file's HS
+    expect(out2[2].journalAbbv).toBe('STD');
+    expect(out2[0].journalAbbv).toBe('HS');
+  });
+});

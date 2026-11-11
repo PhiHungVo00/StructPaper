@@ -8,6 +8,8 @@ import { ModalPortal } from '@/components/modals/ModalPortal';
 import { StepUploadFile } from './StepUploadFile';
 import { StepSelectTemplate } from './StepSelectTemplate';
 import { BatchImportPanel } from './BatchImportPanel';
+import { StepBatchTemplates } from './StepBatchTemplates';
+import { toBatchJournal } from '@/lib/batch-import/journals';
 import { useBatchImport } from '@/hooks/useBatchImport';
 import { summarize } from '@/lib/batch-import/summary';
 import type { BatchItem } from '@/lib/batch-import/types';
@@ -216,23 +218,16 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
     setStep(2);
   };
 
-  const startBatch = (managed: ManagedJournalProfile, files: File[], skipped: number) =>
-    batch.start(
-      files,
-      {
-        journalId: `VNUHCM-${managed.id.toUpperCase()}`,
-        journalName: managed.profile.names?.vi || managed.profile.names?.en || managed.id,
-        journalAbbv: managed.profile.names?.short || managed.id.toUpperCase(),
-      },
-      skipped
-    );
+  /** One template per file (they may all be the same). */
+  const startBatch = (choices: ManagedJournalProfile[], files: File[], skipped: number) =>
+    batch.start(files, toBatchJournal(choices[0]), skipped, choices.map(toBatchJournal));
 
   // Two or more Word files: pick the journal template once (or use the preselected one) and import them all
   const handleBatchPick = async (files: File[], skipped: number) => {
     setBatchFiles(files);
     setBatchSkipped(skipped);
     if (preselectedManaged) {
-      await startBatch(preselectedManaged, files, skipped);
+      await startBatch(files.map(() => preselectedManaged), files, skipped);
       return;
     }
     setStep(2);
@@ -240,10 +235,6 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
 
   // Step 2 completed
   const handleStep2Complete = async (managed: ManagedJournalProfile) => {
-    if (batchPending) {
-      await startBatch(managed, batchFiles, batchSkipped);
-      return;
-    }
     await finalizeCreation(managed, isBlank ? null : parsedPaper);
   };
 
@@ -378,6 +369,16 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
                 exit={isTest ? undefined : { opacity: 0, x: 20 }}
                 transition={isTest ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
               >
+                {batchPending ? (
+                  <StepBatchTemplates
+                    files={batchFiles}
+                    onConfirm={(choices) => startBatch(choices, batchFiles, batchSkipped)}
+                    onBack={() => {
+                      setBatchFiles([]);
+                      setStep(1);
+                    }}
+                  />
+                ) : (
                 <StepSelectTemplate
                   onConfirm={handleStep2Complete}
                   onBack={() => {
@@ -386,6 +387,7 @@ export const CreatePaperModal: React.FC<CreatePaperModalProps> = ({
                   }}
                   selectedJournalId={parsedPaper?.metadata?.journalId?.replace('VNUHCM-', '').toLowerCase()}
                 />
+                )}
               </motion.div>
             )}
           </AnimatePresence>

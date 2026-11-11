@@ -70,6 +70,11 @@ export const BatchImportPanel: React.FC<BatchImportPanelProps> = ({ items, runni
                 <span className="truncate" title={it.fileName}>
                   {it.title || it.fileName}
                 </span>
+                {it.journalAbbv && (
+                  <span data-testid="batch-item-journal" className="shrink-0 px-1.5 py-0.5 rounded-md bg-zinc-900 text-white text-[10px] font-black">
+                    {it.journalAbbv}
+                  </span>
+                )}
               </div>
               <div className="text-[11px] text-slate-500 truncate" title={it.title ? it.fileName : undefined}>
                 {it.title ? `${it.fileName} · ` : ''}

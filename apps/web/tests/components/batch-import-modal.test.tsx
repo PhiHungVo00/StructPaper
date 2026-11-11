@@ -259,3 +259,46 @@ describe('CreatePaperModal: limits', () => {
     expect(screen.getByText('Chọn mẫu tạp chí cho 2 bài báo?')).toBeDefined();
   });
 });
+
+describe('CreatePaperModal: template per file', () => {
+  const rows = () => screen.getAllByTestId('batch-item');
+
+  it('"Mỗi tệp một mẫu": one select per file, each paper made with its own journal', async () => {
+    renderModal();
+    await act(async () => pick([docx('a.docx'), docx('b.docx'), docx('c.docx')]));
+    expect(screen.getByTestId('batch-template-same').getAttribute('aria-selected')).toBe('true');
+    await act(async () => fireEvent.click(screen.getByTestId('batch-template-each')));
+    const selects = screen.getAllByTestId('batch-template-select') as HTMLSelectElement[];
+    expect(selects).toHaveLength(3);
+    expect(screen.getByTestId('batch-template-hint').textContent).toContain('1 mẫu khác nhau');
+    await act(async () => fireEvent.change(selects[1], { target: { value: 'ebl' } }));
+    await act(async () => fireEvent.change(selects[2], { target: { value: 'ssh' } }));
+    expect(screen.getByTestId('batch-template-hint').textContent).toContain('3 mẫu khác nhau');
+    await act(async () => fireEvent.click(screen.getByTestId('continue-to-editor-btn')));
+    await waitFor(() => expect(screen.getByTestId('batch-summary').textContent).toContain('Hoàn thành 3/3'), { timeout: 4000 });
+    const badges = screen.getAllByTestId('batch-item-journal').map((b) => b.textContent);
+    expect(new Set(badges).size).toBe(3);
+    expect(rows()).toHaveLength(3);
+  });
+
+  it('"Đặt cùng một mẫu cho tất cả" fills every select', async () => {
+    renderModal();
+    await act(async () => pick([docx('a.docx'), docx('b.docx')]));
+    await act(async () => fireEvent.click(screen.getByTestId('batch-template-each')));
+    await act(async () => fireEvent.change(screen.getByTestId('batch-template-all'), { target: { value: 'et' } }));
+    expect((screen.getAllByTestId('batch-template-select') as HTMLSelectElement[]).map((s) => s.value)).toEqual(['et', 'et']);
+  });
+
+  it('switching back to "Một mẫu cho tất cả" uses the one shared template again', async () => {
+    renderModal();
+    await act(async () => pick([docx('a.docx'), docx('b.docx')]));
+    await act(async () => fireEvent.click(screen.getByTestId('batch-template-each')));
+    await act(async () => fireEvent.change(screen.getAllByTestId('batch-template-select')[0], { target: { value: 'ebl' } }));
+    await act(async () => fireEvent.click(screen.getByTestId('batch-template-same')));
+    await act(async () => fireEvent.click(screen.getByTestId('compact-template-et')));
+    await act(async () => fireEvent.click(screen.getByTestId('continue-to-editor-btn')));
+    await waitFor(() => expect(screen.getByTestId('batch-summary').textContent).toContain('Hoàn thành 2/2'), { timeout: 4000 });
+    const badges = screen.getAllByTestId('batch-item-journal').map((b) => b.textContent);
+    expect(badges[0]).toBe(badges[1]);
+  });
+});
