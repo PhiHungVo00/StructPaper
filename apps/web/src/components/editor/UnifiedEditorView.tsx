@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -47,6 +47,8 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const router = useRouter();
   const { savePaper, loadPaper } = usePaperStorage();
   const [formData, setFormData] = useState<CompletePaper>(() => JSON.parse(JSON.stringify(paper)));
+  const currentPaperId = useRef(paper.id);
+  currentPaperId.current = paper.id;
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
@@ -79,7 +81,9 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     documentId: paper.id,
     remote: remoteSync,
     saveLocal: async (p) => {
-      onUpdatePaper(p);
+      // A save that finishes after the user switched to another document must only persist its own
+      // document: pushing it into the shared context would swap the new document back to the old one.
+      if (p.id === currentPaperId.current) onUpdatePaper(p);
       return savePaper(p);
     },
   });

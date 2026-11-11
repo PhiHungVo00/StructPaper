@@ -44,17 +44,27 @@ export function useDocumentAutosave({
     [sync, debounceMs]
   );
 
-  // New document loaded: it is by definition clean.
+  // Id of the document `baseline` belongs to.
+  const baselineId = useRef<string>(paper.id);
+
+  // New document loaded: it is by definition clean. The editor swaps its content a render *after*
+  // the id changes, so the baseline is adopted from the first content that carries the new id (below).
   useEffect(() => {
-    baseline.current = paper;
     setState('idle');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
 
   // Any later content change schedules an autosave.
   useEffect(() => {
+    // Content of another document (the editor still shows the previous one for a render): not an edit.
+    if (paper.id !== documentId) return;
+    // First content of a freshly loaded document (the editor re-clones it on load): adopt it as clean.
+    if (baselineId.current !== documentId) {
+      baselineId.current = documentId;
+      baseline.current = paper;
+      return;
+    }
     if (paper !== baseline.current) controller.notify(paper);
-  }, [paper, controller]);
+  }, [paper, documentId, controller]);
 
   // Don't lose the last edits when the tab is hidden/closed.
   useEffect(() => {
