@@ -62,6 +62,7 @@ export const DocumentMenuBar: React.FC<Props> = ({
   };
 
   const st = STATE_UI[saveState];
+  const busy = (Object.keys(exporting) as ExportFormat[]).find((f) => exporting[f]);
   const item = 'w-full text-left px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-lime-50 flex items-center gap-2 rounded-lg';
 
   return (
@@ -97,7 +98,7 @@ export const DocumentMenuBar: React.FC<Props> = ({
               <button
                 key={f}
                 role="menuitem"
-                disabled={!!exporting[f]}
+                disabled={!!busy}
                 className={`${item} disabled:opacity-50`}
                 onClick={() => { setMenu(null); onExport(f); }}
               >
@@ -108,6 +109,13 @@ export const DocumentMenuBar: React.FC<Props> = ({
           </div>
         )}
       </div>
+
+      {busy && (
+        <span role="status" aria-live="polite" data-testid="export-status" className="flex items-center gap-1 text-[11px] font-bold text-lime-700 whitespace-nowrap">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          {busy === 'pdf' ? 'Đang xuất PDF…' : busy === 'docx' ? 'Đang xuất Word…' : 'Đang xuất XML…'}
+        </span>
+      )}
 
       <input
         value={draft}

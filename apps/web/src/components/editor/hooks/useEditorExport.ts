@@ -84,7 +84,7 @@ export function useEditorExport({
       onExported?.('docx', blob, fileName);
       notify('Đã xuất file Word (.docx) thành công!');
     } catch (e: any) {
-      alert('Lỗi xuất DOCX: ' + (e?.message || String(e)));
+      sileo.error({ title: 'Lỗi xuất DOCX', description: e?.message || String(e) });
     } finally {
       setIsExportingDocx(false);
     }
@@ -100,7 +100,7 @@ export function useEditorExport({
       onExported?.('xml', blob, fileName);
       notify('Đã xuất file XML (JATS) thành công!');
     } catch (e: any) {
-      alert('Lỗi xuất XML: ' + (e?.message || String(e)));
+      sileo.error({ title: 'Lỗi xuất XML', description: e?.message || String(e) });
     } finally {
       setIsExportingXml(false);
     }
@@ -113,7 +113,7 @@ export function useEditorExport({
       downloadBlob(blob, `${exportBaseName(formData)}_LaTeX_Package.zip`);
       notify('Đã tải gói nén ZIP LaTeX (.tex + .bib)!');
     } catch (e: any) {
-      alert('Lỗi tạo gói ZIP: ' + (e?.message || String(e)));
+      sileo.error({ title: 'Lỗi tạo gói ZIP', description: e?.message || String(e) });
     } finally {
       setIsExportingZip(false);
     }
@@ -139,10 +139,10 @@ export function useEditorExport({
         }
         notify('Đã tải xuống file PDF thành công!');
       } else {
-        alert('Không thể tạo file PDF do lỗi biên dịch.');
+        sileo.error({ title: 'Không thể tạo file PDF', description: 'Biên dịch thất bại, xem chi tiết ở khung xem trước.' });
       }
     } catch (e: any) {
-      alert('Lỗi tải PDF: ' + (e?.message || String(e)));
+      sileo.error({ title: 'Lỗi tải PDF', description: e?.message || String(e) });
     } finally {
       setIsExportingPdf(false);
     }

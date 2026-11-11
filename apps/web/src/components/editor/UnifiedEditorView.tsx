@@ -8,7 +8,7 @@ import { CompletePaper, PaperSection, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } 
 import { computePreflightCheck } from '@/lib/docx-extractor';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
 import { usePaper } from '@/context/PaperContext';
-import { sileo } from '@/components/DynamicIslandToast';
+import { sileo, toast } from '@/components/DynamicIslandToast';
 import { EditorTabKey } from './types';
 import { EditorLeftDock } from './EditorLeftDock';
 import { ExtractedContentDrawer } from './ExtractedContentDrawer';
@@ -65,8 +65,10 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     handleSaveQuickEdit,
   } = useEditorQuickEdit(formData, setFormData);
 
-  const { compiledPdfUrl, isCompilingPdf, compileStats, compileErrorInfo, setCompileErrorInfo, compileLatexToPdf, handleRecompile } =
+  const { compiledPdfUrl, isCompilingPdf, compileStartedAt, lastOutcomeRef, compileStats, compileErrorInfo, setCompileErrorInfo, compileLatexToPdf, handleRecompile } =
     useEditorCompilation({ paper, formData, onUpdatePaper, setIsDirty });
+  /** Export in progress (covers the save + compile phase before the download starts). */
+  const [pendingExport, setPendingExport] = useState<ExportFormat | null>(null);
 
   const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
   const remoteSync = !isTestEnv && process.env.NEXT_PUBLIC_DISABLE_SYNC !== '1';
@@ -112,27 +114,38 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     async (format: ExportFormat) => {
       if (format === 'docx') return handleDownloadDocx();
       if (format === 'xml') return handleDownloadXml();
-      const url = await compileLatexToPdf(formData);
+      toast.loading('Đang xuất PDF…', 'Đang dàn trang bằng XeLaTeX, thường mất 15–40 giây.', { id: 'export-pdf' });
+      // Retry once when the compile was only superseded (e.g. by the automatic preview compile).
+      let url = await compileLatexToPdf(formData);
+      if (!url && lastOutcomeRef.current === 'cancelled') url = await compileLatexToPdf(formData);
       if (!url) {
+        toast.error('Xuất PDF thất bại', 'Xem chi tiết lỗi biên dịch ở khung xem trước.', { id: 'export-pdf' });
         setExportGate({ format, report: validateForExport(formData, { format, pdfCompiled: false }) });
         return;
       }
+      toast.dismiss('export-pdf');
       return handleDownloadPdf(url);
     },
-    [formData, handleDownloadDocx, handleDownloadXml, handleDownloadPdf, compileLatexToPdf]
+    [formData, handleDownloadDocx, handleDownloadXml, handleDownloadPdf, compileLatexToPdf, lastOutcomeRef]
   );
 
   const requestExport = useCallback(
     async (format: ExportFormat) => {
-      await flush();
-      const report = validateForExport(formData, { format });
-      if (report.issues.length === 0) {
-        await runExport(format);
-        return;
+      if (pendingExport) return;
+      setPendingExport(format);
+      try {
+        await flush();
+        const report = validateForExport(formData, { format });
+        if (report.issues.length === 0) {
+          await runExport(format);
+          return;
+        }
+        setExportGate({ format, report });
+      } finally {
+        setPendingExport(null);
       }
-      setExportGate({ format, report });
     },
-    [flush, formData, runExport]
+    [flush, formData, runExport, pendingExport]
   );
 
   const handleGateAutoFix = useCallback(() => {
@@ -152,7 +165,12 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     if (!exportGate) return;
     const { format } = exportGate;
     setExportGate(null);
-    await runExport(format);
+    setPendingExport(format);
+    try {
+      await runExport(format);
+    } finally {
+      setPendingExport(null);
+    }
   }, [exportGate, runExport]);
 
   // ---- Open: pick a previously saved document (local + server) ----
@@ -262,6 +280,8 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         compileErrorInfo={compileErrorInfo}
         onRecompile={() => handleRecompile(formData)}
         onClearError={() => setCompileErrorInfo(null)}
+        compileStartedAt={compileStartedAt}
+        busyLabel={pendingExport === 'pdf' ? 'Đang xuất PDF…' : undefined}
       />
     </div>
   );
@@ -279,11 +299,11 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         onRecompile={() => handleRecompile(formData)}
         isCompiling={isCompilingPdf}
         onDownloadDocx={() => requestExport('docx')}
-        isExportingDocx={isExportingDocx}
+        isExportingDocx={isExportingDocx || pendingExport === 'docx'}
         onDownloadZip={handleDownloadZip}
         isExportingZip={isExportingZip}
         onDownloadPdf={() => requestExport('pdf')}
-        isExportingPdf={isExportingPdf}
+        isExportingPdf={isExportingPdf || pendingExport === 'pdf'}
         compiledPdfUrl={compiledPdfUrl}
         qcScore={preflight.score}
         hasErrors={preflight.issues?.some((i) => i.severity === 'error')}
@@ -304,7 +324,11 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
           onSave={handleSave}
           onExport={requestExport}
           onKeepMine={resolveKeepMine}
-          exporting={{ docx: isExportingDocx, pdf: isExportingPdf, xml: isExportingXml }}
+          exporting={{
+            docx: isExportingDocx || pendingExport === 'docx',
+            pdf: isExportingPdf || pendingExport === 'pdf',
+            xml: isExportingXml || pendingExport === 'xml',
+          }}
         />
         <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 mb-1.5 bg-white/70 backdrop-blur-md rounded-2xl border border-zinc-200">
           <Link href="/papers" className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs" title="Quay lại danh sách bài báo">
