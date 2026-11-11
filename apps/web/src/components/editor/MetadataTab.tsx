@@ -5,6 +5,7 @@ import { MetadataTabProps } from './types';
 import { Select, SelectOption, DatePicker } from '../ui';
 import { FileText, Calendar, BookOpen, Tag } from 'lucide-react';
 import { PublicationInfoFields } from './PublicationInfoFields';
+import { useTabScrollRestoration } from './hooks';
 import {
   useEditorCommandBus,
   dispatchTitleChange,
@@ -43,6 +44,8 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
 }) => {
   const contextCommandBus = useEditorCommandBus().commandBus;
   const activeBus = propCommandBus || contextCommandBus;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useTabScrollRestoration('metadata', scrollContainerRef);
 
   const titleViRef = useRef<HTMLTextAreaElement>(null);
   const titleEnRef = useRef<HTMLTextAreaElement>(null);
@@ -95,7 +98,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 pb-12 space-y-4">
+    <div ref={scrollContainerRef} className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 pb-12 space-y-4">
       {/* Header Title */}
       <div className="flex items-center gap-2 pb-2 border-b border-zinc-200/60">
         <FileText className="w-4 h-4 text-zinc-700" />

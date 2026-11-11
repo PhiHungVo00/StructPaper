@@ -19,9 +19,18 @@ import {
   Maximize2,
   CheckCircle2,
   Download,
+  Tag,
+  Check,
+  X,
 } from 'lucide-react';
+import { usePlatform } from '@structpaper/platform';
+import {
+  WORKFLOW_STATUS_CONFIG,
+  getWorkflowStatusConfig,
+  type WorkflowStatus,
+} from '@/components/papers/types';
 
-interface DockIconButtonProps {
+export interface DockIconButtonProps {
   id?: string;
   icon?: React.ReactNode;
   label: string;
@@ -35,7 +44,7 @@ interface DockIconButtonProps {
   suppressTooltip?: boolean;
 }
 
-const DockIconButton: React.FC<DockIconButtonProps> = ({
+export const DockIconButton: React.FC<DockIconButtonProps> = ({
   id,
   icon,
   label,
@@ -83,6 +92,7 @@ const DockIconButton: React.FC<DockIconButtonProps> = ({
     >
       <button
         id={id}
+        data-testid={id}
         type="button"
         onClick={onClick}
         disabled={disabled}
@@ -149,8 +159,14 @@ interface EditorLeftDockProps {
   warningCount?: number;
   onOpenQCTab?: () => void;
   homeHref?: string;
+  onBackClick?: () => void;
+  autosaveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onDownloadTypst?: () => void;
   isExportingTypst?: boolean;
+  workflowStatus?: WorkflowStatus | string;
+  onUpdateWorkflowStatus?: (newStatus: WorkflowStatus) => void;
+  onOpenFullscreenPdf?: () => void;
+  paperId?: string;
 }
 
 export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
@@ -176,8 +192,14 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
   warningCount = 0,
   onOpenQCTab,
   homeHref = '/upload',
+  onBackClick,
+  autosaveStatus = 'idle',
   onDownloadTypst,
   isExportingTypst = false,
+  workflowStatus = 'draft',
+  onUpdateWorkflowStatus,
+  onOpenFullscreenPdf,
+  paperId,
 }) => {
   let router: any = null;
   try {
@@ -186,42 +208,90 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
   } catch {
     // Fallback for headless testing environments where AppRouter is not mounted
   }
-  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
-  const downloadBtnRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  const toggleDownloadMenu = () => {
-    if (!isDownloadOpen && downloadBtnRef.current) {
-      const rect = downloadBtnRef.current.getBoundingClientRect();
-      const menuHeight = 230;
-      let top = rect.top + rect.height / 2 - menuHeight / 2;
-      top = Math.max(16, Math.min(top, window.innerHeight - menuHeight - 16));
-      const left = rect.right + 12;
-      setMenuPos({ top, left });
-      setIsDownloadOpen(true);
-    } else {
-      setIsDownloadOpen(false);
-    }
+  let isDesktop = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const platform = usePlatform();
+    isDesktop = platform.capabilities.kind === 'desktop';
+  } catch {
+    isDesktop = false;
+  }
+
+  const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+
+  const currentStatusConfig = getWorkflowStatusConfig(workflowStatus);
+
+  const WORKFLOW_STATUS_THEMES: Record<WorkflowStatus, { innerShadow: string; border: string }> = {
+    draft: {
+      innerShadow: 'inset 0 0 20px rgba(100, 116, 139, 0.28)',
+      border: 'border-slate-300/70',
+    },
+    'in-review': {
+      innerShadow: 'inset 0 0 20px rgba(217, 119, 6, 0.32)',
+      border: 'border-amber-300/70',
+    },
+    proofing: {
+      innerShadow: 'inset 0 0 20px rgba(2, 132, 199, 0.32)',
+      border: 'border-sky-300/70',
+    },
+    ready: {
+      innerShadow: 'inset 0 0 20px rgba(101, 163, 13, 0.35)',
+      border: 'border-[#78C841]/70',
+    },
+    published: {
+      innerShadow: 'inset 0 0 20px rgba(99, 102, 241, 0.32)',
+      border: 'border-indigo-300/70',
+    },
   };
 
+  const currentStatusTheme =
+    WORKFLOW_STATUS_THEMES[workflowStatus as WorkflowStatus] || WORKFLOW_STATUS_THEMES.draft;
+
+  const springTransition = isTest
+    ? { duration: 0 }
+    : {
+        type: 'spring' as const,
+        stiffness: 150,
+        damping: 18,
+        mass: 0.8,
+      };
+
   useEffect(() => {
-    if (!isDownloadOpen) return;
+    if (!isDownloadOpen && !isStatusOpen) return;
 
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        downloadBtnRef.current &&
-        !downloadBtnRef.current.contains(e.target as Node)
+        isDownloadOpen &&
+        downloadMenuRef.current &&
+        !downloadMenuRef.current.contains(target)
       ) {
-        setIsDownloadOpen(false);
+        const triggerBtn = document.getElementById('download-dock-btn');
+        if (!triggerBtn || !triggerBtn.contains(target)) {
+          setIsDownloadOpen(false);
+        }
+      }
+      if (
+        isStatusOpen &&
+        statusMenuRef.current &&
+        !statusMenuRef.current.contains(target)
+      ) {
+        const triggerBtn = document.getElementById('status-dock-btn');
+        if (!triggerBtn || !triggerBtn.contains(target)) {
+          setIsStatusOpen(false);
+        }
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsDownloadOpen(false);
+        setIsStatusOpen(false);
       }
     };
 
@@ -231,7 +301,7 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       window.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isDownloadOpen]);
+  }, [isDownloadOpen, isStatusOpen]);
 
   const isAnyExporting = isExportingDocx || isExportingZip || isExportingPdf || isExportingTypst;
 
@@ -244,6 +314,10 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
       <div className="relative flex flex-col items-center gap-2.5">
         <DockIconButton
           onClick={() => {
+            if (onBackClick) {
+              onBackClick();
+              return;
+            }
             const destination = homeHref || '/papers';
             if (router) router.push(destination);
             else if (typeof window !== 'undefined') window.location.href = destination;
@@ -284,13 +358,27 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
         {/* Action 1: Save Changes */}
         <DockIconButton
           onClick={onSave}
-          label={saveSuccess ? 'Đã lưu thành công!' : 'Lưu thay đổi bản thảo'}
-          icon={<Save className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
+          label={
+            saveSuccess || autosaveStatus === 'saved'
+              ? 'Đã lưu thành công!'
+              : autosaveStatus === 'saving'
+                ? 'Đang tự động lưu...'
+                : autosaveStatus === 'error'
+                  ? 'Lỗi tự động lưu'
+                  : isDirty
+                    ? 'Lưu thay đổi bản thảo (Ctrl+S)'
+                    : 'Lưu thay đổi bản thảo'
+          }
+          icon={<Save className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />}
           badge={
-            saveSuccess ? (
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-2xs">
-                <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+            saveSuccess || autosaveStatus === 'saved' ? (
+              <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#78C841] border-2 border-white flex items-center justify-center shadow-sm">
+                <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
               </span>
+            ) : autosaveStatus === 'saving' ? (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-indigo-500 border border-white animate-pulse" />
+            ) : autosaveStatus === 'error' ? (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white" />
             ) : isDirty ? (
               <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />
             ) : null
@@ -305,46 +393,325 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
           icon={
             <RefreshCw
               className={`w-4 h-4 text-zinc-700 ${isCompiling ? 'animate-spin text-[#78C841]' : ''}`}
-              strokeWidth={2.4}
+              strokeWidth={2.8}
             />
           }
         />
 
-        {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Popup Context Menu */}
-        <DockIconButton
-          id="download-dock-btn"
-          containerRef={downloadBtnRef}
-          onClick={toggleDownloadMenu}
-          active={isDownloadOpen}
-          suppressTooltip={isDownloadOpen}
-          label={
-            isExportingDocx
-              ? 'Đang xuất Word...'
-              : isExportingPdf
-                ? 'Đang xuất PDF...'
-                : isExportingZip
-                  ? 'Đang nén ZIP...'
-                  : 'Tải xuống bản thảo (Word, PDF, ZIP)'
-          }
-          icon={
-            isAnyExporting ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" />
+        {/* Action 3: Tải xuống bản thảo (Word, PDF, ZIP) - Spring Shared Element Morph */}
+        <div className="w-[52px] h-[52px] relative flex items-center justify-center">
+          <AnimatePresence>
+            {!isDownloadOpen ? (
+              <motion.button
+                key="download-trigger-btn"
+                layoutId="dock-download-menu"
+                id="download-dock-btn"
+                data-testid="download-dock-btn"
+                type="button"
+                onClick={() => {
+                  setIsStatusOpen(false);
+                  setIsDownloadOpen(true);
+                }}
+                initial={isTest ? false : undefined}
+                transition={springTransition}
+                aria-label={
+                  isExportingDocx
+                    ? 'Đang xuất Word...'
+                    : isExportingPdf
+                      ? 'Đang xuất PDF...'
+                      : isExportingZip
+                        ? 'Đang nén ZIP...'
+                        : 'Tải xuống bản thảo (Word, PDF, ZIP)'
+                }
+                title={
+                  isExportingDocx
+                    ? 'Đang xuất Word...'
+                    : isExportingPdf
+                      ? 'Đang xuất PDF...'
+                      : isExportingZip
+                        ? 'Đang nén ZIP...'
+                        : 'Tải xuống bản thảo (Word, PDF, ZIP)'
+                }
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md shadow-[inset_0_0_14px_6px_rgba(255,255,255,0.85),0_0_12px_rgba(0,0,0,0.04),0_0_4px_rgba(0,0,0,0.03)] hover:shadow-[inset_0_0_16px_8px_rgba(255,255,255,0.95),0_0_18px_rgba(0,0,0,0.10),0_0_6px_rgba(0,0,0,0.05)] text-zinc-700 hover:text-zinc-950"
+              >
+                {isAnyExporting ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-zinc-700" strokeWidth={2.8} />
+                ) : (
+                  <Download className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
+                )}
+              </motion.button>
             ) : (
-              <Download className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />
-            )
-          }
-        />
+              <motion.div
+                key="download-popup-menu"
+                layoutId="dock-download-menu"
+                ref={downloadMenuRef}
+                id="download-popup-menu"
+                data-testid="download-popup-menu"
+                initial={isTest ? false : undefined}
+                transition={springTransition}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute left-[64px] top-0 z-[100] w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-3xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
+                style={{ transformOrigin: 'top left' }}
+              >
+                <div className="flex items-center justify-between px-2 py-1 select-none">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                    Tùy chọn tải xuống
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDownloadOpen(false);
+                    }}
+                    className="w-5 h-5 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-700 cursor-pointer"
+                    title="Đóng menu"
+                    aria-label="Đóng menu"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="border-t border-zinc-200/80 my-0.5" />
+
+                {/* 1. Tải Word (.docx) */}
+                <button
+                  id="download-docx-btn"
+                  type="button"
+                  onClick={() => {
+                    setIsDownloadOpen(false);
+                    onDownloadDocx();
+                  }}
+                  disabled={isExportingDocx}
+                  className="w-full px-2.5 py-1.5 rounded-xl hover:bg-blue-50/70 hover:text-blue-900 flex items-center gap-2 font-medium text-left cursor-pointer transition-colors group"
+                >
+                  <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-zinc-800 group-hover:text-blue-950">
+                        Tài liệu Word
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-blue-50 text-blue-700 font-bold rounded">
+                        .docx
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-normal truncate">
+                      Bản thảo chỉnh sửa Microsoft Word
+                    </p>
+                  </div>
+                  {isExportingDocx && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600 flex-shrink-0" />}
+                </button>
+
+                {/* 2. Tải bản in PDF (.pdf) */}
+                <button
+                  id="download-pdf-btn"
+                  type="button"
+                  onClick={() => {
+                    setIsDownloadOpen(false);
+                    if (onDownloadPdf) {
+                      onDownloadPdf();
+                    } else if (compiledPdfUrl) {
+                      const a = document.createElement('a');
+                      a.href = compiledPdfUrl;
+                      a.download = 'article.pdf';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }
+                  }}
+                  disabled={isExportingPdf}
+                  className="w-full px-2.5 py-1.5 rounded-xl hover:bg-rose-50/70 hover:text-rose-900 flex items-center gap-2 font-medium text-left cursor-pointer transition-colors group"
+                >
+                  <FileCheck className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-zinc-800 group-hover:text-rose-950">
+                        Bản in PDF
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-rose-50 text-rose-700 font-bold rounded">
+                        .pdf
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-normal truncate">
+                      PDF XeLaTeX xuất bản chất lượng cao
+                    </p>
+                  </div>
+                  {isExportingPdf && <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-600 flex-shrink-0" />}
+                </button>
+
+                <div className="border-t border-zinc-200/80 my-0.5" />
+
+                {/* 3. Tải gói nén ZIP (.tex + .bib + ảnh) */}
+                <button
+                  id="download-zip-btn"
+                  type="button"
+                  onClick={() => {
+                    setIsDownloadOpen(false);
+                    onDownloadZip();
+                  }}
+                  disabled={isExportingZip}
+                  className="w-full px-2.5 py-1.5 rounded-xl hover:bg-indigo-50/70 hover:text-indigo-900 flex items-center gap-2 font-medium text-left cursor-pointer transition-colors group"
+                >
+                  <Archive className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-zinc-800 group-hover:text-indigo-950">
+                        Gói nén ZIP
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 bg-indigo-50 text-indigo-700 font-bold rounded">
+                        .zip
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-normal truncate">
+                      Mã nguồn LaTeX (.tex, .bib, hình ảnh)
+                    </p>
+                  </div>
+                  {isExportingZip && <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600 flex-shrink-0" />}
+                </button>
+
+                {/* 4. Tải file Typst (.typ) */}
+                {onDownloadTypst && (
+                  <button
+                    id="download-typst-btn"
+                    type="button"
+                    onClick={() => {
+                      setIsDownloadOpen(false);
+                      onDownloadTypst();
+                    }}
+                    disabled={isExportingTypst}
+                    className="w-full px-2.5 py-1.5 rounded-xl hover:bg-emerald-50/70 hover:text-emerald-900 flex items-center gap-2 font-medium text-left cursor-pointer transition-colors group"
+                  >
+                    <div className="w-4 h-4 rounded bg-[#78C841] text-white flex items-center justify-center font-bold text-[9px] flex-shrink-0">
+                      T
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-zinc-800 group-hover:text-emerald-950">
+                          Bản thảo Typst
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-emerald-50 text-emerald-700 font-bold rounded">
+                          .typ
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 font-normal truncate">
+                        Mã nguồn Typst dàn trang hiện đại
+                      </p>
+                    </div>
+                    {isExportingTypst && <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#78C841] flex-shrink-0" />}
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Action 3.5: Trạng thái bản thảo (Bản nháp, Đang duyệt, Hiệu đính, Sẵn sàng, Đã xuất bản) - Spring Shared Element Morph */}
+        <div className="w-[52px] h-[52px] relative flex items-center justify-center">
+          <AnimatePresence>
+            {!isStatusOpen ? (
+              <motion.button
+                key="status-trigger-btn"
+                layoutId="dock-status-menu"
+                id="status-dock-btn"
+                data-testid="status-dock-btn"
+                type="button"
+                onClick={() => {
+                  setIsDownloadOpen(false);
+                  setIsStatusOpen(true);
+                }}
+                initial={isTest ? false : undefined}
+                transition={springTransition}
+                aria-label={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
+                title={`Trạng thái bản thảo: ${currentStatusConfig.label}`}
+                className={`w-[52px] h-[52px] rounded-full flex items-center justify-center transition-colors duration-150 select-none cursor-pointer relative bg-white/60 hover:bg-white/90 backdrop-blur-md text-zinc-700 hover:text-zinc-950 border ${currentStatusTheme.border}`}
+                style={{
+                  boxShadow: `${currentStatusTheme.innerShadow}, inset 0 0 14px 6px rgba(255,255,255,0.85), 0 0 12px rgba(0,0,0,0.04), 0 0 4px rgba(0,0,0,0.03)`,
+                }}
+              >
+                <Tag className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />
+              </motion.button>
+            ) : (
+              <motion.div
+                key="status-popup-menu"
+                layoutId="dock-status-menu"
+                ref={statusMenuRef}
+                id="status-popup-menu"
+                data-testid="status-popup-menu"
+                initial={isTest ? false : undefined}
+                transition={springTransition}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute left-[64px] top-0 z-[100] w-56 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-3xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 select-none overflow-hidden"
+                style={{ transformOrigin: 'top left' }}
+              >
+                <div className="flex items-center justify-between px-2 py-1 select-none">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                    Trạng thái bài báo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsStatusOpen(false);
+                    }}
+                    className="w-5 h-5 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-700 cursor-pointer"
+                    title="Đóng menu"
+                    aria-label="Đóng menu"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="border-t border-zinc-200/80 my-0.5" />
+
+                {(['draft', 'in-review', 'proofing', 'ready', 'published'] as const).map((st) => {
+                  const cfg = WORKFLOW_STATUS_CONFIG[st];
+                  const isSelected = (workflowStatus || 'draft') === st;
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      data-testid={`status-option-${st}`}
+                      onClick={() => {
+                        setIsStatusOpen(false);
+                        onUpdateWorkflowStatus?.(st);
+                      }}
+                      className={`w-full px-2.5 py-1.5 rounded-xl flex items-center justify-between text-left font-medium cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-zinc-100 text-zinc-950 font-bold'
+                          : 'hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full ${cfg.dotBg} shrink-0`} />
+                        <span className="text-xs truncate">{cfg.label}</span>
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Action 4: Maximize / Fullscreen PDF */}
         {compiledPdfUrl && (
           <DockIconButton
+            id="maximize-pdf-dock-btn"
             onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.open(compiledPdfUrl, '_blank', 'noreferrer');
+              if (onOpenFullscreenPdf) {
+                onOpenFullscreenPdf();
+              } else if (isDesktop) {
+                const destination = paperId ? `/preview?id=${paperId}` : '/preview';
+                if (router) router.push(destination);
+                else if (typeof window !== 'undefined') window.location.href = destination;
+              } else {
+                if (typeof window !== 'undefined') {
+                  window.open(compiledPdfUrl, '_blank', 'noreferrer');
+                }
               }
             }}
-            label="Mở PDF toàn màn hình trong tab mới"
-            icon={<Maximize2 className="w-4 h-4 text-zinc-700" strokeWidth={2.4} />}
+            label={isDesktop ? 'Mở PDF toàn màn hình' : 'Mở PDF toàn màn hình trong tab mới'}
+            icon={<Maximize2 className="w-4 h-4 text-zinc-700" strokeWidth={2.8} />}
           />
         )}
       </div>
@@ -396,157 +763,6 @@ export const EditorLeftDock: React.FC<EditorLeftDockProps> = ({
           active
         />
       </div>
-
-      {/* POPUP TÙY CHỌN TẢI XUỐNG - STYLE ĐỒNG NHẤT CONTEXT MENU EXCEL */}
-      {isDownloadOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            id="download-popup-menu"
-            ref={menuRef}
-            style={{
-              position: 'fixed',
-              top: menuPos.top,
-              left: menuPos.left,
-              zIndex: 10000005,
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onContextMenu={(e) => e.preventDefault()}
-            className="w-64 bg-white/98 backdrop-blur-xl border border-zinc-200/90 rounded-2xl shadow-2xl p-1.5 text-xs text-zinc-800 space-y-0.5 animate-fadeIn select-none"
-          >
-            <div className="px-2.5 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider select-none">
-              Tùy chọn tải xuống
-            </div>
-
-            {/* 1. Tải Word (.docx) */}
-            <button
-              id="download-docx-btn"
-              type="button"
-              onClick={() => {
-                setIsDownloadOpen(false);
-                onDownloadDocx();
-              }}
-              disabled={isExportingDocx}
-              className="w-full px-2.5 py-2 rounded-xl hover:bg-lime-50 hover:text-lime-900 flex items-center gap-2.5 font-semibold text-left cursor-pointer transition-colors group"
-            >
-              <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-zinc-800 group-hover:text-lime-950">
-                    Tài liệu Word
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-700 font-bold rounded">
-                    .docx
-                  </span>
-                </div>
-                <p className="text-[10px] text-zinc-500 font-normal truncate">
-                  Bản thảo chỉnh sửa Microsoft Word
-                </p>
-              </div>
-              {isExportingDocx && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600 flex-shrink-0" />}
-            </button>
-
-            {/* 2. Tải bản in PDF (.pdf) */}
-            <button
-              id="download-pdf-btn"
-              type="button"
-              onClick={() => {
-                setIsDownloadOpen(false);
-                if (onDownloadPdf) {
-                  onDownloadPdf();
-                } else if (compiledPdfUrl) {
-                  const a = document.createElement('a');
-                  a.href = compiledPdfUrl;
-                  a.download = 'article.pdf';
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                }
-              }}
-              disabled={isExportingPdf}
-              className="w-full px-2.5 py-2 rounded-xl hover:bg-lime-50 hover:text-lime-900 flex items-center gap-2.5 font-semibold text-left cursor-pointer transition-colors group"
-            >
-              <FileCheck className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-zinc-800 group-hover:text-lime-950">
-                    Bản in PDF
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-rose-50 text-rose-700 font-bold rounded">
-                    .pdf
-                  </span>
-                </div>
-                <p className="text-[10px] text-zinc-500 font-normal truncate">
-                  PDF XeLaTeX xuất bản chất lượng cao
-                </p>
-              </div>
-              {isExportingPdf && <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-600 flex-shrink-0" />}
-            </button>
-
-            <div className="border-t border-zinc-200/80 my-1" />
-
-            {/* 3. Tải gói nén ZIP (.tex + .bib + ảnh) */}
-            <button
-              id="download-zip-btn"
-              type="button"
-              onClick={() => {
-                setIsDownloadOpen(false);
-                onDownloadZip();
-              }}
-              disabled={isExportingZip}
-              className="w-full px-2.5 py-2 rounded-xl hover:bg-lime-50 hover:text-lime-900 flex items-center gap-2.5 font-semibold text-left cursor-pointer transition-colors group"
-            >
-              <Archive className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-zinc-800 group-hover:text-lime-950">
-                    Gói nén ZIP
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-700 font-bold rounded">
-                    .zip
-                  </span>
-                </div>
-                <p className="text-[10px] text-zinc-500 font-normal truncate">
-                  Mã nguồn LaTeX (.tex, .bib, hình ảnh)
-                </p>
-              </div>
-              {isExportingZip && <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600 flex-shrink-0" />}
-            </button>
-
-            {/* 4. Tải file Typst (.typ) nếu ở chế độ Typst */}
-            {onDownloadTypst && (
-              <button
-                id="download-typst-btn"
-                type="button"
-                onClick={() => {
-                  setIsDownloadOpen(false);
-                  onDownloadTypst();
-                }}
-                disabled={isExportingTypst}
-                className="w-full px-2.5 py-2 rounded-xl hover:bg-lime-50 hover:text-lime-900 flex items-center gap-2.5 font-semibold text-left cursor-pointer transition-colors group"
-              >
-                <div className="w-4 h-4 rounded bg-[#78C841] text-white flex items-center justify-center font-bold text-[9px] flex-shrink-0">
-                  T
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-zinc-800 group-hover:text-lime-950">
-                      Bản thảo Typst
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded">
-                      .typ
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-zinc-500 font-normal truncate">
-                    Mã nguồn Typst dàn trang hiện đại
-                  </p>
-                </div>
-                {isExportingTypst && <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#78C841] flex-shrink-0" />}
-              </button>
-            )}
-          </div>,
-          document.body
-        )}
     </aside>
   );
 };

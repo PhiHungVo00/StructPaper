@@ -144,15 +144,17 @@ export function createNewPaperFromJournal(managed: ManagedJournalProfile): Compl
   const year = now.getFullYear().toString();
   const p = managed.profile;
 
+  const displayLabel = `Bản thảo bài báo mới - ${p.names?.short || p.names?.vi || ''}`;
   const newPaper: CompletePaper = {
     id: `paper_${Date.now()}`,
+    displayName: displayLabel,
     templateId: p.id,
     templateName: p.names?.vi || p.names?.en || 'Mẫu Tạp chí',
     status: 'draft',
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     metadata: {
-      title: `Bản thảo bài báo mới - ${p.names?.short || p.names?.vi || ''}`,
+      title: displayLabel,
       articleType: p.articleTypes?.[0]?.label?.vi || 'Bài báo nghiên cứu',
       journalId: p.id,
       journalName: p.names?.vi || 'Tạp chí ĐHQG-HCM',

@@ -218,6 +218,21 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 
 | `4827f61` | Nhập hàng loạt: mỗi tệp có thể dùng cùng một mẫu hoặc mẫu khác nhau (bước chọn mẫu có hai chế độ, dòng tiến độ hiện mẫu đã áp dụng, thử lại giữ đúng mẫu từng tệp). |
 
+### Hợp nhất với bản gốc (upstream/main, v1.0.12)
+Bản gốc và nhánh này cùng viết lại trình soạn theo hai hướng; khi gộp:
+
+| Phần | Giữ | Lý do |
+| --- | --- | --- |
+| Tự lưu | `useDocumentAutosave` của nhánh này (lưu máy + máy chủ, phát hiện xung đột, bản chụp phiên bản, tự chạy lại nếu có sửa trong lúc lưu). `useEditorAutoSave` của bản gốc không còn được dùng | hook cũ bỏ lỡ chỉnh sửa trong lúc đang lưu và không đồng bộ máy chủ |
+| Công tắc "Tự động lưu" ở thanh tiêu đề | nối vào tự lưu của nhánh này (`enabled`); tắt thì chỉ lưu khi bấm Lưu / Ctrl+S | giữ tính năng của bản gốc |
+| Trạng thái ở thanh tiêu đề / dock | suy ra từ trạng thái tự lưu (`lib/editor/autosave-status.ts`: lưu máy cũng tính là đã lưu, xung đột/lỗi là lỗi) | |
+| Danh sách mục | bản ảo hoá của bản gốc (`SectionCardItem`, `useSectionVirtualizer`); đã gắn lại mục Công thức, nút Bố cục trang, nút thêm công thức | bài 150 mục chỉ vẽ ~29 thẻ |
+| Ảnh để biên dịch | `extractPaperImagesAsync` của bản gốc (đọc được cả ảnh `blob:`); `lib/paper-images.ts` đã bỏ | |
+| Hỏi lại khi thoát, cảnh báo đóng tab | của bản gốc (`isDirty`) + `useUnsavedChangesWarning` | |
+| Mở bài khác | `useShowPaperOnSwitch`: chỉ đổi bản sao khi id đổi, không phải lúc vừa mở (tránh coi việc mở bài là một lần sửa) | |
+
+Kiểm tra sau gộp: 46 file test web (455 test) đều đạt, các gói con đạt (riêng `platform-desktop` có 2 test gọi GitHub thật bị quá thời gian, không liên quan). Hai test của bản gốc phải chỉnh nhẹ vì giao diện nhánh này có thêm ô tên trên menu Tệp (chọn đúng ô tiêu đề ở tab Tựa đề). Thử thật trên trình duyệt: nhập hàng loạt 2 tệp hai mẫu khác nhau, mở bài, thêm công thức "Trải 2 cột", trạng thái "Đã lưu", tải lại vẫn còn. Lưu ý: `EditorLeftDock.tsx` của bản gốc dài 768 dòng, vượt mốc 553 trong `scripts/baseline-line-limits.json` (do bản gốc, chưa sửa).
+
 ### Còn lại / giới hạn đã biết
 * Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).
 * Tiêu đề "MỞ ĐẦU" lấy từ file Word (PDF mẫu của tạp chí ghi "GIỚI THIỆU").

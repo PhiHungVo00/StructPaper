@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
 import Link from 'next/link';
-import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
 import { CompletePaper, PaperSection, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/paper';
 import { computePreflightCheck } from '@/lib/docx-extractor';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
@@ -32,9 +32,27 @@ import { ExportGateModal } from '@/components/documents/ValidationModals';
 import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
 import { useDocumentAutosave } from '@/hooks/useDocumentAutosave';
 import { DocumentApi } from '@/lib/documents/document-api';
-import { useEditorCompilation, useEditorExport, useEditorShortcuts } from './hooks';
+import { autosaveStatusFromSaveState } from '@/lib/editor/autosave-status';
+import {
+  useEditorCompilation,
+  useEditorExport,
+  useEditorShortcuts,
+  useSyncEditorSession,
+  useUnsavedChangesWarning,
+  useShowPaperOnSwitch,
+  useHydrateDisplayName,
+  EditorTabStateProvider,
+  useCreateEditorTabStateStore,
+} from './hooks';
+import { useEditorSession } from '@/context/EditorSessionContext';
 import { usePaperStorage, useEditorQuickEdit } from '@/hooks';
 import { PaperQuickEditModal } from '@/components/papers';
+import { ActionConfirmModal } from '@/components/modals/ActionConfirmModal';
+import { usePlatform } from '@structpaper/platform';
+import {
+  WORKFLOW_STATUS_CONFIG,
+  type WorkflowStatus,
+} from '@/components/papers/types';
 
 interface UnifiedEditorViewProps {
   paper: CompletePaper;
@@ -51,6 +69,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   currentPaperId.current = paper.id;
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isExitWarningOpen, setIsExitWarningOpen] = useState(false);
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
   const [isExtractedDrawerOpen, setIsExtractedDrawerOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<EditorTabKey>('metadata');
@@ -58,6 +77,14 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const [exportGate, setExportGate] = useState<{ format: ExportFormat; report: ValidationReport } | null>(null);
   const [isOpenDialog, setIsOpenDialog] = useState(false);
   const [isNewDialog, setIsNewDialog] = useState(false);
+  const { store: tabStateStore, markTabPendingReset } = useCreateEditorTabStateStore(formData.id);
+  const handleNavigateFromPreflight = useCallback(
+    (tab: EditorTabKey) => {
+      markTabPendingReset(tab);
+      setActiveSubTab(tab);
+    },
+    [markTabPendingReset]
+  );
 
   const {
     isQuickEditOpen,
@@ -65,10 +92,30 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     handleOpenQuickEdit,
     handleCloseQuickEdit,
     handleSaveQuickEdit,
-  } = useEditorQuickEdit(formData, setFormData);
+  } = useEditorQuickEdit(formData, setFormData, onUpdatePaper);
+
+  const handleHydrateDisplayName = useCallback(
+    (paperId: string, hydratedName: string) => {
+      setFormData((prev) =>
+        prev.id === paperId && !prev.displayName?.trim()
+          ? { ...prev, displayName: hydratedName }
+          : prev
+      );
+    },
+    []
+  );
+  useHydrateDisplayName(formData.id, formData.displayName, handleHydrateDisplayName);
+
+  const { autoSaveEnabled } = useEditorSession();
 
   const { compiledPdfUrl, isCompilingPdf, compileStartedAt, lastOutcomeRef, compileStats, compileErrorInfo, setCompileErrorInfo, compileLatexToPdf, handleRecompile } =
-    useEditorCompilation({ paper, formData, onUpdatePaper, setIsDirty });
+    useEditorCompilation({
+      paper,
+      formData,
+      onUpdatePaper,
+      onSavePaper: savePaper,
+      setIsDirty,
+    });
   /** Export in progress (covers the save + compile phase before the download starts). */
   const [pendingExport, setPendingExport] = useState<ExportFormat | null>(null);
 
@@ -80,6 +127,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     paper: formData,
     documentId: paper.id,
     remote: remoteSync,
+    enabled: autoSaveEnabled, // the title-bar switch: off = nothing is saved until "Lưu"/Ctrl+S
     saveLocal: async (p) => {
       // A save that finishes after the user switched to another document must only persist its own
       // document: pushing it into the shared context would swap the new document back to the old one.
@@ -87,6 +135,9 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
       return savePaper(p);
     },
   });
+
+  // The dock / title bar speak the simple idle|saving|saved|error vocabulary.
+  const autosaveStatus = autosaveStatusFromSaveState(saveState);
 
   useEffect(() => {
     if (saveState === 'saved' || saveState === 'saved-local') setIsDirty(false);
@@ -207,9 +258,96 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     setFormData((p) => ({ ...p, displayName: name } as CompletePaper));
   }, []);
 
+  useSyncEditorSession({
+    paperId: formData.id,
+    displayName: formData.displayName,
+    autosaveStatus,
+    isDirty,
+    saveSuccess,
+    onManualSave: handleSave,
+  });
+
+  // Back Navigation Guard handlers
+  const handleRequestBack = useCallback(() => {
+    if (isDirty) {
+      setIsExitWarningOpen(true);
+    } else {
+      router.push('/papers');
+    }
+  }, [isDirty, router]);
+
+  const handleConfirmSaveAndExit = useCallback(async () => {
+    await handleSave();
+    setIsExitWarningOpen(false);
+    router.push('/papers');
+  }, [handleSave, router]);
+
+  const handleDiscardAndExit = useCallback(() => {
+    setIsExitWarningOpen(false);
+    router.push('/papers');
+  }, [router]);
+
+  // Handler for updating paper workflow status
+  const handleUpdateWorkflowStatus = useCallback(
+    (newStatus: WorkflowStatus) => {
+      const updated: CompletePaper = {
+        ...formData,
+        status: newStatus as any,
+        workflowStatus: newStatus,
+      };
+      setFormData(updated);
+      setIsDirty(true);
+      onUpdatePaper(updated);
+      const label = WORKFLOW_STATUS_CONFIG[newStatus]?.label || newStatus;
+      sileo.success({
+        title: 'Đã cập nhật trạng thái',
+        description: `Bản thảo đã được chuyển sang trạng thái "${label}"`,
+      });
+    },
+    [formData, onUpdatePaper]
+  );
+
+  let isDesktop = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const platform = usePlatform();
+    isDesktop = platform.capabilities.kind === 'desktop';
+  } catch {
+    isDesktop = false;
+  }
+
+  const handleOpenFullscreenPdf = useCallback(() => {
+    if (isDesktop) {
+      router.push(`/preview?id=${formData.id}`);
+    } else if (compiledPdfUrl) {
+      window.open(compiledPdfUrl, '_blank', 'noreferrer');
+    }
+  }, [isDesktop, formData.id, router, compiledPdfUrl]);
+
   useEditorShortcuts({ onSave: handleSave });
-  useEffect(() => { setFormData(JSON.parse(JSON.stringify(paper))); setIsDirty(false); }, [paper.id]);
-  const preflight = computePreflightCheck(formData);
+  useEffect(() => {
+    if (isDirty) {
+      setSaveSuccess(false);
+    }
+  }, [isDirty]);
+
+  useUnsavedChangesWarning(isDirty);
+  useShowPaperOnSwitch(paper, setFormData, () => setIsDirty(false));
+  useEffect(() => {
+    if (paper.displayName?.trim() && paper.id === formData.id && !formData.displayName?.trim()) {
+      setFormData((prev) => ({ ...prev, displayName: paper.displayName }));
+    }
+  }, [paper.id, paper.displayName, formData.id, formData.displayName]);
+  const deferredFormData = useDeferredValue(formData);
+  const preflight = useMemo(
+    () => computePreflightCheck(deferredFormData),
+    [deferredFormData]
+  );
+
+  const handleSectionsChange = useCallback((sections: PaperSection[]) => {
+    setFormData((prev) => ({ ...prev, sections: assignEquationNumbers(sections) }));
+    setIsDirty(true);
+  }, []);
 
   const handleApplyLayoutSettings = (newSettings: LayoutSettings, newJournalId?: string) => {
     const journalIdToUse = newJournalId || formData.metadata.journalId || currentJournal;
@@ -266,10 +404,17 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         )}
         {activeSubTab === 'authors' && <AuthorsTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
         {activeSubTab === 'abstract' && <AbstractTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
-        {activeSubTab === 'sections' && <SectionsTab sections={formData.sections} onChange={(s) => { setFormData((p) => ({ ...p, sections: assignEquationNumbers(s) })); setIsDirty(true); }} metadata={formData.metadata} references={formData.references} />}
+        {activeSubTab === 'sections' && (
+          <SectionsTab
+            sections={formData.sections}
+            onChange={handleSectionsChange}
+            metadata={formData.metadata}
+            references={formData.references}
+          />
+        )}
         {activeSubTab === 'refs' && <ReferencesTab references={formData.references} onChange={(r) => { setFormData((p) => ({ ...p, references: r })); setIsDirty(true); }} />}
         {activeSubTab === 'citation' && <CitationTab citationText={citationText} onChange={handleUpdateCitation} metadata={formData.metadata} />}
-        {activeSubTab === 'preflight' && <PreflightQCTab preflight={preflight} onNavigateTab={setActiveSubTab} />}
+        {activeSubTab === 'preflight' && <PreflightQCTab preflight={preflight} onNavigateTab={handleNavigateFromPreflight} />}
       </div>
     </div>
   );
@@ -291,9 +436,16 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   );
 
   return (
-    <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
+    <EditorTabStateProvider paperId={formData.id} store={tabStateStore}>
+      <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
       <EditorLeftDock
         homeHref="/papers"
+        paperId={formData.id}
+        onBackClick={handleRequestBack}
+        autosaveStatus={autosaveStatus}
+        workflowStatus={formData.status || (formData as any).workflowStatus || 'draft'}
+        onUpdateWorkflowStatus={handleUpdateWorkflowStatus}
+        onOpenFullscreenPdf={handleOpenFullscreenPdf}
         onOpenQuickEdit={handleOpenQuickEdit}
         onOpenExtractedDrawer={() => setIsExtractedDrawerOpen(true)}
         onOpenLayoutSettings={() => setIsSettingsDrawerOpen(true)}
@@ -335,9 +487,14 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
           }}
         />
         <div className="flex sm:hidden flex-shrink-0 items-center justify-between p-1.5 mb-1.5 bg-white/70 backdrop-blur-md rounded-2xl border border-zinc-200">
-          <Link href="/papers" className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs" title="Quay lại danh sách bài báo">
+          <button
+            type="button"
+            onClick={handleRequestBack}
+            className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 font-bold text-xs flex items-center gap-1 shadow-2xs cursor-pointer"
+            title="Quay lại danh sách bài báo"
+          >
             <Home className="w-4 h-4" />
-          </Link>
+          </button>
           <div className="flex items-center gap-1 bg-zinc-200/70 p-0.5 rounded-xl">
             <button type="button" onClick={() => setMobilePane('editor')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${mobilePane === 'editor' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}>Soạn thảo</button>
             <button type="button" onClick={() => setMobilePane('preview')} className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${mobilePane === 'preview' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}>PDF</button>
@@ -377,6 +534,26 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         onClose={handleCloseQuickEdit}
         onSave={handleSaveQuickEdit}
       />
-    </div>
+
+      {/* Unsaved Changes Confirmation Modal */}
+      <ActionConfirmModal
+        isOpen={isExitWarningOpen}
+        onClose={() => setIsExitWarningOpen(false)}
+        onConfirm={handleConfirmSaveAndExit}
+        secondaryAction={{
+          label: 'Rời đi không lưu',
+          onClick: handleDiscardAndExit,
+          testId: 'editor-discard-and-exit-btn',
+        }}
+        variant="warning"
+        title="Thay đổi chưa được lưu"
+        description="Bạn có chỉnh sửa chưa lưu trong bản thảo bài báo. Bạn có muốn lưu các thay đổi này trước khi rời khỏi trang soạn thảo không?"
+        confirmLabel="Lưu & Thoát"
+        cancelLabel="Ở lại"
+        testId="editor-exit-confirm-modal"
+        confirmTestId="editor-save-and-exit-btn"
+      />
+      </div>
+    </EditorTabStateProvider>
   );
 };

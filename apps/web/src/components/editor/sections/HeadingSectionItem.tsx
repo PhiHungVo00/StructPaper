@@ -4,13 +4,13 @@ import React from 'react';
 import { PaperSection } from '@/types/paper';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 
-interface HeadingSectionItemProps {
+export interface HeadingSectionItemProps {
   sec: PaperSection;
   idx: number;
   onUpdateSection: (index: number, updated: PaperSection) => void;
 }
 
-export const HeadingSectionItem: React.FC<HeadingSectionItemProps> = ({
+const HeadingSectionItemBase: React.FC<HeadingSectionItemProps> = ({
   sec,
   idx,
   onUpdateSection,
@@ -37,3 +37,6 @@ export const HeadingSectionItem: React.FC<HeadingSectionItemProps> = ({
     </div>
   );
 };
+
+export const HeadingSectionItem = React.memo(HeadingSectionItemBase);
+HeadingSectionItem.displayName = 'HeadingSectionItem';

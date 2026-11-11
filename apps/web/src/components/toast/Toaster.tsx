@@ -54,7 +54,8 @@ export const Toaster: React.FC = () => {
       <div
         aria-live="assertive"
         aria-label="Thông báo khẩn cấp"
-        className="fixed top-0 left-0 right-0 z-[100000] w-full pointer-events-auto flex flex-col"
+        style={{ top: 'var(--titlebar-height, 0px)' }}
+        className="fixed left-0 right-0 z-[100000] w-full pointer-events-auto flex flex-col"
       >
         <AnimatePresence mode="popLayout">
           {stickyToasts.map((toastItem) => (
@@ -71,8 +72,14 @@ export const Toaster: React.FC = () => {
       <div
         aria-live="polite"
         aria-label="Thông báo hệ thống"
+        style={{
+          top:
+            stickyToasts.length > 0
+              ? 'calc(var(--titlebar-height, 0px) + 2.75rem)'
+              : 'var(--titlebar-height, 0px)',
+        }}
         className={`fixed left-1/2 -translate-x-1/2 z-[99999] pointer-events-none flex flex-col items-center gap-2 w-full max-w-xl px-4 select-none transition-[top] duration-200 ${
-          stickyToasts.length > 0 ? 'top-11 sm:top-12 pt-2' : 'top-0 pt-0'
+          stickyToasts.length > 0 ? 'pt-2' : 'pt-0'
         }`}
       >
         <AnimatePresence mode="popLayout">

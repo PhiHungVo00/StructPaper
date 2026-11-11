@@ -55,3 +55,26 @@ describe('useDocumentAutosave when the loaded document changes', () => {
     expect(result.current.state).not.toBe('error');
   });
 });
+
+describe('useDocumentAutosave with the auto-save switch off', () => {
+  it('saves nothing on its own, but saves once the switch is turned on again', async () => {
+    const saveLocal = vi.fn(async (_p: CompletePaper) => true);
+    const base = paperOf('d', 'Bản thảo');
+    const { rerender } = renderHook(
+      ({ paper, enabled }) => useDocumentAutosave({ paper, documentId: 'd', saveLocal, remote: false, debounceMs: 100, enabled }),
+      { initialProps: { paper: base, enabled: false } }
+    );
+    const edited = { ...base, metadata: { ...base.metadata, title: 'Đã sửa' } };
+    rerender({ paper: edited, enabled: false });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(saveLocal).not.toHaveBeenCalled();
+    rerender({ paper: edited, enabled: true });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(saveLocal).toHaveBeenCalledTimes(1);
+    expect(saveLocal.mock.calls[0][0].metadata.title).toBe('Đã sửa');
+  });
+});

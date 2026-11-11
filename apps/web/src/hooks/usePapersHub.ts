@@ -17,6 +17,7 @@ import { ALL_SAMPLE_PAPERS } from '@/lib/sample-papers';
 import { SAMPLE_VNUHCM_RECORDS } from '@/lib/authoring/sample-records-seeder';
 import { getAuthoringPapers } from '@/lib/authoring/paper-storage';
 import { usePaper } from '@/context/PaperContext';
+import type { CompletePaper } from '@/types/paper';
 import { toast } from '@/components/DynamicIslandToast';
 import {
   FilterWorkflowStatus,
@@ -112,12 +113,17 @@ export function usePapersHub() {
 
     if (record) {
       try {
-        const v1 = adaptV2toV1(record.doc as any);
+        const v1 = adaptV2toV1(record.doc as any) as CompletePaper;
         if (!v1.id) v1.id = record.info.id;
+        v1.displayName = record.info.displayName;
+        (v1 as any).submissionId = record.info.submissionId;
+        (v1 as any).workflowStatus = record.info.workflowStatus;
+        (v1 as any).tags = record.info.tags;
+        (v1 as any).note = record.info.note;
         if (record.info.displayName && v1.metadata && !v1.metadata.title) {
           v1.metadata.title = record.info.displayName;
         }
-        setPaper(v1 as any);
+        setPaper(v1);
         if (record.doc.journalId) {
           const norm = record.doc.journalId.toUpperCase().startsWith('VNUHCM-')
             ? record.doc.journalId
@@ -127,14 +133,20 @@ export function usePapersHub() {
       } catch (err) {
         console.error('Failed to adapt v2 doc to v1:', err);
         if (sample) {
-          setPaper(sample.paper);
+          setPaper({
+            ...sample.paper,
+            displayName: sample.paper.displayName || sample.label,
+          });
           if (sample.journalId) {
             setCurrentJournal(sample.journalId);
           }
         }
       }
     } else if (sample) {
-      setPaper(sample.paper);
+      setPaper({
+        ...sample.paper,
+        displayName: sample.paper.displayName || sample.label,
+      });
       if (sample.journalId) {
         setCurrentJournal(sample.journalId);
       }

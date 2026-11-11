@@ -37,6 +37,10 @@ node_modules/
 **/node_modules/
 .next/
 **/.next/
+package-lock.json
+**/package-lock.json
+yarn.lock
+**/yarn.lock
 struct-paper-app/node_modules/
 struct-paper-app/.next/
 struct-paper-app/out/

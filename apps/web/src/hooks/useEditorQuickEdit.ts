@@ -13,7 +13,8 @@ import type { CompletePaper } from '@/types/paper';
  */
 export function useEditorQuickEdit(
   formData: CompletePaper,
-  setFormData: React.Dispatch<React.SetStateAction<CompletePaper>>
+  setFormData: React.Dispatch<React.SetStateAction<CompletePaper>>,
+  onQuickEditSynced?: (updatedPaper: CompletePaper) => void
 ) {
   const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
   const [quickEditRecord, setQuickEditRecord] = useState<ManuscriptRecord | null>(null);
@@ -68,14 +69,29 @@ export function useEditorQuickEdit(
           });
         }
 
+        const patchedFields = {
+          displayName: patch.displayName ?? formData.displayName,
+          submissionId: patch.submissionId ?? (formData as any).submissionId,
+          status: (patch.workflowStatus as any) ?? formData.status,
+          workflowStatus: patch.workflowStatus ?? formData.workflowStatus,
+          note: patch.note ?? (formData as any).note,
+          tags: patch.tags ?? (formData as any).tags,
+        };
+
         setFormData((prev) => ({
           ...prev,
-          displayName: patch.displayName ?? (prev as any).displayName,
+          displayName: patch.displayName ?? prev.displayName,
           submissionId: patch.submissionId ?? (prev as any).submissionId,
           status: (patch.workflowStatus as any) ?? prev.status,
+          workflowStatus: patch.workflowStatus ?? prev.workflowStatus,
           note: patch.note ?? (prev as any).note,
           tags: patch.tags ?? (prev as any).tags,
         }));
+
+        onQuickEditSynced?.({
+          ...formData,
+          ...patchedFields,
+        });
 
         sileo.success({
           title: 'Cập nhật thành công',
@@ -89,7 +105,7 @@ export function useEditorQuickEdit(
         throw err;
       }
     },
-    [formData, setFormData]
+    [formData, setFormData, onQuickEditSynced]
   );
 
   return {

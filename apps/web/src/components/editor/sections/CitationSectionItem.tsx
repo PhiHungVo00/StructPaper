@@ -6,7 +6,7 @@ import { AutoResizeTextarea } from './AutoResizeTextarea';
 import { generateStandardCitation } from './utils';
 import { Sparkles, Check, Copy } from 'lucide-react';
 
-interface CitationSectionItemProps {
+export interface CitationSectionItemProps {
   sec: PaperSection;
   idx: number;
   metadata?: PaperMetadata;
@@ -15,7 +15,7 @@ interface CitationSectionItemProps {
   onCopyCitation: (id: string, text: string) => void;
 }
 
-export const CitationSectionItem: React.FC<CitationSectionItemProps> = ({
+const CitationSectionItemBase: React.FC<CitationSectionItemProps> = ({
   sec,
   idx,
   metadata,
@@ -76,3 +76,6 @@ export const CitationSectionItem: React.FC<CitationSectionItemProps> = ({
     </div>
   );
 };
+
+export const CitationSectionItem = React.memo(CitationSectionItemBase);
+CitationSectionItem.displayName = 'CitationSectionItem';

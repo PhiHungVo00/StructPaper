@@ -11,6 +11,7 @@ export const DEFAULT_MOCK_PAPERS: CompletePaper[] = [
   {
     ...SAMPLE_PAPER_HS630,
     id: 'paper_vnuhcm_hs630',
+    displayName: SAMPLE_PAPER_HS630.displayName || 'VNUHCM-HS (ID 630)',
     templateId: 'vnuhcm_health_sciences_id630',
     templateName: 'Tạp chí Khoa học Sức khỏe ĐHQG-HCM (ID630)',
     status: 'ready',
@@ -19,6 +20,7 @@ export const DEFAULT_MOCK_PAPERS: CompletePaper[] = [
   },
   {
     id: 'paper_ieee_dl_segmentation',
+    displayName: 'IEEE TMI — Liver Tumor Segmentation',
     metadata: {
       title: 'Deep Learning Multi-Phase CT Liver Tumor Segmentation with Residual Attention U-Net',
       titleEn: 'Deep Learning Multi-Phase CT Liver Tumor Segmentation with Residual Attention U-Net',
@@ -175,6 +177,7 @@ export const DEFAULT_MOCK_PAPERS: CompletePaper[] = [
   },
   {
     id: 'paper_nature_photodynamics',
+    displayName: 'Nature BME — Pancreatic Photodynamics',
     metadata: {
       title: 'Nanoparticle-Enhanced Photodynamic Therapy for Targeted Eradication of Hypoxic Pancreatic Adenocarcinoma',
       titleEn: 'Nanoparticle-Enhanced Photodynamic Therapy for Targeted Eradication of Hypoxic Pancreatic Adenocarcinoma',
@@ -327,6 +330,7 @@ export function duplicateAuthoringPaper(id: string): CompletePaper | null {
   const newPaper: CompletePaper = {
     ...JSON.parse(JSON.stringify(target)),
     id: `paper_${Date.now()}`,
+    displayName: `${target.displayName || target.metadata.title} (Bản sao)`,
     metadata: {
       ...target.metadata,
       title: `${target.metadata.title} (Bản sao)`,
@@ -365,10 +369,12 @@ export function createNewPaperFromTemplate(
   const year = now.getFullYear().toString();
 
   const emptyBase = createEmptyPaper(template.id);
+  const resolvedDisplayName = customTitle || (isVnuhcm ? 'Bản thảo bài báo khoa học mới' : 'Untitled Academic Paper');
 
   const newPaper: CompletePaper = {
     ...emptyBase,
     id: `paper_${Date.now()}`,
+    displayName: resolvedDisplayName,
     templateId: template.id,
     templateName: template.name,
     status: 'draft',
@@ -376,7 +382,7 @@ export function createNewPaperFromTemplate(
     updatedAt: now.toISOString(),
     metadata: {
       ...emptyBase.metadata,
-      title: customTitle || (isVnuhcm ? 'Bản thảo bài báo khoa học mới' : 'Untitled Academic Paper'),
+      title: resolvedDisplayName,
       articleType: isVnuhcm ? 'Bài báo nghiên cứu' : 'Research Article',
       journalId: template.id,
       journalName: template.institution || template.name,
@@ -404,12 +410,7 @@ export function createNewPaperFromTemplate(
       abstract:
         'Nhập tóm tắt nội dung nghiên cứu khoa học tại đây. Nêu rõ bối cảnh, phương pháp thực nghiệm, kết quả thu được và đóng góp chính của bài báo.',
       keywords: ['Bài báo khoa học', 'Phương pháp nghiên cứu', 'ĐHQG-HCM'],
-      dates: {
-        received: `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${year}`,
-        revised: '',
-        accepted: '',
-        published: '',
-      },
+      dates: { received: `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${year}`, revised: '', accepted: '', published: '' },
       doi: `https://doi.org/10.32508/${template.id}.${year}.001`,
       volume: '1',
       issue: '1',
@@ -468,15 +469,7 @@ export function createNewPaperFromTemplate(
       },
     ],
     references: [
-      {
-        id: 1,
-        raw: 'Nguyen, V. A., & Tran, H. (2025). Advanced Structural Extraction and Typesetting for Scientific Papers. Journal of Science & Technology, 12(3), 45-58.',
-        authors: 'Nguyen, V. A., Tran, H.',
-        title: 'Advanced Structural Extraction and Typesetting for Scientific Papers',
-        year: '2025',
-        isCited: true,
-        citationCount: 1,
-      },
+      { id: 1, raw: 'Nguyen, V. A., & Tran, H. (2025). Advanced Structural Extraction and Typesetting for Scientific Papers. Journal of Science & Technology, 12(3), 45-58.', authors: 'Nguyen, V. A., Tran, H.', title: 'Advanced Structural Extraction and Typesetting for Scientific Papers', year: '2025', isCited: true, citationCount: 1 },
     ],
   };
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "StructPaper",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "identifier": "com.structpaper.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -21,6 +21,8 @@
         "minHeight": 700,
         "resizable": true,
         "fullscreen": false,
+        "decorations": false,
+        "shadow": true,
         "visible": true,
         "focus": true,
         "center": true

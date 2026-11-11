@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ReferencesTabProps } from './types';
 import { Quote, Plus, Trash2, ExternalLink, CheckCircle, AlertTriangle } from 'lucide-react';
 import { EndOfListIndicator } from './EndOfListIndicator';
+import { useTabScrollRestoration } from './hooks';
 import {
   useEditorCommandBus,
   dispatchAddReference,
@@ -73,6 +74,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
   const [newlyAddedId, setNewlyAddedId] = useState<number | null>(null);
   const [deletingRefIds, setDeletingRefIds] = useState<Set<number>>(new Set());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { commitScrollTop } = useTabScrollRestoration('refs', scrollContainerRef);
 
   // Smooth scroll and auto-focus newly added reference
   useEffect(() => {
@@ -252,7 +254,10 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
           <EndOfListIndicator
             title="Bạn đã lướt đến cuối danh sách"
             subtitle={`Đã hiển thị toàn bộ ${references.length} tài liệu tham khảo`}
-            onScrollToTop={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+            onScrollToTop={() => {
+              scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+              commitScrollTop(0);
+            }}
           />
         ) : (
           <div className="p-8 text-center rounded-3xl bg-gray-200/50 space-y-3">

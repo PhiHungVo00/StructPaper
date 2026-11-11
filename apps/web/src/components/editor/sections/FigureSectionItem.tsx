@@ -1,7 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { PaperSection, PaperFigure } from '@/types/paper';
+import {
+  hydrateFigureAssetById,
+  revokeTrackedObjectUrl,
+} from '@/lib/media/blob-image-registry';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 import {
   Image as ImageIcon,
@@ -11,7 +15,7 @@ import {
   ClipboardPaste,
 } from 'lucide-react';
 
-interface FigureSectionItemProps {
+export interface FigureSectionItemProps {
   sec: PaperSection;
   idx: number;
   setFileInputRef: (index: number, el: HTMLInputElement | null) => void;
@@ -25,7 +29,7 @@ interface FigureSectionItemProps {
   onTriggerFileInput: (index: number) => void;
 }
 
-export const FigureSectionItem: React.FC<FigureSectionItemProps> = ({
+const FigureSectionItemBase: React.FC<FigureSectionItemProps> = ({
   sec,
   idx,
   setFileInputRef,
@@ -38,6 +42,69 @@ export const FigureSectionItem: React.FC<FigureSectionItemProps> = ({
   onPasteImageFromClipboardButton,
   onTriggerFileInput,
 }) => {
+  const secRef = useRef(sec);
+  secRef.current = sec;
+  const idxRef = useRef(idx);
+  idxRef.current = idx;
+  const onUpdateSectionRef = useRef(onUpdateSection);
+  onUpdateSectionRef.current = onUpdateSection;
+  const latestSrcRef = useRef(sec.figure?.src);
+  latestSrcRef.current = sec.figure?.src;
+  const latestAssetIdRef = useRef(sec.figure?.assetId);
+  latestAssetIdRef.current = sec.figure?.assetId;
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const attemptedHydrationsRef = useRef<Set<string>>(new Set());
+  const hydratedUrlsRef = useRef<Set<string>>(new Set());
+
+  const handleImageError = useCallback(async () => {
+    const erroredSrc = latestSrcRef.current;
+    const targetAssetId = latestAssetIdRef.current;
+    if (!erroredSrc?.startsWith('blob:') || !targetAssetId) return;
+    if (hydratedUrlsRef.current.has(erroredSrc)) return;
+
+    const attemptKey = `${targetAssetId}:${erroredSrc}`;
+    if (attemptedHydrationsRef.current.has(attemptKey)) return;
+    attemptedHydrationsRef.current.add(attemptKey);
+
+    const hydratedUrl = await hydrateFigureAssetById(targetAssetId);
+    if (!hydratedUrl) return;
+
+    const latestSec = secRef.current;
+    if (
+      !isMountedRef.current ||
+      latestSrcRef.current !== erroredSrc ||
+      latestAssetIdRef.current !== targetAssetId ||
+      !latestSec.figure
+    ) {
+      revokeTrackedObjectUrl(hydratedUrl);
+      return;
+    }
+
+    hydratedUrlsRef.current.add(hydratedUrl);
+    onUpdateSectionRef.current(idxRef.current, {
+      ...latestSec,
+      figure: {
+        ...latestSec.figure,
+        src: hydratedUrl,
+      },
+    });
+  }, []);
+
+  const handleFileInputRef = useCallback(
+    (el: HTMLInputElement | null) => {
+      setFileInputRef(idx, el);
+    },
+    [setFileInputRef, idx]
+  );
+
   if (!sec.figure) return null;
 
   return (
@@ -97,7 +164,7 @@ export const FigureSectionItem: React.FC<FigureSectionItemProps> = ({
         {/* Hidden file input */}
         <input
           type="file"
-          ref={(el) => setFileInputRef(idx, el)}
+          ref={handleFileInputRef}
           accept="image/*"
           onChange={(e) => onFileInputChange(idx, e)}
           className="hidden"
@@ -108,6 +175,9 @@ export const FigureSectionItem: React.FC<FigureSectionItemProps> = ({
             <img
               src={sec.figure.src}
               alt={sec.figure.caption}
+              loading="lazy"
+              decoding="async"
+              onError={handleImageError}
               className="max-h-44 object-contain mx-auto rounded-lg cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
               onClick={() => onOpenLightbox(sec.figure!)}
             />
@@ -167,3 +237,6 @@ export const FigureSectionItem: React.FC<FigureSectionItemProps> = ({
     </div>
   );
 };
+
+export const FigureSectionItem = React.memo(FigureSectionItemBase);
+FigureSectionItem.displayName = 'FigureSectionItem';

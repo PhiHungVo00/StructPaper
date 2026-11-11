@@ -81,8 +81,11 @@ describe('Task 5: Journal Profile & Template Management UI', () => {
     it('renders all 7 VNUHCM journals with bilingual titles, brand badges and specifications', () => {
       render(<JournalHubView />);
 
-      // Verify top heading
+      // Verify top heading & sticky toolbar titlebar offset
       expect(screen.getByText('Quản Lý Mẫu & Tạp Chí Khoa Học')).toBeDefined();
+      const stickyToolbar = screen.getByTestId('journal-hub-sticky-toolbar');
+      expect(stickyToolbar.className).toContain('sticky');
+      expect(stickyToolbar.className).toContain('top-[var(--titlebar-height,0px)]');
 
       // Check for the 7 short codes
       expect(screen.getByText('VNUHCM-STD')).toBeDefined();

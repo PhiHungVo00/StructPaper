@@ -1,6 +1,4 @@
-import type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout } from './paper-extensions';
-export type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout };
-import type { Cell } from '@structpaper/doc-model';
+import type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout } from './paper-extensions'; export type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout }; import type { Cell } from '@structpaper/doc-model';
 
 export interface Author {
   id: string;
@@ -551,6 +549,7 @@ export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
 
 export interface CompletePaper {
   id: string;
+  displayName?: string;
   metadata: PaperMetadata;
   sections: PaperSection[];
   references: PaperReference[];
@@ -559,6 +558,7 @@ export interface CompletePaper {
   templateName?: string;
   updatedAt?: string;
   createdAt?: string;
-  status?: 'draft' | 'review' | 'ready';
+  status?: 'draft' | 'review' | 'ready' | string;
+  workflowStatus?: string;
 }
 

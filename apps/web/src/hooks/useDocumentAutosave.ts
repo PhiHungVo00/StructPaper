@@ -13,6 +13,8 @@ export interface UseDocumentAutosaveOptions {
   /** Pass false to disable server sync (tests, fully-offline desktop). */
   remote?: boolean;
   debounceMs?: number;
+  /** false = manual saving only (the editor's auto-save switch): edits are not saved on their own. */
+  enabled?: boolean;
 }
 
 export function useDocumentAutosave({
@@ -21,6 +23,7 @@ export function useDocumentAutosave({
   saveLocal,
   remote = true,
   debounceMs = 1200,
+  enabled = true,
 }: UseDocumentAutosaveOptions) {
   const [state, setState] = useState<SaveState>('idle');
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -63,8 +66,8 @@ export function useDocumentAutosave({
       baseline.current = paper;
       return;
     }
-    if (paper !== baseline.current) controller.notify(paper);
-  }, [paper, documentId, controller]);
+    if (enabled && paper !== baseline.current) controller.notify(paper);
+  }, [paper, documentId, controller, enabled]);
 
   // Don't lose the last edits when the tab is hidden/closed.
   useEffect(() => {

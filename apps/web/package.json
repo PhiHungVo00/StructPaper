@@ -1,7 +1,8 @@
 {
   "name": "@structpaper/web",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -24,6 +25,7 @@
     "@structpaper/platform-web": "workspace:*",
     "@structpaper/qc-engine": "workspace:*",
     "@structpaper/storage": "workspace:*",
+    "@tanstack/react-virtual": "^3.14.26",
     "@tiptap/core": "^3.32.2",
     "@tiptap/extension-subscript": "^3.32.2",
     "@tiptap/extension-superscript": "^3.32.2",

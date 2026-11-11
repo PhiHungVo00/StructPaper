@@ -1,7 +1,7 @@
 import { DEFAULT_LAYOUT_SETTINGS, normalizeCompletePaper } from '@/types/paper';
 import { parseDocxFile } from '@/lib/docx-parser';
 import { exportToLatex } from '@/lib/exporters';
-import { extractPaperImages } from '@/lib/paper-images';
+import { extractPaperImagesAsync } from '@/lib/media/figure-image-utils';
 import { validateForImport } from '@/lib/validation/validators';
 import { loadPaperFromIndexedDb, savePaperToIndexedDb } from '@/lib/storage/paper-sync';
 import { collectAllExistingTitles } from '@/lib/storage/paper-naming';
@@ -78,7 +78,7 @@ export function createBatchDeps(): BatchDeps {
       const started = performance.now();
       const ready = normalizeCompletePaper(paper);
       const tex = exportToLatex(ready, ready.layoutSettings || DEFAULT_LAYOUT_SETTINGS);
-      const blob = await compileToPdf(tex, referencedImages(tex, extractPaperImages(ready)), signal);
+      const blob = await compileToPdf(tex, referencedImages(tex, await extractPaperImagesAsync(ready)), signal);
       return { blob, ms: Math.round(performance.now() - started) };
     },
     archive: api ? async (paper, pdf, fileName) => void (await api.uploadExport(paper.id, pdf, 'pdf', fileName)) : undefined,

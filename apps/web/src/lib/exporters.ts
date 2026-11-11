@@ -2,6 +2,10 @@ import JSZip from 'jszip';
 import { CompletePaper } from './sample-papers';
 import { generateFullJournalLatex, generateLatexPackageZip } from './latex-template';
 import { exportToJatsXml } from './jats-export';
+import {
+  appendFigureImagesToZip,
+  rewriteBlobFigureSrcsForArchive,
+} from './media/figure-image-utils';
 
 export { generateLatexPackageZip };
 
@@ -110,23 +114,15 @@ export async function generatePaperZip(paper: CompletePaper): Promise<Blob> {
   const folderName = paper.id || 'paper_package';
   const folder = zip.folder(folderName) || zip;
 
-  folder.file('paper.tex', exportToLatex(paper));
-  folder.file('paper.html', exportToHtml(paper));
-  folder.file('paper.xml', exportToJatsXml(paper));
-  folder.file('paper.json', exportToJson(paper));
-
-  // Include extracted figures if any
+  // Extract & pack figures first so archive HTML/TeX reference packed paths (e.g. images/fig1.jpg)
   const imgFolder = folder.folder('images');
-  paper.sections.forEach((sec) => {
-    if (sec.type === 'figure' && sec.figure && sec.figure.src) {
-      if (sec.figure.src.startsWith('data:image')) {
-        const parts = sec.figure.src.split(',');
-        if (parts[1]) {
-          imgFolder?.file(`fig${sec.figure.num}.png`, parts[1], { base64: true });
-        }
-      }
-    }
-  });
+  const packedPaths = await appendFigureImagesToZip(imgFolder, paper.sections);
+  const archivePaper = rewriteBlobFigureSrcsForArchive(paper, packedPaths);
+
+  folder.file('paper.tex', exportToLatex(archivePaper));
+  folder.file('paper.html', exportToHtml(archivePaper));
+  folder.file('paper.xml', exportToJatsXml(archivePaper));
+  folder.file('paper.json', exportToJson(paper));
 
   return await zip.generateAsync({ type: 'blob' });
 }

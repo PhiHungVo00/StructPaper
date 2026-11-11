@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PaperMetadata } from '@/types/paper';
 import { Bookmark, Sparkles, Copy, Check, Info, FileText } from 'lucide-react';
 import { generateStandardCitation } from './sections/utils';
 import { sileo } from '@/components/DynamicIslandToast';
+import { useTabScrollRestoration } from './hooks';
 
 interface CitationTabProps {
   citationText: string;
@@ -18,6 +19,8 @@ export const CitationTab: React.FC<CitationTabProps> = ({
   metadata,
 }) => {
   const [copied, setCopied] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useTabScrollRestoration('citation', scrollContainerRef);
 
   const handleGenerate = () => {
     if (!metadata) return;
@@ -49,7 +52,7 @@ export const CitationTab: React.FC<CitationTabProps> = ({
     : 0;
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 space-y-5">
+    <div ref={scrollContainerRef} className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 space-y-5">
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-200/80 flex-shrink-0">
         <div className="flex items-center gap-1.5">

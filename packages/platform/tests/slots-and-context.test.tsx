@@ -7,6 +7,7 @@ import {
   usePlatform,
   useCapabilities,
   useUpdateService,
+  useWindowService,
   useAppUpdater,
   createFakePlatform,
   defineSlots,
@@ -52,6 +53,7 @@ describe('packages/platform: Context & Hooks', () => {
         platform: usePlatform(),
         caps: useCapabilities(),
         updates: useUpdateService(),
+        win: useWindowService(),
       }),
       { wrapper }
     );
@@ -60,6 +62,7 @@ describe('packages/platform: Context & Hooks', () => {
     expect(result.current.caps.hasAppUpdater).toBe(true);
     expect(result.current.platform.config.appVersion).toBe('2.5.0');
     expect(result.current.updates.channel).toBe('stable');
+    expect(result.current.win.isSupported()).toBe(true);
   });
 });
 

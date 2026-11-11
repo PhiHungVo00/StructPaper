@@ -5,6 +5,7 @@ import {
   WebUpdateService,
   WebFileService,
   WebShellService,
+  WebWindowService,
 } from '../src';
 import type { UpdateState, UpdateInfo } from '@structpaper/platform';
 
@@ -26,6 +27,8 @@ describe('packages/platform-web: createWebPlatform', () => {
     expect(platform.files).toBeInstanceOf(WebFileService);
     expect(platform.updates).toBeInstanceOf(WebUpdateService);
     expect(platform.shell).toBeInstanceOf(WebShellService);
+    expect(platform.window).toBeInstanceOf(WebWindowService);
+    expect(platform.window.isSupported()).toBe(false);
   });
 
   it('allows customizing RuntimeConfig', () => {
@@ -350,5 +353,19 @@ describe('packages/platform-web: WebShellService', () => {
     );
 
     windowOpenSpy.mockRestore();
+  });
+});
+
+describe('packages/platform-web: WebWindowService', () => {
+  it('exposes unsupported window controls that resolve safely as no-ops', async () => {
+    const win = new WebWindowService();
+    expect(win.isSupported()).toBe(false);
+    await expect(win.minimize()).resolves.toBeUndefined();
+    await expect(win.toggleMaximize()).resolves.toBeUndefined();
+    await expect(win.close()).resolves.toBeUndefined();
+    await expect(win.startDragging()).resolves.toBeUndefined();
+    await expect(win.isMaximized()).resolves.toBe(false);
+    const unsub = win.onMaximizedChange(() => {});
+    expect(() => unsub()).not.toThrow();
   });
 });

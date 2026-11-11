@@ -12,6 +12,11 @@ import { displayHeading } from './headings';
 import { resolvePublication, hasPublicationValue, UNKNOWN } from './publication';
 import { qrBlockFor } from './qr-latex';
 import { buildEnglishPage, hasEnglishPageContent, articleTypeToEnglish, toAsciiName } from './latex-english-page';
+import {
+  resolveLatexFigureFilename,
+  appendFigureImagesToZip,
+  rewriteBlobFigureSrcsForArchive,
+} from './media/figure-image-utils';
 
 import { stripCaptionLabel } from './docx-table-extras';
 export { escapeLatex };
@@ -371,15 +376,7 @@ ${isOneColumn
       bodyLatex += equationToLatex(sec, secIdx, oneCol);
     } else if (sec.type === 'figure' && sec.figure) {
       const figNum = sec.figure.num || (secIdx + 1);
-      let imgName = `fig${figNum}.png`;
-      if (sec.figure.src) {
-        if (sec.figure.src.startsWith('data:image')) {
-          const isJpg = sec.figure.src.startsWith('data:image/jpeg') || sec.figure.src.startsWith('data:image/jpg');
-          imgName = `fig${figNum}.${isJpg ? 'jpg' : 'png'}`;
-        } else {
-          imgName = sec.figure.src.split('/').pop() || `fig${figNum}.png`;
-        }
-      }
+      const imgName = resolveLatexFigureFilename(sec.figure, figNum);
 
       // Column layout for figure: 1-column vs 2-column
       const isFigOneCol = oneCol || sec.figure.columnSpan === '1-column' || sec.figure.isFullWidth === false;
@@ -496,24 +493,12 @@ export async function generateLatexPackageZip(paper: CompletePaper, customSettin
   const folderName = paper.id || 'vnuhcm_latex_package';
   const folder = zip.folder(folderName) || zip;
 
-  folder.file('document.tex', generateFullJournalLatex(paper, customSettings));
-  folder.file('references.bib', generateBibTex(paper));
-
   const imgFolder = folder.folder('images');
-  paper.sections.forEach((sec, idx) => {
-    if (sec.type === 'figure' && sec.figure && sec.figure.src) {
-      const num = sec.figure.num || (idx + 1);
-      if (sec.figure.src.startsWith('data:image')) {
-        const parts = sec.figure.src.split(',');
-        if (parts[1]) {
-          const isJpg = sec.figure.src.startsWith('data:image/jpeg') || sec.figure.src.startsWith('data:image/jpg');
-          const ext = isJpg ? 'jpg' : 'png';
-          imgFolder?.file(`fig${num}.${ext}`, parts[1], { base64: true });
-          imgFolder?.file(`fig${num}.png`, parts[1], { base64: true });
-        }
-      }
-    }
-  });
+  const packedPaths = await appendFigureImagesToZip(imgFolder, paper.sections);
+  const archivePaper = rewriteBlobFigureSrcsForArchive(paper, packedPaths);
+
+  folder.file('document.tex', generateFullJournalLatex(archivePaper, customSettings));
+  folder.file('references.bib', generateBibTex(archivePaper));
 
   return await zip.generateAsync({ type: 'blob' });
 }

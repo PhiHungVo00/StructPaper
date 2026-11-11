@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   CompletePaper,
@@ -36,6 +36,8 @@ import { Home, Eye, Edit3, FileEdit } from 'lucide-react';
 import { sileo } from '@/components/DynamicIslandToast';
 import { PaperQuickEditModal } from '@/components/papers';
 import { useEditorQuickEdit } from '@/hooks';
+import { useEditorAutoSave, useSyncEditorSession, useHydrateDisplayName } from '@/components/editor/hooks';
+import { useEditorSession } from '@/context/EditorSessionContext';
 
 interface TypstPaperEditorViewProps {
   initialPaper: CompletePaper;
@@ -65,7 +67,19 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
     handleOpenQuickEdit,
     handleCloseQuickEdit,
     handleSaveQuickEdit,
-  } = useEditorQuickEdit(formData, setFormData);
+  } = useEditorQuickEdit(formData, setFormData, saveAuthoringPaper);
+
+  const handleHydrateDisplayName = useCallback(
+    (paperId: string, hydratedName: string) => {
+      setFormData((prev) =>
+        prev.id === paperId && !prev.displayName?.trim()
+          ? { ...prev, displayName: hydratedName }
+          : prev
+      );
+    },
+    []
+  );
+  useHydrateDisplayName(formData.id, formData.displayName, handleHydrateDisplayName);
 
   // Export progress states
   const [isExportingDocx, setIsExportingDocx] = useState(false);
@@ -82,8 +96,20 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
   // Preview sync state
   const [isCompiling, setIsCompiling] = useState(false);
 
-  // Debounced auto-save timer
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { autoSaveEnabled } = useEditorSession();
+
+  const { autosaveStatus } = useEditorAutoSave({
+    paperId: formData.id,
+    formData,
+    isDirty,
+    setIsDirty,
+    enabled: autoSaveEnabled,
+    debounceMs: 2000,
+    onSave: async (updated) => {
+      saveAuthoringPaper(updated);
+      return true;
+    },
+  });
 
   // Save changes to storage
   const handleSave = useCallback(() => {
@@ -96,6 +122,15 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
     });
     setTimeout(() => setSaveSuccess(false), 2500);
   }, [formData]);
+
+  useSyncEditorSession({
+    paperId: formData.id,
+    displayName: formData.displayName,
+    autosaveStatus,
+    isDirty,
+    saveSuccess,
+    onManualSave: handleSave,
+  });
 
   // Keyboard shortcut Ctrl+S
   useEffect(() => {
@@ -113,14 +148,6 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
   const updateData = (updated: CompletePaper) => {
     setFormData(updated);
     setIsDirty(true);
-
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-    }
-    autoSaveTimerRef.current = setTimeout(() => {
-      saveAuthoringPaper(updated);
-      setIsDirty(false);
-    }, 2000);
   };
 
   const handleMetadataChange = (newMetadata: any) => {
@@ -324,6 +351,7 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
       {/* 1. LEFT VERTICAL DOCK (Desktop/Tablet) */}
       <EditorLeftDock
         homeHref="/papers"
+        autosaveStatus={autosaveStatus}
         onOpenQuickEdit={handleOpenQuickEdit}
         onOpenExtractedDrawer={() => setIsExtractedDrawerOpen(true)}
         onOpenLayoutSettings={() => setIsSettingsDrawerOpen(true)}

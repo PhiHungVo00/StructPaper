@@ -203,7 +203,7 @@ export const Sidebar: React.FC = () => {
     <>
       {/* DESKTOP & TABLET DOCK - NO WRAPPER BOX, EXPANDING PILLS WITH CHEVRON TOGGLE */}
       <aside
-        className={`hidden sm:flex flex-col items-start justify-between h-[calc(100vh-1.5rem)] sticky top-3 my-3 ml-3.5 flex-shrink-0 z-50 select-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'w-[280px]' : 'w-[58px]'
+        className={`hidden sm:flex flex-col items-start justify-between h-[calc(100vh-var(--titlebar-height,0px)-1.5rem)] sticky top-[calc(var(--titlebar-height,0px)+0.75rem)] my-3 ml-3.5 flex-shrink-0 z-50 select-none transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'w-[280px]' : 'w-[58px]'
           }`}
         aria-label="Thanh điều hướng chính"
       >
@@ -277,7 +277,7 @@ export const Sidebar: React.FC = () => {
       </aside>
 
       {/* MOBILE TOP NAVIGATION BAR */}
-      <div className="sm:hidden sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-gray-100/80 px-4 py-3 flex items-center justify-between shadow-xs">
+      <div className="sm:hidden sticky top-[var(--titlebar-height,0px)] z-40 bg-white/85 backdrop-blur-md border-b border-gray-100/80 px-4 py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setMobileOpen(true)}

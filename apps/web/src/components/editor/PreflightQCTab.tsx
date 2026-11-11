@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { PreflightQCTabProps, EditorTabKey } from './types';
 import {
   AlertCircle,
@@ -10,12 +10,16 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { computePreflightCheckWrapper } from './preflight-wrapper';
+import { useTabScrollRestoration } from './hooks';
 
 export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({
   preflight,
   paper,
   onNavigateTab,
 }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useTabScrollRestoration('preflight', scrollContainerRef);
+
   // Evaluates preflight check via wrapper (ready for @structpaper/qc-engine in Phase 5)
   const activePreflight = useMemo(() => {
     return computePreflightCheckWrapper(preflight || paper);
@@ -55,7 +59,7 @@ export const PreflightQCTab: React.FC<PreflightQCTabProps> = ({
       </div>
 
       {/* Internal Scrollable Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-6">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-6">
         {/* Issues list */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">

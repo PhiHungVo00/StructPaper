@@ -6,11 +6,10 @@ import {
   AlignLeft,
   Table as TableIcon,
   Image as ImageIcon,
-  Bookmark,
   Sigma,
 } from 'lucide-react';
 
-interface SectionInsertDividerProps {
+export interface SectionInsertDividerProps {
   idx: number;
   onAddHeading: (level: 'h1' | 'h2' | 'h3', afterIndex: number) => void;
   onAddParagraph: (afterIndex: number) => void;
@@ -20,7 +19,7 @@ interface SectionInsertDividerProps {
   onAddEquation?: (afterIndex?: number) => void;
 }
 
-export const SectionInsertDivider: React.FC<SectionInsertDividerProps> = ({
+const SectionInsertDividerBase: React.FC<SectionInsertDividerProps> = ({
   idx,
   onAddHeading,
   onAddParagraph,
@@ -89,3 +88,6 @@ export const SectionInsertDivider: React.FC<SectionInsertDividerProps> = ({
     </div>
   );
 };
+
+export const SectionInsertDivider = React.memo(SectionInsertDividerBase);
+SectionInsertDivider.displayName = 'SectionInsertDivider';

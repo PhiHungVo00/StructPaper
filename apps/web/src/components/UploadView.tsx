@@ -119,7 +119,10 @@ export const UploadView: React.FC<UploadViewProps> = ({ onPaperLoaded, currentPa
       title: 'Tải bài mẫu thành công',
       description: `Đã nạp bài mẫu "${sample.label}"`,
     });
-    onPaperLoaded(sample.paper);
+    onPaperLoaded({
+      ...sample.paper,
+      displayName: sample.paper.displayName || sample.label,
+    });
   };
 
   const filteredSamples = ALL_SAMPLE_PAPERS.filter((item) => {
