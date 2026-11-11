@@ -185,9 +185,15 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | `2f61b21` | Tiêu đề "TÀI LIỆU THAM KHẢO" (polyglossia đặt lại `\refname`). |
 | `4e1f296` | Công thức **Trải 2 cột**, **bố cục trang theo mục** (1/2 cột, ngang/dọc), **hướng ngang toàn bài**; lưu các tuỳ chọn qua v1↔v2 (xem mục 6b). |
 
+### Giao diện chỉnh bố cục
+| Commit | Thay đổi |
+| --- | --- |
+| `69b6312` | Thẻ công thức có nút "Trong 1 cột / Trải 2 cột"; mọi thẻ mục có nút "Bố cục trang" (trang mới, cột, hướng) và huy hiệu "Trang mới · 1 cột · Ngang"; Giao diện → "Hướng trang (toàn bộ nội dung)". Xem trước HTML cho công thức Trải 2 cột chiếm cả hai cột. |
+
 ### Xuất Word (.docx)
 | Commit | Thay đổi |
 | --- | --- |
+| `e2ac6ff` | Word theo đúng bố cục trang: 1/2 cột toàn bài, công thức Trải 2 cột, dấu bố cục trang theo mục (mỗi dấu là một section Word sang trang mới, có cột và hướng riêng), hướng ngang toàn bài, và bảng "xoay ngang" nằm riêng một trang ngang (trước đây bị bỏ qua). Mã ở `lib/docx-export-layout.ts`. Giới hạn: tab của đầu/chân trang chỉnh theo khổ dọc nên ở trang ngang dòng chữ căn phải không chạm lề phải. |
 | `1679b50` | Bộ xuất Word viết lại: dàn trang như bản in (khổ giấy, lề, đầu/chân trang, cột bên trái, khung tóm tắt, thân 2 cột, ảnh, công thức Word, bảng ô gộp, trang tiếng Anh) và tên style của template. |
 
 ### Còn lại / giới hạn đã biết
