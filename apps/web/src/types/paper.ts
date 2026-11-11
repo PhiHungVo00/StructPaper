@@ -54,8 +54,7 @@ export interface PaperMetadata {
   year: string;
   firstPage: number;
   lastPage: number;
-  titleOriginal?: string; // title as typed in Word when the importer changed it (undo)
-  publication?: PublicationInfo; // "?" when not entered yet (see paper-extensions)
+  titleOriginal?: string; publication?: PublicationInfo; // Word title before normalization (undo); "?" publication fields until entered
 }
 
 export interface PaperFigure {
@@ -499,9 +498,7 @@ export interface PreflightCheck {
 }
 
 export interface JournalTemplate {
-  doiPrefix?: string; // e.g. 10.32508/vnuhcmj-ebl -> DOI = prefix.v{vol}i{issue}.{articleId}
-  officialNameEn?: string; // English journal name printed in headers (when the journal uses it)
-  officialAbbvEn?: string; // English abbreviation used in "Cite this article"
+  doiPrefix?: string; officialNameEn?: string; officialAbbvEn?: string; // DOI prefix (DOI = prefix.v{vol}i{issue}.{articleId}); English name/abbreviation for headers and citation
   id: string;
   name: string;
   shortName: string;
