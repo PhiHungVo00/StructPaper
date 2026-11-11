@@ -8,6 +8,7 @@ import { tableToLatex } from './latex-table';
 import { SIZE9_PREAMBLE } from './latex-size9';
 import { displayHeading } from './headings';
 import { resolvePublication, hasPublicationValue, UNKNOWN } from './publication';
+import { qrBlockFor } from './qr-latex';
 import { buildEnglishPage, hasEnglishPageContent, articleTypeToEnglish } from './latex-english-page';
 
 import { stripCaptionLabel } from './docx-table-extras';
@@ -280,6 +281,7 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
 
   // Publication data: "?" until the editor enters it, blank if deliberately cleared
   const pub = resolvePublication(metadata);
+  const qrBlock = qrBlockFor(pub.doi);
   const dateOrUnknown = (v?: string) => formatJournalDate(v) || UNKNOWN;
   const publishedText = hasPublicationValue(pub.published) ? formatJournalDate(pub.published) : pub.published;
   const metaBlock = `\\def\\cmDoi{${escapeLatex(pub.doi)}}
@@ -316,10 +318,10 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
 ${sidebox}
 \\newgeometry{left=15.4pc,right=3.1pc,footskip=0cm,bottom=${(theme.margins.bottom + 1.4).toFixed(1)}cm,paperheight=${paperHeightStr},paperwidth=${paperWidthStr},headsep=.2cm,top=${theme.margins.top}cm}    
 ${isOneColumn
-  ? `\\onecolumn \\maketitle {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}\\IfFileExists{qr-code.png}{\\includegraphics[scale=.014]{qr-code}}{\\IfFileExists{article-qr.png}{\\includegraphics[scale=.014]{article-qr}}{\\vspace*{1.5cm}}}\\\\\n\\vspace*{-.35pc}{\\fontsize{8pt}{9pt}\\selectfont\\hspace*{-.75pc}\\color{gray}{Use your smartphone to scan~this}\\\\\n\\vspace*{-.15pc}\\hspace*{-.75pc}\\color{gray}{QR code and download this article}}\\end{center}\\end{textblock*}\\begin{onecolabstract}\\def\\baselinestretch{1.06}\\fontsize{9.5pt}{9.5pt}\\selectfont ${escapeLatex(safeAbstract)}\\def\\keywordstitle{Keywords}
+  ? `\\onecolumn \\maketitle {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}${qrBlock}\\\\\n\\vspace*{-.35pc}{\\fontsize{8pt}{9pt}\\selectfont\\hspace*{-.75pc}\\color{gray}{Use your smartphone to scan~this}\\\\\n\\vspace*{-.15pc}\\hspace*{-.75pc}\\color{gray}{QR code and download this article}}\\end{center}\\end{textblock*}\\begin{onecolabstract}\\def\\baselinestretch{1.06}\\fontsize{9.5pt}{9.5pt}\\selectfont ${escapeLatex(safeAbstract)}\\def\\keywordstitle{Keywords}
 
 \\noindent\\prolight\\textbf{Từ khoá: }{${escapeLatex(safeKeywords.join(', '))}\\newline}\\end{onecolabstract}\\end{mdframed}}\\vspace*{.8pc}\\saythanks \\baselineskip=\\the\\baselineskip plus.5pt minus.5pt`
-  : `\\twocolumn[ \\maketitle {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}\\IfFileExists{qr-code.png}{\\includegraphics[scale=.014]{qr-code}}{\\IfFileExists{article-qr.png}{\\includegraphics[scale=.014]{article-qr}}{\\vspace*{1.5cm}}}\\\\\n\\vspace*{-.35pc}{\\fontsize{8pt}{9pt}\\selectfont\\hspace*{-.75pc}\\color{gray}{Use your smartphone to scan~this}\\\\\n\\vspace*{-.15pc}\\hspace*{-.75pc}\\color{gray}{QR code and download this article}}\\end{center}\\end{textblock*}\\begin{onecolabstract}\\def\\baselinestretch{1.06}\\fontsize{9.5pt}{9.5pt}\\selectfont ${escapeLatex(safeAbstract)}\\def\\keywordstitle{Keywords}
+  : `\\twocolumn[ \\maketitle {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}${qrBlock}\\\\\n\\vspace*{-.35pc}{\\fontsize{8pt}{9pt}\\selectfont\\hspace*{-.75pc}\\color{gray}{Use your smartphone to scan~this}\\\\\n\\vspace*{-.15pc}\\hspace*{-.75pc}\\color{gray}{QR code and download this article}}\\end{center}\\end{textblock*}\\begin{onecolabstract}\\def\\baselinestretch{1.06}\\fontsize{9.5pt}{9.5pt}\\selectfont ${escapeLatex(safeAbstract)}\\def\\keywordstitle{Keywords}
 
 \\noindent\\prolight\\textbf{Từ khoá: }{${escapeLatex(safeKeywords.join(', '))}\\newline}\\end{onecolabstract}\\end{mdframed}}\\vspace*{.8pc}]\\saythanks \\baselineskip=\\the\\baselineskip plus.5pt minus.5pt`}
 

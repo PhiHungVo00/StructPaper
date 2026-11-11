@@ -113,6 +113,7 @@ Nếu có tiêu đề + tóm tắt tiếng Anh, bài PDF kết thúc bằng tran
 
 ### Thông tin xuất bản, tiêu đề, số mục, nền bảng
 * **Thông tin xuất bản** (DOI, tập, số, trang, ngày): chưa có thì ô hiện `?`; người dùng xóa `?` để nhập giá trị, hoặc xóa hết để **để trống** (in ra rỗng). Chưa đụng tới thì in `?`.
+* **Mã QR** trang 1 tự tạo từ ô DOI (link `https://doi.org/…`), vẽ bằng nét TeX nên không cần ảnh/gói và giống nhau trên mọi bộ biên dịch. DOI còn "?" hoặc trống thì không in mã (không bao giờ in mã giả).
 * **Tiêu đề viết hoa toàn bộ** trong Word được chuẩn hóa về dạng câu khi nhập (có nút hoàn tác về tiêu đề gốc).
 * **Số mục** gõ trong Word ("4. Kết quả") không in theo tạp chí; bật "Giữ số thứ tự mục" trong Giao diện để giữ lại (áp dụng cho PDF, Word, XML, xem trước).
 * **Nền thân bảng**: mặc định trắng; tùy chọn "xen kẽ" hoặc "tô toàn bộ" ở từng bảng. Bài cũ từng bật sọc vẫn giữ sọc.
