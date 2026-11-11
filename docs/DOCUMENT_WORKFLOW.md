@@ -119,6 +119,16 @@ Nếu có tiêu đề + tóm tắt tiếng Anh, bài PDF kết thúc bằng tran
 * **Nền thân bảng**: mặc định trắng; tùy chọn "xen kẽ" hoặc "tô toàn bộ" ở từng bảng. Bài cũ từng bật sọc vẫn giữ sọc.
 * **Chữ 9pt** dựng trực tiếp (không cần gói `extsizes`). Dấu nháy cong được khai báo cho xeCJK nên không bị lỗi dấu nháy. Lần biên dịch PDF đầu có thể chậm vì phải tải gói; chạy `pnpm warmup:latex` một lần để tải sẵn.
 
+### Bổ sung khi so với mẫu EES ID850 và bài mẫu template tiếng Việt
+- Tài liệu tham khảo kết thúc bằng "DOI: …" không còn bị nuốt; DOI bài báo chỉ lấy từ dòng "DOI:" ở phần đầu (không lấy DOI của một tài liệu tham khảo, nên mã QR không bao giờ trỏ nhầm bài).
+- Trang tiếng Anh sau tài liệu tham khảo ("Research Article", tiêu đề, ABSTRACT, Keywords – kể cả lỗi gõ "Keywwords") được đọc thành titleEn/abstractEn/keywordsEn/nameEn.
+- Công thức Word (OMML) có số "(n)" gõ bên cạnh được nhận là công thức hiển thị và giữ đúng số (`	ag{n}`); dòng "n là …" ngắn dưới "Trong đó:" được giữ.
+- Bảng chứa lưới hình + ô chú thích "Hình N" là một hình (các ô a/b/c được ghép thành một ảnh trong trình duyệt); mã trường "SEQ Bảng" không lọt vào chú thích; ô gộp (tiêu đề nhiều tầng, "Dự báo" gộp 2 dòng) được giữ ở PDF và Word; bảng "Danh mục từ viết tắt" được liệt kê dưới đề mục.
+- Trang hướng dẫn tác giả của template (style GuideHeading/GuideText/Instruction) bị bỏ qua; các mục cuối bài (Đóng góp của các tác giả, Xung đột lợi ích, Tính khả dụng của dữ liệu, …) là đề mục.
+- PDF: tên tạp chí tiếng Anh in như mẫu của từng tạp chí, mã QR 42 pt có logo VNUHCM Press ở giữa (mức sửa lỗi H, vẫn quét được), huy hiệu "Check for updates" và logo đóng gói sẵn trong API (`apps/api/src/main/resources/latex-assets`), số trang bắt đầu từ trang đầu trong số, tiêu đề "TÀI LIỆU THAM KHẢO".
+- Word (.docx): dàn trang như bản in (khổ giấy, lề, đầu/chân trang trang 1 và chẵn/lẻ, cột bên trái có QR/Liên hệ/Lịch sử/DOI/Check for updates, khung tóm tắt, thân 2 cột có ảnh, công thức Word, bảng ô gộp, trang tiếng Anh) và dùng tên style của template.
+- Khi biên dịch/xuất: khung xem trước hiện "Đang biên dịch… Ns", thanh menu hiện "Đang xuất PDF…", mục xuất bị khoá cho tới khi xong.
+
 ## 10. Kiểm tra tự động
 
 | Kiểm tra | Lệnh |
