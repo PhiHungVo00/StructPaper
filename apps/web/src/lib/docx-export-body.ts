@@ -18,14 +18,10 @@ import { displayHeading } from './headings';
 import { buildDocxTable } from './docx-table';
 import { stripCaptionLabel } from './docx-table-extras';
 import type { DocxImage } from './docx-export-assets';
-import { ABSTRACT_FILL, COL_W, FONT_SANS, FONT_SERIF, TEXT_W } from './docx-export-front';
+import { ABSTRACT_FILL, FONT_SANS, FONT_SERIF } from './docx-export-front';
+import { SegmentBuilder, type Block, type Segment } from './docx-export-layout';
 
-export type Block = Paragraph | Table;
-/** Consecutive blocks that share a column layout: 2-column body, or a full-width figure/table. */
-export interface Segment {
-  fullWidth: boolean;
-  children: Block[];
-}
+export type { Block, Segment };
 
 const BODY_SIZE = 18; // 9 pt, as printed
 const CITE_RE = /\s*\[(\d+(?:\s*[,–-]\s*\d+)*)\]/g;
@@ -69,9 +65,8 @@ function headingPara(sec: PaperSection, theme: ResolvedTheme, color: string): Pa
 }
 
 /** Figure in a light-blue box: picture, then "Hình N: caption", like the printed journal. */
-function figureBlock(sec: PaperSection, image: DocxImage | undefined, full: boolean, color: string, lang: 'vi' | 'en'): Table {
+function figureBlock(sec: PaperSection, image: DocxImage | undefined, boxW: number, color: string, lang: 'vi' | 'en'): Table {
   const fig = sec.figure!;
-  const boxW = full ? TEXT_W : COL_W;
   const scale = Math.min(100, fig.scalePercent ?? 100) / 100;
   const widthPx = Math.round(((boxW - 300) / 15) * scale);
   const pic = image
@@ -112,8 +107,7 @@ function figureBlock(sec: PaperSection, image: DocxImage | undefined, full: bool
   });
 }
 
-function equationPara(sec: PaperSection, full: boolean): Paragraph {
-  const width = full ? TEXT_W : COL_W;
+function equationPara(sec: PaperSection, width: number): Paragraph {
   const children: Array<TextRun | ReturnType<typeof latexToDocxMath>> = [new TextRun({ text: '\t' }), latexToDocxMath(sec.equation!.latex)];
   if (sec.equation!.numbered) children.push(new TextRun({ text: `\t(${sec.equation!.num ?? ''})`, font: FONT_SERIF, size: BODY_SIZE }));
   return new Paragraph({
@@ -126,20 +120,30 @@ function equationPara(sec: PaperSection, full: boolean): Paragraph {
   });
 }
 
-/** Body sections and references, split into 2-column runs and full-width figure/table runs. */
+/**
+ * Body sections and references, split into Word segments: 2-column runs, full-width figure/table/equation runs,
+ * and page-layout switches (document default, section markers, rotated tables) — see docx-export-layout.
+ */
 export function buildBody(
   sections: PaperSection[],
   references: PaperReference[],
-  ctx: { theme: ResolvedTheme; color: string; figures: Map<string, DocxImage>; lang: 'vi' | 'en'; refTitle: string }
+  ctx: {
+    theme: ResolvedTheme;
+    color: string;
+    figures: Map<string, DocxImage>;
+    lang: 'vi' | 'en';
+    refTitle: string;
+    /** Document default: one-column body (layoutSettings.columnLayout). */
+    oneColumn?: boolean;
+    /** Document default: the whole body on landscape pages (layoutSettings.orientation). */
+    landscape?: boolean;
+  }
 ): Segment[] {
-  const segments: Segment[] = [{ fullWidth: false, children: [] }];
-  const push = (full: boolean, ...blocks: Block[]) => {
-    let seg = segments[segments.length - 1];
-    if (seg.fullWidth !== full) segments.push((seg = { fullWidth: full, children: [] }));
-    seg.children.push(...blocks);
-  };
+  const layout = new SegmentBuilder(!!ctx.oneColumn, !!ctx.landscape);
+  const push = (full: boolean, ...blocks: Block[]) => layout.push(full, ...blocks);
   const { theme, color } = ctx;
   for (const sec of sections) {
+    layout.enter(sec.pageLayout);
     if ((sec.type === 'h1' || sec.type === 'h2' || sec.type === 'h3') && sec.title) {
       push(false, headingPara(sec, theme, color));
       if (sec.content) push(false, bodyPara(sec.content, color));
@@ -148,14 +152,16 @@ export function buildBody(
     } else if ((sec.type === 'quote' || sec.type === 'box') && sec.content) {
       push(false, new Paragraph({ style: 'BodyText', indent: { left: 360, right: 360 }, children: richRuns(sec.content, color).map((r) => r) }));
     } else if (sec.type === 'equation' && sec.equation?.latex.trim()) {
-      push(false, equationPara(sec, false));
+      const full = layout.spans(sec.equation.columnSpan === '2-column');
+      push(full, equationPara(sec, layout.width(full)));
     } else if (sec.type === 'figure' && sec.figure) {
       const full = sec.figure.columnSpan === '2-column' || (sec.figure.columnSpan !== '1-column' && !!sec.figure.isFullWidth);
-      push(full, figureBlock(sec, ctx.figures.get(sec.id), full, color, ctx.lang), new Paragraph({ spacing: { after: 120 }, children: [] }));
+      push(full, figureBlock(sec, ctx.figures.get(sec.id), layout.width(full), color, ctx.lang), new Paragraph({ spacing: { after: 120 }, children: [] }));
     } else if (sec.type === 'table' && sec.table) {
       const t = sec.table;
       const full = t.columnSpan === '2-column' || (t.columnSpan !== '1-column' && t.isFullWidth !== false && (t.headers?.length ?? 0) > 3);
-      push(full, ...buildDocxTable(t, theme, full ? TEXT_W : COL_W));
+      if (t.isRotated && !layout.isLandscape) layout.rotated((w) => buildDocxTable(t, theme, w));
+      else push(full, ...buildDocxTable(t, theme, layout.width(full)));
     }
   }
   if (references.length > 0) {
@@ -173,5 +179,5 @@ export function buildBody(
       );
     }
   }
-  return segments.filter((s) => s.children.length > 0);
+  return layout.done();
 }

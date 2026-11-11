@@ -107,7 +107,7 @@ describe('exportToLatex page layout', () => {
         para('d', { content: 'MARK-BACK', pageLayout: {} }),
       ])
     );
-    const at = (s: string) => tex.indexOf(s);
+    const at = (s: string, from = 0) => tex.indexOf(s, from);
     expect(at('\\begin{landscape}')).toBeGreaterThan(0);
     expect(at('\\begin{landscape}')).toBeLessThan(at('MARK-LANDSCAPE'));
     expect(at('\\end{landscape}')).toBeGreaterThan(at('MARK-LANDSCAPE'));

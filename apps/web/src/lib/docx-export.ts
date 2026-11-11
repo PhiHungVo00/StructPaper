@@ -5,7 +5,8 @@ import { getJournalTemplate } from './templates';
 import { hasPublicationValue, resolvePublication, UNKNOWN } from './publication';
 import { articleTypeToEnglish, hasEnglishPageContent, toAsciiName } from './latex-english-page';
 import { collectExportAssets, defaultImageLoader, type ImageLoader } from './docx-export-assets';
-import { buildFrontMatter, buildHeadersFooters, GEOM, FONT_SANS, FONT_SERIF, type FrontMatter } from './docx-export-front';
+import { buildFrontMatter, buildHeadersFooters, FONT_SANS, FONT_SERIF, type FrontMatter } from './docx-export-front';
+import { pageFor, segmentSections } from './docx-export-layout';
 import { buildBody } from './docx-export-body';
 
 /**
@@ -133,10 +134,8 @@ export async function exportPaperToDocx(paper: CompletePaper, opts: DocxExportOp
   const assets = await collectExportAssets(paper, pub.doi, opts.loadImage ?? defaultImageLoader);
   const vi = frontMatterFor(paper, 'vi');
   const firstPage = parseInt(pub.firstPage, 10);
-  const page = {
-    size: { width: GEOM.pageW, height: GEOM.pageH },
-    margin: { top: GEOM.top, bottom: GEOM.bottom, left: GEOM.left, right: GEOM.right, header: 500, footer: 450 },
-  };
+  const page = pageFor(false);
+  const ls = paper.layoutSettings;
 
   const segments = buildBody(paper.sections || [], paper.references || [], {
     theme,
@@ -144,6 +143,8 @@ export async function exportPaperToDocx(paper: CompletePaper, opts: DocxExportOp
     figures: assets.figures,
     lang: 'vi',
     refTitle: 'TÀI LIỆU THAM KHẢO',
+    oneColumn: ls?.columnLayout === '1-column',
+    landscape: ls?.orientation === 'landscape',
   });
   const hf = buildHeadersFooters(vi, color, assets.openAccess);
   const sections: ISectionOptions[] = [
@@ -155,14 +156,7 @@ export async function exportPaperToDocx(paper: CompletePaper, opts: DocxExportOp
       ...hf,
       children: buildFrontMatter(vi, color, assets),
     },
-    ...segments.map((seg) => ({
-      properties: {
-        type: SectionType.CONTINUOUS,
-        page,
-        column: seg.fullWidth ? { count: 1 } : { count: 2, space: GEOM.gap, equalWidth: true },
-      },
-      children: seg.children,
-    })),
+    ...segmentSections(segments),
   ];
 
   if (theme.englishSummaryPage && hasEnglishPageContent(paper.metadata)) {
