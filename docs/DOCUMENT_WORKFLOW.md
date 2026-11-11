@@ -216,7 +216,7 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | --- | --- |
 | `1e35fa0` | Nhập hàng loạt (mục 2b): chọn nhiều .docx, mỗi tệp thành một bài, đọc/lưu/biên dịch PDF song song với bảng tiến độ, hủy, thử lại, mở, tải PDF/zip. Đã kiểm chứng bằng 7 tệp mẫu thật trên trình duyệt (~57 s, so với ~150 s nếu làm lần lượt) và một đợt rà soát độc lập; sửa theo đó: lưu thất bại không còn báo thành công, hủy được cả bước đọc/lưu bị kẹt, giải phóng bộ nhớ, thử lại riêng phần PDF, lưu PDF máy chủ sau khi bài đã có, tên tệp zip an toàn trên Windows. `savePaperToIndexedDb` giờ trả về `true/false`. |
 
-| (commit kế tiếp) | Nhập hàng loạt: mỗi tệp có thể dùng cùng một mẫu hoặc mẫu khác nhau (bước chọn mẫu có hai chế độ, dòng tiến độ hiện mẫu đã áp dụng, thử lại giữ đúng mẫu từng tệp). |
+| `4827f61` | Nhập hàng loạt: mỗi tệp có thể dùng cùng một mẫu hoặc mẫu khác nhau (bước chọn mẫu có hai chế độ, dòng tiến độ hiện mẫu đã áp dụng, thử lại giữ đúng mẫu từng tệp). |
 
 ### Còn lại / giới hạn đã biết
 * Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).
