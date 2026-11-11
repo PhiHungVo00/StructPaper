@@ -126,3 +126,13 @@ describe('validation gates', () => {
     expect(validateForExport(paper).issues.some((i) => i.code === 'equation.invalid')).toBe(true);
   });
 });
+
+describe('title style', () => {
+  it('warns when the title is all capitals', () => {
+    const paper = paperWith([p('a', 'x')]);
+    paper.metadata.title = 'ẢNH HƯỞNG CỦA NĂNG LỰC SỐ ĐẾN HIỆU QUẢ';
+    expect(validateForImport(paper).issues.some((i) => i.code === 'field.title.allcaps')).toBe(true);
+    paper.metadata.title = 'Ảnh hưởng của năng lực số đến hiệu quả';
+    expect(validateForImport(paper).issues.some((i) => i.code === 'field.title.allcaps')).toBe(false);
+  });
+});

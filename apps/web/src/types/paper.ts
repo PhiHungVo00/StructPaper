@@ -496,6 +496,8 @@ export interface PreflightCheck {
 }
 
 export interface JournalTemplate {
+  officialNameEn?: string; // English journal name printed in headers (when the journal uses it)
+  officialAbbvEn?: string; // English abbreviation used in "Cite this article"
   id: string;
   name: string;
   shortName: string;

@@ -17,6 +17,7 @@ import { latexToDocxMath, splitTextWithMath } from './docx-math';
 import { resolveTheme } from './theme-config';
 import { buildDocxTable } from './docx-table';
 
+import { stripCaptionLabel } from './docx-table-extras';
 // Official font families matching ID630_HS-2026-10-02-06-42.docx & VNUHCMJ-HS-Vi.dotx
 const FONT_SERIF = 'Times New Roman';
 const FONT_SANS = 'Calibri';
@@ -534,7 +535,7 @@ function formatJournalDate(dateStr?: string): string {
               color: COLOR_TITLE,
             }),
             new TextRun({
-              text: sec.figure.caption,
+              text: stripCaptionLabel(sec.figure.caption),
               font: FONT_SANS,
               size: 17,
             }),

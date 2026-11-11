@@ -1,6 +1,7 @@
 import type { CompletePaper, PaperSection } from '@/types/paper';
 import { splitMathSegments, xmlEscape } from '@/lib/math-text';
 
+import { stripCaptionLabel } from './docx-table-extras';
 /**
  * JATS 1.2 XML export for the VNUHCM journal platform.
  *
@@ -39,6 +40,18 @@ export function figureHref(paper: CompletePaper, figNum: number, src: string, op
   return `${base}/${journalInitial(md.journalId)}/v-${md.volume || 1}/i-${md.issue || 1}/a-${articleId}/img-${figNum}.${ext}`;
 }
 
+// Per-export context: ids that must be unique (xml:id) and the reference ids that actually exist.
+let usedIds = new Set<string>();
+let knownRefs: Set<number> | null = null;
+
+/** xml:id values must be unique in the whole document (the DTD rejects duplicates). */
+function uniqueId(base: string): string {
+  let id = base;
+  for (let n = 2; usedIds.has(id); n++) id = `${base}_${n}`;
+  usedIds.add(id);
+  return id;
+}
+
 const CITE_RE = /\[(\d+(?:\s*[,–-]\s*\d+)*)\]/g;
 
 /** Text -> JATS inline XML: formulas become <inline-formula>, [n] becomes <xref ref-type="bibr">. */
@@ -48,7 +61,8 @@ export function inlineToJats(text: string): string {
       if (seg.kind === 'text') {
         return xmlEscape(seg.value).replace(CITE_RE, (all, inner: string) => {
           const first = Number(inner.split(/[,–-]/)[0]);
-          return Number.isFinite(first) ? `<xref ref-type="bibr" rid="R${first}">${all}</xref>` : all;
+          // Only link citations that have a bibliography entry (IDREF must resolve).
+          return Number.isFinite(first) && (!knownRefs || knownRefs.has(first)) ? `<xref ref-type="bibr" rid="R${first}">${all}</xref>` : all;
         });
       }
       const tex = seg.value.replace(/]]>/g, ']] >');
@@ -64,6 +78,22 @@ function splitName(full: string): { surname: string; given: string } {
   // Vietnamese convention used by the platform: surname = last token.
   const surname = parts.pop() || '';
   return { surname, given: parts.join(' ') };
+}
+
+type JatsCell = { text: string; colSpan?: number; rowSpan?: number };
+
+/** <table> that satisfies the DTD: (thead?, tbody+) or, when there are no body rows, plain tr+. */
+function tableXml(
+  headRows: JatsCell[][],
+  bodyRows: JatsCell[][],
+  cell: (tag: 'th' | 'td', c: JatsCell) => string
+): string {
+  const head = headRows.filter((r) => r.length);
+  const body = bodyRows.filter((r) => r.length);
+  const tr = (tag: 'th' | 'td') => (r: JatsCell[]) => `<tr>${r.map((c) => cell(tag, c)).join('')}</tr>`;
+  if (!head.length && !body.length) return '';
+  if (!body.length) return `<table>${head.map(tr('th')).join('')}</table>`;
+  return `<table>${head.length ? `<thead>${head.map(tr('th')).join('')}</thead>` : ''}<tbody>${body.map(tr('td')).join('')}</tbody></table>`;
 }
 
 interface OpenSec {
@@ -101,12 +131,12 @@ function bodyToJats(paper: CompletePaper, opts: JatsOptions): string {
       eqId += 1;
       const tex = s.equation.latex.replace(/]]>/g, ']] >');
       const label = s.equation.numbered ? `<label>(${s.equation.num ?? eqId})</label>` : '';
-      out.push(`<disp-formula id="eq${s.equation.num ?? eqId}">${label}<tex-math><![CDATA[${tex}]]></tex-math></disp-formula>`);
+      out.push(`<disp-formula id="${uniqueId(`eq${s.equation.num ?? eqId}`)}">${label}<tex-math><![CDATA[${tex}]]></tex-math></disp-formula>`);
     } else if (s.type === 'figure' && s.figure) {
       figId += 1;
       const n = s.figure.num || figId;
       out.push(
-        `<fig id="fig${n}"><label>Hình ${n}</label><caption><p>${inlineToJats(s.figure.caption)}</p></caption>` +
+        `<fig id="${uniqueId(`fig${n}`)}"><label>Hình ${n}</label><caption><p>${inlineToJats(stripCaptionLabel(s.figure.caption))}</p></caption>` +
           `<graphic xlink:href="${xmlEscape(figureHref(paper, n, s.figure.src || '', opts))}"/>` +
           (s.figure.source ? `<attrib>${xmlEscape(s.figure.source)}</attrib>` : '') +
           `</fig>`
@@ -120,9 +150,8 @@ function bodyToJats(paper: CompletePaper, opts: JatsOptions): string {
       const cell = (tag: 'th' | 'td', c: { text: string; colSpan?: number; rowSpan?: number }) =>
         `<${tag}${c.colSpan && c.colSpan > 1 ? ` colspan="${c.colSpan}"` : ''}${c.rowSpan && c.rowSpan > 1 ? ` rowspan="${c.rowSpan}"` : ''}>${inlineToJats(c.text)}</${tag}>`;
       out.push(
-        `<table-wrap id="tbl${n}"><label>Bảng ${n}</label><caption><p>${inlineToJats(t.caption)}</p></caption>` +
-          `<table><thead>${headRows.map((r) => `<tr>${r.map((c) => cell('th', c)).join('')}</tr>`).join('')}</thead>` +
-          `<tbody>${bodyRows.map((r) => `<tr>${r.map((c) => cell('td', c)).join('')}</tr>`).join('')}</tbody></table>` +
+        `<table-wrap id="${uniqueId(`tbl${n}`)}"><label>Bảng ${n}</label><caption><p>${inlineToJats(stripCaptionLabel(t.caption))}</p></caption>` +
+          tableXml(headRows, bodyRows, cell) +
           (t.source ? `<table-wrap-foot><p>${xmlEscape(t.source)}</p></table-wrap-foot>` : '') +
           `</table-wrap>`
       );
@@ -133,10 +162,19 @@ function bodyToJats(paper: CompletePaper, opts: JatsOptions): string {
 }
 
 export function exportToJatsXml(paper: CompletePaper, opts: JatsOptions = {}): string {
+  usedIds = new Set<string>();
+  knownRefs = new Set((paper.references || []).map((r) => r.id));
+  // reserve R<n> first so duplicated numbers cannot steal a citation target
+  const refsXmlIds = (paper.references || []).map((r) => ({ r, id: uniqueId(`R${r.id}`) }));
   const md = paper.metadata;
   const doi = (md.doi || '').replace(/^https?:\/\/doi\.org\//, '');
+  const affByNumber = new Map<number, string>();
   const aff = (md.affiliations || [])
-    .map((a) => `<aff id="aff${a.id}"><institution>${xmlEscape(a.name)}</institution></aff>`)
+    .map((a) => {
+      const id = uniqueId(`aff${a.id}`);
+      if (!affByNumber.has(a.id)) affByNumber.set(a.id, id);
+      return `<aff id="${id}"><institution>${xmlEscape(a.name)}</institution></aff>`;
+    })
     .join('\n');
   const contribs = (md.authors || [])
     .map((a) => {
@@ -146,7 +184,7 @@ export function exportToJatsXml(paper: CompletePaper, opts: JatsOptions = {}): s
         `<name><surname>${xmlEscape(surname)}</surname><given-names>${xmlEscape(given)}</given-names></name>` +
         (a.orcid ? `<contrib-id contrib-id-type="orcid">${xmlEscape(a.orcid)}</contrib-id>` : '') +
         (a.email ? `<email>${xmlEscape(a.email)}</email>` : '') +
-        (a.affiliationIds || []).map((id) => `<xref ref-type="aff" rid="aff${id}"/>`).join('') +
+        (a.affiliationIds || []).filter((id) => affByNumber.has(id)).map((id) => `<xref ref-type="aff" rid="${affByNumber.get(id)}"/>`).join('') +
         `</contrib>`
       );
     })
@@ -163,8 +201,8 @@ export function exportToJatsXml(paper: CompletePaper, opts: JatsOptions = {}): s
     .join('');
   const pub = dateEl('pub', md.dates?.published).replace('<date date-type="pub">', '<pub-date pub-type="epub">').replace('</date>', '</pub-date>');
 
-  const refs = (paper.references || [])
-    .map((r) => `<ref id="R${r.id}"><label>${r.id}</label><mixed-citation>${xmlEscape(r.raw)}</mixed-citation></ref>`)
+  const refs = refsXmlIds
+    .map(({ r, id }) => `<ref id="${id}"><label>${r.id}</label><mixed-citation>${xmlEscape(r.raw)}</mixed-citation></ref>`)
     .join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>

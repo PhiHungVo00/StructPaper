@@ -97,3 +97,29 @@ Giá trị được làm sạch (`lib/theme-config.ts`) trước khi chèn vào 
 
 Xuất theo JATS 1.2 (`lib/jats-export.ts`): `front` (tạp chí, tác giả, đơn vị, ngày, tóm tắt, từ khóa), `body` lồng mục đúng cấp, công thức, `fig`/`table-wrap` kèm nguồn, `ref-list` có `xref` tới `[n]`. Đường dẫn ảnh theo quy ước của hệ thống tạp chí khi biết mã bài (`a-#`):
 `https://static.vnuhcmjournal.com.vn/articles/<viết tắt tạp chí>/v-<tập>/i-<số>/a-<mã bài>/img-<n>.<ext>`; nếu chưa có mã bài thì dùng `images/img-<n>.<ext>`. Kiểm tra bằng <https://jats4r.niso.org/jats4r-validator/>.
+
+## 9. Nhập từ Word: những gì được khôi phục
+
+Kiểm tra bằng bài mẫu EBL ID1750 (so với PDF của tạp chí):
+
+* **Bảng:** nhãn trong ô tiêu đề được tách thành tên bảng (không còn "Bảng 2: Bảng 2"), ô nhiều dòng giữ nguyên từng dòng, bảng nằm trong **trang ngang** của Word được đặt **xoay ngang**, bảng hẹp (≤ 4 cột) để 1 cột và bảng rộng 2 cột, bảng bị bỏ sót được chèn đúng thứ tự số. Dòng "Chú thích:" / "Nguồn:" ngay sau bảng thuộc về bảng.
+* **Hình:** mỗi hình ghép với ảnh gần nó nhất trong XML. Hình vẽ bằng khối Word (không phải ảnh) để trống và được báo "Hình trống" thay vì gắn nhầm ảnh khác.
+* **Chỉ số trên/dưới** (f², R², CO₂…) giữ nguyên dạng công thức; công thức Word (OMML) trên dòng riêng thành khối công thức.
+* **Tác giả/đơn vị:** sửa lỗi tên bị tách ("Nguyễ n"); đơn vị viết hai dòng Việt + Anh gộp thành một (tiếng Anh dùng cho trang tóm tắt cuối).
+* **Không tự bịa** DOI, tập, số, trang, ngày nhận/sửa/chấp nhận/đăng: file Word thường không có, nên để trống, hiện "?" trên đầu trang và cảnh báo ở cổng kiểm tra.
+
+### Trang tóm tắt tiếng Anh cuối bài
+Nếu có tiêu đề + tóm tắt tiếng Anh, bài PDF kết thúc bằng trang tiếng Anh như bản in của tạp chí (tiêu đề, tác giả, khung Abstract, Key words, đơn vị tiếng Anh, Correspondence, History, DOI, Copyright, "Cite this article"). Tắt bằng `layoutSettings.theme.englishSummaryPage = false`. Thân bài dùng cỡ chữ 9pt thật (`extarticle`); máy biên dịch cần gói `extsizes` (MiKTeX tự cài lần đầu).
+
+## 10. Kiểm tra tự động
+
+| Kiểm tra | Lệnh |
+| --- | --- |
+| Unit + component + tích hợp | `pnpm test` |
+| XML xuất ra hợp lệ theo **DTD JATS 1.2 chính thức** | `python scripts/jats/fetch-dtd.py scripts/jats/dtd` (một lần) rồi `pnpm test` (cần python + lxml; không có thì bỏ qua) |
+| End-to-end trình duyệt (nhập Word → cổng kiểm tra → tự động lưu → xuất Word/XML/PDF → mở lại), cần API chạy ở :8080 | `pnpm exec playwright test e2e/document-workflow.spec.ts --project=chrome` |
+
+Chạy cả hệ thống thật: `docker compose -f docker-compose.minio.yml up -d`, API với `STRUCTPAPER_STORAGE_TYPE=minio` (xem docker-compose), rồi `pnpm dev:web`. (Image `minio/minio` chính thức đã bị gỡ khỏi Docker Hub nên compose dùng bản Bitnami cố định.)
+
+## 11. Ứng dụng đóng gói (Windows / macOS)
+Bản desktop (Tauri) dùng bản xuất tĩnh của web: tự động lưu và lưu trữ chạy cục bộ (IndexedDB), biên dịch PDF dùng tectonic đi kèm; nếu cấu hình `NEXT_PUBLIC_API_BASE_URL` trỏ tới máy chủ thì đồng bộ DB + MinIO, nếu không thì chỉ hiện "Đã lưu trên máy". `node apps/web/scripts/export-desktop.mjs` vẫn build thành công với các thay đổi này (khâu đóng gói Tauri/Rust chưa chạy trong môi trường này).

@@ -71,6 +71,17 @@ describe('JATS XML export', () => {
     expect(exportToJatsXml(p)).toContain('images/img-1.png');
   });
 
+  it('never emits duplicate xml ids (found by validating against the real JATS 1.2 DTD)', () => {
+    const p = samplePaper();
+    p.metadata.affiliations = [
+      { id: 1, name: 'Khoa Thương mại và Du lịch' },
+      { id: 1, name: 'Faculty of Commerce and Tourism' },
+    ];
+    const xml = exportToJatsXml(p);
+    const ids = [...xml.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('derives the journal initial', () => {
     expect(journalInitial('VNUHCM-HS')).toBe('hs');
     expect(journalInitial('VNUHCMJ-ET')).toBe('et');

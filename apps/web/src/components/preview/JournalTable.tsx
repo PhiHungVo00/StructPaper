@@ -2,6 +2,7 @@ import React from 'react';
 import { PaperTable, synthesizeHeaderRows, normalizePaperTable } from '@/types/paper';
 import { DEFAULT_THEME, type ResolvedTheme } from '@/lib/theme-config';
 
+import { stripCaptionLabel } from '@/lib/docx-table-extras';
 interface JournalTableProps {
   table: PaperTable;
   isFullWidth?: boolean;
@@ -38,7 +39,7 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
           style={{ fontFamily: "'Source Sans 3', Calibri, Arial, sans-serif" }}
         >
           <strong className="font-bold" style={{ color: theme.titleColor }}>Bảng {table.num}: </strong>
-          <span>{table.caption}</span>
+          <span>{stripCaptionLabel(table.caption)}</span>
         </p>
       </div>
 

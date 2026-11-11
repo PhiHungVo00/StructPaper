@@ -99,6 +99,24 @@ function coreChecks(paper: CompletePaper, gate: ValidationGate): ValidationIssue
     push({ id: 'date_order_accepted', severity: 'error', code: 'field.date.order', title: 'Ngày chấp nhận trước ngày sửa bài', message: 'Ngày chấp nhận phải sau hoặc bằng ngày sửa bài.', fixTab: 'metadata' });
   }
 
+  // Word titles are often typed in capitals; the journal prints sentence case.
+  const titleLetters = (md.title || '').replace(/[^A-Za-zÀ-ỹ]/g, '');
+  if (titleLetters.length >= 12 && titleLetters === titleLetters.toUpperCase()) {
+    push({ id: 'title_allcaps', severity: 'warning', code: 'field.title.allcaps', title: 'Tiêu đề đang viết hoa toàn bộ', message: 'Tạp chí in tiêu đề theo kiểu câu (chỉ viết hoa chữ đầu và tên riêng).', suggestion: 'Sửa lại ở thẻ "Tựa đề".', fixTab: 'metadata' });
+  }
+
+  // Publication data is assigned by the editorial office; the Word file normally lacks it.
+  const missingPub = [
+    !md.doi?.trim() && 'DOI',
+    !md.volume?.trim() && 'Tập',
+    !md.issue?.trim() && 'Số',
+    !(md.firstPage > 0 && md.lastPage > 0) && 'Trang',
+    !(md.dates?.published || '').trim() && 'Ngày đăng',
+  ].filter(Boolean) as string[];
+  if (missingPub.length) {
+    push({ id: 'pub_info_missing', severity: 'warning', code: 'field.publication.missing', title: `Thiếu thông tin xuất bản: ${missingPub.join(', ')}`, message: 'Các trường này do ban biên tập cấp và thường không có trong file Word gốc.', suggestion: 'Nhập ở thẻ "Tựa đề" trước khi xuất bản.', fixTab: 'metadata' });
+  }
+
   const words = wordCount(md.abstract);
   if (md.abstract?.trim() && (words < 275 || words > 500)) {
     push({ id: 'abstract_words', severity: 'warning', code: 'field.abstract.length', title: `Tóm tắt có ${words} từ`, message: 'Template quy định tóm tắt dài 275–500 từ.', suggestion: words < 275 ? 'Bổ sung nội dung tóm tắt.' : 'Rút gọn tóm tắt.', fixTab: 'abstract' });

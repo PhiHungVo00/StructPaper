@@ -17,7 +17,7 @@
         "affiliationsLength": 3,
         "hasAbstract": true,
         "abstractLength": 43,
-        "sectionsLength": 30,
+        "sectionsLength": 28,
         "tablesLength": 1,
         "figuresLength": 1,
         "referencesLength": 8
@@ -34,7 +34,7 @@
         "affiliationsLength": 3,
         "hasAbstract": true,
         "abstractLength": 490,
-        "sectionsLength": 37,
+        "sectionsLength": 36,
         "tablesLength": 1,
         "figuresLength": 1,
         "referencesLength": 8
@@ -51,7 +51,7 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 1729,
-        "sectionsLength": 111,
+        "sectionsLength": 104,
         "tablesLength": 7,
         "figuresLength": 3,
         "referencesLength": 40
@@ -68,7 +68,7 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 2279,
-        "sectionsLength": 80,
+        "sectionsLength": 74,
         "tablesLength": 5,
         "figuresLength": 0,
         "referencesLength": 36
@@ -116,10 +116,10 @@
       "metrics": {
         "title": "ẢNH HƯỞNG CỦA NĂNG LỰC VÀ SÁNG TẠO SỐ ĐẾN HIỆU QUẢ KINH DOANH LOGISTICS CẢM NHẬN: VAI TRÒ CỦA CHUYỂN ĐỔI SỐ VÀ HỖ TRỢ CHÍNH SÁCH",
         "authorsLength": 1,
-        "affiliationsLength": 2,
+        "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 1307,
-        "sectionsLength": 53,
+        "sectionsLength": 52,
         "tablesLength": 3,
         "figuresLength": 2,
         "referencesLength": 43
@@ -153,7 +153,7 @@
         "affiliationsLength": 4,
         "hasAbstract": true,
         "abstractLength": 1677,
-        "sectionsLength": 63,
+        "sectionsLength": 62,
         "tablesLength": 5,
         "figuresLength": 4,
         "referencesLength": 31
@@ -184,7 +184,7 @@
       "metrics": {
         "title": "Thiết kế thiết bị sử dụng đầu dò uốn (BE) để đo vận tốc sóng cắt trong nền cát đắp công trình giao thông",
         "authorsLength": 4,
-        "affiliationsLength": 7,
+        "affiliationsLength": 4,
         "hasAbstract": true,
         "abstractLength": 1907,
         "sectionsLength": 84,

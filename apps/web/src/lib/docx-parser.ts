@@ -1,6 +1,10 @@
 import mammoth from 'mammoth';
 import { ommlToLatex } from './omml';
 import { extractDisplayEquations, insertEquations } from './docx-equations';
+import { attachTableFooterLine, placeLeftoverTable, landscapeResolver, applyTableLayoutHints } from './docx-table-extras';
+import { mergeBilingualAffiliations } from './docx-affiliations';
+import { enrichScriptRuns } from './docx-richtext';
+import { pairFiguresWithImages } from './docx-figures';
 import JSZip from 'jszip';
 import { Author, Affiliation, PaperSection, PaperReference, PreflightCheck, StructuralIssue, CompletePaper, PaperMetadata, TableCell } from '@/types/paper';
 import { JOURNAL_TEMPLATES, getJournalTemplate } from './templates';
@@ -108,6 +112,7 @@ export function detectJournalFromContent(
 export interface XmlRun {
   text: string;
   isSup: boolean;
+  isSub?: boolean;
   isBold: boolean;
   isItalic: boolean;
 }
@@ -160,6 +165,8 @@ export async function extractOpenXmlParagraphs(zip: JSZip): Promise<XmlParagraph
       const isSup =
         /<w:vertAlign\s+w:val="superscript"/i.test(rXml) ||
         /<w:position\s+w:val="[1-9]\d*"/i.test(rXml);
+      const isSub =
+        /<w:vertAlign\s+w:val="subscript"/i.test(rXml) || /<w:position\s+w:val="-\d+"/i.test(rXml);
       const isBold = /<w:b[\s\/>]/i.test(rXml) && !/<w:b\s+w:val="(?:0|false)"/i.test(rXml);
       const isItalic = /<w:i[\s\/>]/i.test(rXml) && !/<w:i\s+w:val="(?:0|false)"/i.test(rXml);
 
@@ -170,7 +177,7 @@ export async function extractOpenXmlParagraphs(zip: JSZip): Promise<XmlParagraph
       }
       if (text) {
         text = decodeXml(text);
-        runs.push({ text, isSup, isBold, isItalic });
+        runs.push({ text, isSup, isSub, isBold, isItalic });
         fullText += text;
       }
     }
@@ -199,6 +206,8 @@ export interface ExtractedDocxTable {
   headerRows?: TableCell[][];
   bodyRows?: TableCell[][];
   pos: number;
+  /** The table sits in a landscape section of the Word file. */
+  landscape?: boolean;
   placed?: boolean;
 }
 
@@ -275,7 +284,8 @@ export function parseOpenXmlTable(tblXml: string): {
           return cleanEndNoteText(decodeXml(raw));
         })
         .filter((t) => t.length > 0);
-      const cellText = pTexts.join(' ').trim();
+      // one line per paragraph: multi-line cells (e.g. 4 value lines) must stay aligned across columns
+      const cellText = pTexts.join('\n').trim();
 
       if (vMerge === 'continue') {
         let parentRow = r - 1;
@@ -449,6 +459,7 @@ export async function extractOpenXmlTables(
   const docXml = await docXmlFile.async('text');
 
   const tables: ExtractedDocxTable[] = [];
+  const isLandscapeAt = landscapeResolver(docXml);
   const tblRegex = /<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi;
   let tblMatch: RegExpExecArray | null;
 
@@ -499,7 +510,11 @@ export async function extractOpenXmlTables(
     if (!parsed) continue;
 
     // Check embedded banner in row 0
-    if (!detectedCaption && parsed.rows.length > 0 && parsed.headers.length === 1) {
+    // (a banner that spans every column yields N identical header cells, not just one)
+    const isBannerRow =
+      parsed.headers.length === 1 ||
+      (parsed.headers.length > 1 && !!parsed.headers[0] && parsed.headers.every((h) => h === parsed.headers[0]));
+    if (!detectedCaption && parsed.rows.length > 0 && isBannerRow) {
       const h0 = parsed.headers[0];
       const embMatch = h0.match(/^(?:b\s*ảng|bảng|table|b\.)\s*(\d*)[:.-]?\s*(.*)/i);
       if (embMatch) {
@@ -509,6 +524,13 @@ export async function extractOpenXmlTables(
         if (parsed.rows.length > 0) {
           parsed.headers = parsed.rows[0];
           parsed.rows = parsed.rows.slice(1);
+          // keep the structured rows in step: the first body row becomes the header row
+          if (parsed.bodyRows && parsed.bodyRows.length > 0) {
+            parsed.headerRows = [parsed.bodyRows[0]];
+            parsed.bodyRows = parsed.bodyRows.slice(1);
+          } else {
+            parsed.headerRows = [];
+          }
         }
       }
     }
@@ -547,6 +569,7 @@ export async function extractOpenXmlTables(
       headerRows: parsed.headerRows,
       bodyRows: parsed.bodyRows,
       pos: tblPos,
+      landscape: isLandscapeAt(tblPos),
       placed: false,
     });
   }
@@ -623,7 +646,9 @@ export function extractAuthorsAndAffiliationsFromRuns(paragraphs: XmlParagraph[]
                 if (part.includes('*')) curIsCorr = true;
                 const trailingNums = (part.match(/\d+/g) || []).map(Number);
                 if (trailingNums.length > 0) curAffIds.push(...trailingNums);
-                curName += (curName ? ' ' : '') + part.replace(/[\d*()]/g, '').trim();
+                // Runs of one name are contiguous ("Nguy" + "ễ" + "n Thanh H"): keep the raw text,
+                // do not insert a space between runs (that produced "Nguyễ n").
+                curName += parts[partIdx].replace(/[\d*()]/g, '');
               }
             }
           }
@@ -855,7 +880,29 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     }
   }
 
-  if (figureImageMap.size === 0 && imageMap.size > 0) {
+  // Position-based pairing (caption <-> nearest picture) is authoritative for every figure whose caption
+  // paragraph exists in the XML: it handles captions above the picture and figures that are native
+  // drawings (no picture at all). Figures it cannot see keep the order-based pairing.
+  const xmlCaptionNumbers = new Set<number>();
+  try {
+    const docXmlForFigures = await zip.file('word/document.xml')?.async('text');
+    const relsXml = await zip.file('word/_rels/document.xml.rels')?.async('text');
+    if (docXmlForFigures && relsXml) {
+      const pairing = pairFiguresWithImages(docXmlForFigures, relsXml);
+      pairing.captionNumbers.forEach((n) => {
+        xmlCaptionNumbers.add(n);
+        figureImageMap.delete(n);
+      });
+      pairing.images.forEach((name, num) => {
+        const dataUrl = imageMap.get(name);
+        if (dataUrl) figureImageMap.set(num, dataUrl);
+      });
+    }
+  } catch {
+    /* keep the order-based pairing */
+  }
+
+  if (figureImageMap.size === 0 && xmlCaptionNumbers.size === 0 && imageMap.size > 0) {
     let figIdx = 1;
     imageMap.forEach((dataUrl) => {
       figureImageMap.set(figIdx, dataUrl);
@@ -865,7 +912,9 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
 
   const openXmlTables = await extractOpenXmlTables(zip);
   const openXmlParagraphs = await extractOpenXmlParagraphs(zip);
-  const { authors, affiliations, corresponding } = extractAuthorsAndAffiliationsFromRuns(openXmlParagraphs);
+  const { authors, affiliations: rawAffiliations, corresponding } = extractAuthorsAndAffiliationsFromRuns(openXmlParagraphs);
+  // VI + EN lines of the same affiliation become one entry (nameEn)
+  const affiliations = mergeBilingualAffiliations(rawAffiliations);
 
   // Generate clean document text without table cells to prevent table cell fragments leaking into body paragraphs
   const docXmlFile = zip.file('word/document.xml');
@@ -940,8 +989,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   let volume = '';
   let issue = '';
   let year = '';
-  let firstPage = 1;
-  let lastPage = 10;
+  let firstPage = 0;
+  let lastPage = 0;
 
   let i = 0;
 
@@ -1236,7 +1285,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       const matchedImg =
         figureImageMap.get(figNum) ||
         figureImageMap.get(explicitNum) ||
-        (figNum <= imageList.length ? imageList[figNum - 1] : '') ||
+        (!xmlCaptionNumbers.has(figNum) && figNum <= imageList.length ? imageList[figNum - 1] : '') ||
         '';
 
       sections.push({
@@ -1360,6 +1409,9 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       }
     }
 
+    // "Chú thích: …" / "Nguồn: …" right after a table belong to that table
+    if (attachTableFooterLine(sections, line)) continue;
+
     // Paragraph
     if (line.length > 20) {
       if (!isFrontMatterDone) {
@@ -1378,8 +1430,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   for (const t of openXmlTables) {
     if (!t.placed && (t.type === 'table' || t.type === 'appendix')) {
       t.placed = true;
-      sections.push({
-        id: `s_${sections.length + 1}`,
+      placeLeftoverTable(sections, {
+        id: `s_tab_${t.id}`,
         type: 'table',
         content: t.caption,
         table: {
@@ -1409,6 +1461,10 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   } catch (eqErr) {
     console.warn('[docx-parser] Không thể trích xuất công thức Word:', eqErr);
   }
+
+  // Keep superscripts / subscripts (f², R², CO₂ …) that plain-text extraction flattens
+  enrichScriptRuns(sections, openXmlParagraphs);
+  applyTableLayoutHints(sections, Object.fromEntries(openXmlTables.map((t) => [t.id, !!t.landscape])));
 
   if (!title) {
     title = fileName ? fileName.replace(/\.docx$/i, '') : 'Bản thảo chưa đặt tiêu đề';
@@ -1448,12 +1504,13 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     keywords: keywords.length > 0 ? keywords : ['Báo cáo khoa học', 'VNUHCM'],
     keywordsEn,
     dates,
-    doi: doi || `https://doi.org/10.32508/${journalInfo.journalId.toLowerCase()}.${Date.now().toString().slice(-4)}`,
-    volume: volume || '7',
-    issue: issue || '2',
+    // Publication data (DOI, volume, issue, pages) is assigned by the editorial office: never invent it.
+    doi,
+    volume,
+    issue,
     year: year || '2026',
-    firstPage: firstPage || 1,
-    lastPage: lastPage || Math.max(firstPage + 8, 10),
+    firstPage,
+    lastPage,
   };
 
   const paper: CompletePaper = {

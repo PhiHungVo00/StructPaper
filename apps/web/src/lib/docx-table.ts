@@ -2,8 +2,16 @@ import { Paragraph, Table, TableRow, TableCell, TextRun, WidthType, ShadingType 
 import type { PaperTable } from '@/types/paper';
 import type { ResolvedTheme } from './theme-config';
 
+import { stripCaptionLabel } from './docx-table-extras';
 const FONT_SERIF = 'Times New Roman';
 const FONT_SANS = 'Calibri';
+
+/** One Paragraph per line, so multi-line cells keep their line breaks in Word. */
+function cellParagraphs(text: string, font: string, size: number, bold = false): Paragraph[] {
+  return String(text ?? '')
+    .split('\n')
+    .map((line) => new Paragraph({ children: [new TextRun({ text: line, font, size, bold })] }));
+}
 
 /**
  * Word table block: caption, the table (header row repeats on every page and rows never split
@@ -23,7 +31,7 @@ export function buildDocxTable(table: PaperTable, theme: ResolvedTheme): Array<P
               color: COLOR_TITLE,
             }),
             new TextRun({
-              text: table.caption,
+              text: stripCaptionLabel(table.caption),
               font: FONT_SANS,
               size: 17,
               bold: true,
@@ -42,18 +50,7 @@ export function buildDocxTable(table: PaperTable, theme: ResolvedTheme): Array<P
             (h) =>
               new TableCell({
                 shading: { type: ShadingType.CLEAR, fill: theme.tableHeaderColor.slice(1) },
-                children: [
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: h,
-                        font: FONT_SANS,
-                        size: 16, // 8pt
-                        bold: true,
-                      }),
-                    ],
-                  }),
-                ],
+                children: cellParagraphs(h, FONT_SANS, 16, true),
               })
           ),
         }),
@@ -68,17 +65,7 @@ export function buildDocxTable(table: PaperTable, theme: ResolvedTheme): Array<P
               (cell) =>
                 new TableCell({
                   shading: { type: ShadingType.CLEAR, fill },
-                  children: [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: cell,
-                          font: FONT_SERIF,
-                          size: 16, // 8pt
-                        }),
-                      ],
-                    }),
-                  ],
+                  children: cellParagraphs(cell, FONT_SERIF, 16),
                 })
             ),
           })
@@ -94,7 +81,7 @@ export function buildDocxTable(table: PaperTable, theme: ResolvedTheme): Array<P
       if (table.source && table.source.trim()) {
         out.push(
           new Paragraph({
-            children: [new TextRun({ text: table.source, font: FONT_SANS, size: 15, italics: true })],
+            children: table.source.split('\n').flatMap((l, i) => [new TextRun({ text: l, font: FONT_SANS, size: 15, italics: true, break: i > 0 ? 1 : 0 })]),
             spacing: { before: 40, after: 160 },
           })
         );

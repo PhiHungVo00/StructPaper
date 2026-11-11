@@ -2,6 +2,7 @@ import type { PaperTable } from '@/types/paper';
 import type { ResolvedTheme } from './theme-config';
 import { escapeLatex } from './latex-escape';
 
+import { stripCaptionLabel } from './docx-table-extras';
 /**
  * LaTeX for one table block. Layout is chosen from the table options:
  *
@@ -52,10 +53,15 @@ export function tableToLatex(
       .join(' & ')} \\\\`;
 
   const sourceLine = table.source && table.source.trim()
-    ? `\\par\\vspace{2pt}{\\footnotesize\\textit{${escapeLatex(table.source)}}}`
+    ? `\\par\\vspace{2pt}{\\footnotesize ${table.source
+        .split('\n')
+        .filter((l) => l.trim())
+        // notes ("Chú thích: …") are italic, the "Nguồn: …" line is upright, like the printed journal
+        .map((l) => (/^(chú thích|ghi chú|notes?)\s*:/i.test(l.trim()) ? `\\textit{${escapeLatex(l.trim())}}` : escapeLatex(l.trim())))
+        .join('\\newline ')}}`
     : '';
 
-  const caption = `\\caption{{\\textbf{${escapeLatex(table.caption)}}}}`;
+  const caption = `\\caption{{\\textbf{${escapeLatex(stripCaptionLabel(table.caption))}}}}`;
   const label = `\\label{tab:${table.num || 1}}`;
   const headRow = `\\rowcolor{tableheadrcolor}\n${headers.map((h) => `\\textbf{${escapeLatex(h)}}`).join(' & ')} \\\\ \\hline`;
   const continuedTitle = escapeLatex(theme.continuedTitleText.replace('{n}', String(table.num || '')));
@@ -80,7 +86,7 @@ export function tableToLatex(
     const contLine = `\\multicolumn{${maxCols}}{c}{\\textit{${continuedTitle}}}\\\\`;
     const repeat = theme.repeatTableHeader ? `\\tablehead{\\hline ${contLine}\n${headRow}}\n` : `\\tablehead{${contLine}}\n`;
     return `\n${sizeOpen}
-\\topcaption{{\\textbf{${escapeLatex(table.caption)}}}}
+\\topcaption{{\\textbf{${escapeLatex(stripCaptionLabel(table.caption))}}}}
 \\tablefirsthead{\\hline ${headRow}}
 ${repeat}\\tabletail{\\hline \\multicolumn{${maxCols}}{r}{\\textit{${continuedFoot}}}\\\\}
 \\tablelasttail{\\hline}

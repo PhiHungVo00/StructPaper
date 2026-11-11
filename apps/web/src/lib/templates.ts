@@ -58,6 +58,9 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     accentColor: '#BA68C8',
     issn: '2588-1108',
     headerText: 'Tạp chí Phát triển KH&CN – Kinh tế, Luật & Quản lý',
+    // As printed in the reference PDF (EBL ID1750)
+    officialNameEn: 'VNUHCM Journal of Economics, Business and Law',
+    officialAbbvEn: 'VNUHCM J. Econ. Bus. Law',
   },
   'VNUHCM-ET': {
     id: 'VNUHCM-ET',

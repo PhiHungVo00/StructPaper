@@ -5,7 +5,9 @@ import { resolveTheme, hexToRgb as themeHexToRgb } from './theme-config';
 import { sanitizeMathForLatex } from './math-text';
 import { escapeLatex } from './latex-escape';
 import { tableToLatex } from './latex-table';
+import { buildEnglishPage, hasEnglishPageContent, articleTypeToEnglish } from './latex-english-page';
 
+import { stripCaptionLabel } from './docx-table-extras';
 export { escapeLatex };
 
 /**
@@ -160,7 +162,8 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
     .replace('\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee}', '\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee,supertabular,array,longtable,pdflscape}')
     .replace('\\definecolor{tableheadrcolor}{RGB}{229, 229, 229}', `\\definecolor{tableheadrcolor}{RGB}{${headRgb.r}, ${headRgb.g}, ${headRgb.b}}\n\\definecolor{tablezebracolor}{RGB}{${zebraRgb.r}, ${zebraRgb.g}, ${zebraRgb.b}}`)
     .replace('left=1.7cm,headsep=.2cm,right=1.3cm,top=1.8cm]', `left=${theme.margins.left}cm,headsep=.2cm,right=${theme.margins.right}cm,top=${theme.margins.top}cm,bottom=${theme.margins.bottom}cm]`)
-    .replace('\\documentclass[9pt,twocolumn]{article}', `\\documentclass[${fontSize},${docClassCols}]{article}`)
+    // `article` has no real 9pt option (it silently falls back to 10pt); extarticle does.
+    .replace('\\documentclass[9pt,twocolumn]{article}', `\\documentclass[${fontSize},${docClassCols}]{${fontSize === '9pt' ? 'extarticle' : 'article'}}`)
     .replace('paperheight=11in,paperwidth=8.51in', `paperheight=${paperHeightStr},paperwidth=${paperWidthStr}`)
     .replace('\\setlength{\\paperwidth}{8.51in}', `\\setlength{\\paperwidth}{${paperWidthStr}}`)
     .replace('\\setlength{\\paperheight}{11in}', `\\setlength{\\paperheight}{${paperHeightStr}}`)
@@ -180,6 +183,10 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
     );
   }
 
+  if (tmpl.officialAbbvEn) {
+    preamblePart1 = preamblePart1.replace('\\textit{Sci. Tech. Dev. J.\\journalabbv}', `\\textit{${tmpl.officialAbbvEn}.}`);
+  }
+
   // Inject page numbering format and startNumber at end of preamble
   preamblePart1 += `\n${pageFormatCmd}\n${startPageCmd}\n`;
   if (theme.bodyFont !== 'Times New Roman') {
@@ -191,8 +198,10 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
 
   const safeTitle = (metadata.title || '').trim() || 'TIÊU ĐỀ BÀI BÁO (BẢN THẢO)';
   const safeAbstract = (metadata.abstract || '').trim() || 'Tóm tắt bài báo chưa được nhập. Vui lòng cập nhật tóm tắt tại mục Tóm tắt để hoàn thiện bản thảo.';
-  const safeKeywords = metadata.keywords && metadata.keywords.filter((k) => k.trim()).length > 0
-    ? metadata.keywords.filter((k) => k.trim())
+  // a trailing '.' on the last keyword would print as ".." because the template appends one
+  const cleanKw = (ks?: string[]) => (ks || []).map((k) => k.trim().replace(/\.+$/, '')).filter(Boolean);
+  const safeKeywords = cleanKw(metadata.keywords).length > 0
+    ? cleanKw(metadata.keywords)
     : ['Bản thảo', 'Từ khóa'];
 
   const rawAuthors = metadata.authors && metadata.authors.length > 0
@@ -250,36 +259,37 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
 
   const customJournalName = metadata.journalName || tmpl.name;
   const isVnuhcmMain = /^Tạp chí Phát triển (Khoa học &|KH&CN|Khoa học và) Công nghệ/i.test(customJournalName);
-  const mainJournalName = isVnuhcmMain ? 'Tạp chí Phát triển Khoa học và Công nghệ' : customJournalName;
+  const mainJournalName = tmpl.officialNameEn || (isVnuhcmMain ? 'Tạp chí Phát triển Khoa học và Công nghệ' : customJournalName);
   const subSeriesName = isVnuhcmMain
     ? customJournalName.replace(/^Tạp chí Phát triển (Khoa học &|KH&CN|Khoa học và) Công nghệ\s*[–-]?\s*/i, '').trim()
     : '';
-  const journalSuffix = subSeriesName ? ` -- ${subSeriesName}` : '';
+  const journalSuffix = subSeriesName && !tmpl.officialNameEn ? ` -- ${subSeriesName}` : '';
 
   const rawAbbv = metadata.journalAbbv || tmpl.shortName;
   const subAbbv = rawAbbv.replace(/^Sci\.\s*Tech\.\s*Dev\.\s*J\.?\s*/i, '').trim();
   const formattedAbbv = subAbbv ? ` - ${subAbbv.replace(/^-\s*/, '')}` : (rawAbbv && rawAbbv !== tmpl.shortName ? ` - ${rawAbbv}` : '');
 
-  const metaBlock = `\\def\\cmDoi{${escapeLatex(metadata.doi || `https://doi.org/10.32508/${tmpl.id.toLowerCase()}.v${metadata.volume || '1'}i${metadata.issue || '1'}`)}}
-\\def\\cmVolume{${metadata.volume || '1'}}
-\\def\\cmIssue{${metadata.issue || '1'}}
+  const metaBlock = `\\def\\cmDoi{${escapeLatex(metadata.doi || '')}}
+\\def\\cmVolume{${metadata.volume || '?'}}
+\\def\\cmIssue{${metadata.issue || '?'}}
 \\def\\cmMonth{}
 \\def\\cmYear{${metadata.year || new Date().getFullYear().toString()}}
 \\def\\journalabbv{${escapeLatex(formattedAbbv)}}
 
-\\def\\cmReceived{${escapeLatex(formatJournalDate(metadata.dates?.received) || '14-06-2025')}}
-\\def\\cmRevised{${escapeLatex(formatJournalDate(metadata.dates?.revised) || '10-02-2026')}}
-\\def\\cmAccepted{${escapeLatex(formatJournalDate(metadata.dates?.accepted) || '14-04-2026')}}
-\\def\\cmPublished{${escapeLatex(formatJournalDate(metadata.dates?.published) || '07-05-2026')}}
-\\def\\cmfirstpage{${metadata.firstPage || 1}}
-\\def\\cmlastpage{${metadata.lastPage || 10}}
+\\def\\cmReceived{${escapeLatex(formatJournalDate(metadata.dates?.received))}}
+\\def\\cmRevised{${escapeLatex(formatJournalDate(metadata.dates?.revised))}}
+\\def\\cmAccepted{${escapeLatex(formatJournalDate(metadata.dates?.accepted))}}
+\\def\\cmPublished{${escapeLatex(formatJournalDate(metadata.dates?.published))}}
+\\def\\cmfirstpage{${metadata.firstPage || '?'}}
+\\def\\cmlastpage{${metadata.lastPage || '?'}}
 \\def\\citeauthor{${escapeLatex(citeAuthors)}}
 \\def\\citetitle{\\textbf{${escapeLatex(safeTitle)}}}\\def\\journalname{${escapeLatex(journalSuffix)}}\\def\\actualjournal{${escapeLatex(mainJournalName)}}\\renewcommand{\\refname}{Tài liệu tham khảo}
 `;
 
-  const dynamicAffbox = `        \\gdef\\affbox{\\parbox{4.4cm}{
-        {~\\\\[.5pc]\\raggedright {\\fontsize{8pt}{8pt}\\selectfont\\itshape ${affiliationsFormatted}\\\\[.5pc]} }{\\ttfamily\\bfseries\\color{titlecolor}\\fontsize{7pt}{7pt}\\selectfont \\Correspondence}\\\\[.35pc]
-        {\\ttfamily\\fontsize{7pt}{8pt}\\selectfont\\textbf{\\prolight ${corrName}}, ${corrAff}\\\\[.35pc]Email: ${corrEmail}.\\\\[.3pc]}}}`;
+  const buildAffbox = (affs: string, name: string, aff: string, email: string) => `        \\gdef\\affbox{\\parbox{4.4cm}{
+        {~\\\\[.5pc]\\raggedright {\\fontsize{8pt}{8pt}\\selectfont\\itshape ${affs}\\\\[.5pc]} }{\\ttfamily\\bfseries\\color{titlecolor}\\fontsize{7pt}{7pt}\\selectfont \\Correspondence}\\\\[.35pc]
+        {\\ttfamily\\fontsize{7pt}{8pt}\\selectfont\\textbf{\\prolight ${name}}, ${aff}\\\\[.35pc]Email: ${email}.\\\\[.3pc]}}}`;
+  const dynamicAffbox = buildAffbox(affiliationsFormatted, corrName, corrAff, corrEmail);
 
   const sidebox = OFFICIAL_SIDEBOX_TEMPLATE.replace(
     /\\gdef\\affbox\{[\s\S]*?\\newdimen\\fooa/,
@@ -382,7 +392,7 @@ ${isOneColumn
 \\IfFileExists{open-access.png}{\\includegraphics[width=0.65\\linewidth]{open-access.png}}{\\rule{5cm}{3cm}}%
 }}}}}}
 \\makeatother 
-\\caption{{\\textbf{${escapeLatex(sec.figure.caption)}}}}
+\\caption{{\\textbf{${escapeLatex(stripCaptionLabel(sec.figure.caption))}}}}
 ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${escapeLatex(sec.figure.source)}}}\\\\\n` : ''}\\label{figure-${figNum}}${mdframedEnd}
 \\end{${figEnv}}
 \\egroup\n`;
@@ -409,7 +419,29 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
       `\n\n\\end{thebibliography}\n}\n`;
   }
 
-  return `${preamblePart1}${metaBlock}${OFFICIAL_PREAMBLE_PART2}${titleBlock}${bodyLatex}${bibLatex}\n\\end{document}\n`;
+  // Closing English summary page (English title / abstract / affiliation), like the printed journal.
+  const englishPage =
+    theme.englishSummaryPage && hasEnglishPageContent({ titleEn: metadata.titleEn, abstractEn: metadata.abstractEn })
+      ? buildEnglishPage({
+          titleEn: metadata.titleEn || '',
+          abstractEn: metadata.abstractEn || '',
+          keywordsEn: cleanKw(metadata.keywordsEn),
+          articleTypeEn: articleTypeToEnglish(metadata.articleType),
+          authorsFormatted,
+          affiliationsEnFormatted: rawAffiliations
+            .map((aff) => `${hasMultipleAffs && aff.id ? `\\textsuperscript{${aff.id}}` : ''}${escapeLatex((aff.nameEn || aff.name).trim())}`)
+            .join('\\\\[.35pc]\n'),
+          corrName,
+          corrAffEn: escapeLatex((rawAffiliations[0]?.nameEn || metadata.corresponding?.affiliation || rawAffiliations[0]?.name || '').trim()),
+          corrEmail,
+          isOneColumn,
+          sideboxTemplate: OFFICIAL_SIDEBOX_TEMPLATE,
+          preambleWithMaketitle: OFFICIAL_PREAMBLE_PART1 + OFFICIAL_PREAMBLE_PART2,
+          buildAffbox,
+        })
+      : null;
+
+  return `${preamblePart1}${metaBlock}${OFFICIAL_PREAMBLE_PART2}${titleBlock}${bodyLatex}${bibLatex}${englishPage ?? ''}\n\\end{document}\n`;
 }
 
 export const exportToLatex = generateFullJournalLatex;

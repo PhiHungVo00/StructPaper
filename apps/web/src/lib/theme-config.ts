@@ -13,6 +13,7 @@ export interface ResolvedTheme {
   longTableRowThreshold: number;
   continuedTitleText: string;
   continuedFootText: string;
+  englishSummaryPage: boolean;
 }
 
 /** Defaults replicate the previously hard-coded VNUHCM look. */
@@ -30,6 +31,7 @@ export const DEFAULT_THEME: ResolvedTheme = {
   // Same wording as the journal's reference PDF (EBL ID1750).
   continuedTitleText: 'Table {n} continued',
   continuedFootText: 'Continued on next page',
+  englishSummaryPage: true,
 };
 
 const HEX_RE = /^#?([0-9a-fA-F]{6})$/;
@@ -90,6 +92,7 @@ export function resolveTheme(
     longTableRowThreshold: Math.round(clamp(t.longTableRowThreshold, 1, 200, base.longTableRowThreshold)),
     continuedTitleText: sanitizeLabel(t.continuedTitleText, base.continuedTitleText),
     continuedFootText: sanitizeLabel(t.continuedFootText, base.continuedFootText),
+    englishSummaryPage: t.englishSummaryPage !== false,
   };
 }
 
