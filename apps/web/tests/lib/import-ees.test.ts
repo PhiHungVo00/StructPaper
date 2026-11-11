@@ -84,6 +84,18 @@ describe('real file: EES ID850 imported from Word', () => {
   });
 });
 
+describe('real file: the journal Vietnamese template sample', () => {
+  it('leaves the author-guide page out and keeps back-matter titles as headings', async () => {
+    const f = path.resolve(__dirname, '../../../../fixtures/golden/templates/Bài mẫu template tiếng Việt.docx');
+    const buf = fs.readFileSync(f);
+    const p = await parseDocxFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, 'vi.docx');
+    expect(p.sections.some((s) => /Hướng dẫn dành cho tác giả|không thuộc nội dung bài báo/.test(s.content || s.title || ''))).toBe(false);
+    const h1 = p.sections.filter((s) => s.type === 'h1').map((s) => s.title);
+    expect(h1).toEqual(expect.arrayContaining(['Đóng góp của các tác giả', 'Xung đột lợi ích', 'Tính khả dụng của dữ liệu']));
+    expect(p.metadata.titleEn).toMatch(/^FACTORS AFFECTING/);
+  }, 60_000);
+});
+
 describe('helpers', () => {
   it('splits keywords without the final period', () => {
     expect(splitKeywords('a, b; c.')).toEqual(['a', 'b', 'c']);

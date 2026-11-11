@@ -6,7 +6,7 @@ import { mergeBilingualAffiliations } from './docx-affiliations';
 import { findEnglishBackMatter, splitKeywords } from './docx-english-backmatter';
 import { enrichScriptRuns } from './docx-richtext';
 import { loadFigureImages } from './docx-figure-images';
-import { figureTableInfo, figureTableAsCaptionParagraph } from './docx-figure-tables';
+import { figureTableInfo, figureTableAsCaptionParagraph, stripGuideParagraphs } from './docx-figure-tables';
 import { extractListHeadings } from './docx-headings';
 import { articleIdFromFileName } from './publication';
 import { normalizeImportedTitle } from './title-case';
@@ -855,9 +855,9 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   let cleanMammothOpts = mammothOpts;
   if (docXmlFile) {
     const docXml = await docXmlFile.async('text');
-    if (docXml.includes('<w:tbl')) {
+    if (docXml.includes('<w:tbl') || /w:val="(Guide|Instruction)/.test(docXml)) {
       // Tables leave the text pass; a picture grid with a "Hình N" caption leaves its caption behind
-      const cleanDocXml = docXml.replace(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi, (t) => figureTableAsCaptionParagraph(t) ?? '');
+      const cleanDocXml = stripGuideParagraphs(docXml.replace(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi, (t) => figureTableAsCaptionParagraph(t) ?? ''));
       const cleanZip = await JSZip.loadAsync(fileBuffer);
       cleanZip.file('word/document.xml', cleanDocXml);
       const cleanBuffer = await cleanZip.generateAsync({ type: 'arraybuffer' });
@@ -1204,7 +1204,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
 
     // Headings H1
     if (
-      /^(giới thiệu|đặt vấn đề|mở đầu|introduction|phương pháp|methods|phương pháp nghiên cứu|vật liệu và phương pháp|kết quả|results|kết quả và thảo luận|bàn luận|thảo luận|discussion|kết luận|conclusion|conclusions|lời cảm ơn|acknowledgements|danh mục từ viết tắt|tuyên bố đóng góp của tác giả|tuyên bố xung đột lợi ích):?$/i.test(
+      /^(giới thiệu|đặt vấn đề|mở đầu|introduction|phương pháp|methods|phương pháp nghiên cứu|vật liệu và phương pháp|kết quả|results|kết quả và thảo luận|bàn luận|thảo luận|discussion|kết luận|conclusion|conclusions|lời cảm ơn|acknowledgements|danh mục từ viết tắt|tuyên bố đóng góp của tác giả|tuyên bố xung đột lợi ích|đóng góp của các tác giả|xung đột lợi ích|tính khả dụng của dữ liệu|chấp thuận về đạo đức nghiên cứu|nguồn kinh phí|kinh phí|tài trợ|funding|author contributions|conflicts? of interest|data availability|ethics approval):?$/i.test(
         line
       ) ||
       /^(\d+)\.\s+([A-ZÀ-Ỹa-z\s:]{3,60})$/i.test(line) ||

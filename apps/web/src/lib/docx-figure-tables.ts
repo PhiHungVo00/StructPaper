@@ -132,3 +132,11 @@ export async function composeFigurePanels(
     return null;
   }
 }
+
+/**
+ * The journal's Word template ends with an author-guide page (styles GuideHeading1/2, GuideText,
+ * Instruction) that "is not part of the article"; those paragraphs leave the text pass.
+ */
+export function stripGuideParagraphs(docXml: string): string {
+  return docXml.replace(/<w:p\b(?:(?!<\/w:p>)[\s\S])*?<w:pStyle w:val="(?:Guide[A-Za-z0-9]*|Instruction)"[\s\S]*?<\/w:p>/g, '');
+}
