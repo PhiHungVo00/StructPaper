@@ -231,7 +231,7 @@ Bản gốc và nhánh này cùng viết lại trình soạn theo hai hướng; 
 | Hỏi lại khi thoát, cảnh báo đóng tab | của bản gốc (`isDirty`) + `useUnsavedChangesWarning` | |
 | Mở bài khác | `useShowPaperOnSwitch`: chỉ đổi bản sao khi id đổi, không phải lúc vừa mở (tránh coi việc mở bài là một lần sửa) | |
 
-Kiểm tra sau gộp: 46 file test web (455 test) đều đạt, các gói con đạt (riêng `platform-desktop` có 2 test gọi GitHub thật bị quá thời gian, không liên quan). Hai test của bản gốc phải chỉnh nhẹ vì giao diện nhánh này có thêm ô tên trên menu Tệp (chọn đúng ô tiêu đề ở tab Tựa đề). Thử thật trên trình duyệt: nhập hàng loạt 2 tệp hai mẫu khác nhau, mở bài, thêm công thức "Trải 2 cột", trạng thái "Đã lưu", tải lại vẫn còn. Lưu ý: `EditorLeftDock.tsx` của bản gốc dài 768 dòng, vượt mốc 553 trong `scripts/baseline-line-limits.json` (do bản gốc, chưa sửa).
+Kiểm tra sau gộp: 46 file test web (455 test) đều đạt, các gói con đạt (riêng `platform-desktop` có 2 test gọi GitHub thật bị quá thời gian, không liên quan). Hai test của bản gốc phải chỉnh nhẹ vì giao diện nhánh này có thêm ô tên trên menu Tệp (chọn đúng ô tiêu đề ở tab Tựa đề). Thử thật trên trình duyệt: nhập hàng loạt 2 tệp hai mẫu khác nhau, mở bài, thêm công thức "Trải 2 cột", trạng thái "Đã lưu", tải lại vẫn còn. `EditorLeftDock.tsx` của bản gốc dài 768 dòng (vượt mốc 553): đã tách thành `DockIconButton`, `DockDownloadMenu`, `DockStatusMenu` (còn ~400 dòng), giữ nguyên hành vi. Test `live-updater-e2e` (gọi GitHub thật) chỉ chạy khi đặt `RUN_LIVE_UPDATER_E2E=1`.
 
 ### Còn lại / giới hạn đã biết
 * Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).

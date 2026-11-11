@@ -3,7 +3,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { DesktopUpdateService } from '../src/desktop-update-service';
 import type { UpdateState } from '@structpaper/platform';
 
-describe('Auto-Update E2E Integration: Live GitHub Releases & Downgrade Simulation', () => {
+// Talks to the real GitHub release endpoint, so it only runs on request (RUN_LIVE_UPDATER_E2E=1); a plain
+// `pnpm test` must not depend on the network.
+describe.skipIf(!process.env.RUN_LIVE_UPDATER_E2E)('Auto-Update E2E Integration: Live GitHub Releases & Downgrade Simulation', () => {
   const GITHUB_LATEST_ENDPOINT =
     'https://github.com/StructPaper/StructPaper/releases/latest/download/latest.json';
 
