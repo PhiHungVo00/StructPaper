@@ -37,6 +37,22 @@ export function placeLeftoverTable(sections: PaperSection[], section: PaperSecti
     if (s.table.num < num && i > afterIdx) afterIdx = i;
     if (s.table.num > num && beforeIdx === -1) beforeIdx = i;
   });
+  // Printed journals put a table right after the paragraph that first cites it ("... (Bảng 2)"), not
+  // right after the previous table. Look for that paragraph after the previous table.
+  const cites = new RegExp(String.raw`(?:bảng|table)\s*${num}(?!\d)`, 'i');
+  const from = afterIdx >= 0 ? afterIdx + 1 : 0;
+  const limit = beforeIdx === -1 ? sections.length : beforeIdx;
+  for (let i = from; num > 0 && i < limit; i++) {
+    const s = sections[i];
+    if (s.type === 'paragraph' && cites.test((s.content || '').replace(/<[^>]+>/g, ''))) {
+      // A long table takes its own page(s): the journal lets the text run on and puts it just before the
+      // next numbered table (otherwise the page break strands the figure/text floats before it).
+      const tb = section.table;
+      const isLong = !!tb && (tb.rows.length > 20 || (tb.headers.length >= 6 && tb.rows.length >= 12)) && beforeIdx > i;
+      sections.splice(isLong ? beforeIdx : i + 1, 0, section);
+      return;
+    }
+  }
   if (afterIdx >= 0 && (beforeIdx === -1 || afterIdx < beforeIdx)) sections.splice(afterIdx + 1, 0, section);
   else if (beforeIdx >= 0) sections.splice(beforeIdx, 0, section);
   else sections.push(section);

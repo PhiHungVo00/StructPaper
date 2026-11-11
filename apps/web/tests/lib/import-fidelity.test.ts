@@ -182,6 +182,10 @@ describe('real file: ID1750 (EBL) imported from Word', () => {
 
     const tables = p.sections.filter((s) => s.type === 'table').map((s) => s.table!);
     expect(tables.map((t) => t.num)).toEqual([1, 2, 3]);
+    // Table 2 sits right after the paragraph that first cites it (as in the printed article), not straight after table 1
+    const idx = p.sections.findIndex((s) => s.type === 'table' && s.table!.num === 2);
+    expect(p.sections.slice(0, idx).some((x) => /bảng 2/i.test(x.content || ""))).toBe(true);
+    expect(p.sections[idx + 1]?.type).toBe("table");
     // table 2 (measurement model): caption row consumed, real header kept, landscape in the Word file
     const t2 = tables[1];
     expect(stripCaptionLabel(t2.caption)).toBe('Mô hình đo lường');
