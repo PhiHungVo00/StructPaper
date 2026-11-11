@@ -1,654 +1,185 @@
-import {
-  Document,
-  Paragraph,
-  TextRun,
-  HeadingLevel,
-  Packer,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  AlignmentType,
-  ShadingType,
-  TabStopType,
-} from 'docx';
-import { CompletePaper } from '@/types/paper';
-import { latexToDocxMath, splitTextWithMath } from './docx-math';
+import { Document, Packer, Paragraph, SectionType, type ISectionOptions } from 'docx';
+import type { CompletePaper, PaperMetadata } from '@/types/paper';
 import { resolveTheme } from './theme-config';
-import { displayHeading } from './headings';
-import { buildDocxTable } from './docx-table';
-
-import { stripCaptionLabel } from './docx-table-extras';
-// Official font families matching ID630_HS-2026-10-02-06-42.docx & VNUHCMJ-HS-Vi.dotx
-const FONT_SERIF = 'Times New Roman';
-const FONT_SANS = 'Calibri';
-const FONT_AFFIL = 'Palatino Linotype';
-const COLOR_MUTED = '555555';
-const COLOR_GRAY = '7F7F7F';
-
-/** Text with inline $…$ formulas -> TextRuns + native Word equations. */
-function runsWithMath(text: string, font: string, size: number) {
-  return splitTextWithMath(text).map((c) =>
-    c.kind === 'text' ? new TextRun({ text: c.value, font, size }) : c.math
-  );
-}
+import { getJournalTemplate } from './templates';
+import { hasPublicationValue, resolvePublication, UNKNOWN } from './publication';
+import { articleTypeToEnglish, hasEnglishPageContent, toAsciiName } from './latex-english-page';
+import { collectExportAssets, defaultImageLoader, type ImageLoader } from './docx-export-assets';
+import { buildFrontMatter, buildHeadersFooters, GEOM, FONT_SANS, FONT_SERIF, type FrontMatter } from './docx-export-front';
+import { buildBody } from './docx-export-body';
 
 /**
- * Exports complete paper into DOCX format conforming to VNUHCM journal styles.
+ * Word export laid out like the printed journal (same page size, margins and look as the PDF):
+ * page-1 header (journal line, Open Access, article type), title and authors, the side column
+ * (QR from the DOI, affiliation, correspondence, history, DOI, "Check for updates", copyright) next
+ * to the shaded abstract box, the citation box in the page-1 footer, a two-column body with
+ * pictures, native Word equations and merged-cell tables, odd/even running headers and page
+ * numbers from the issue's first page, and the closing English summary page.
+ * Paragraph styles carry the template's names (ArticleTitle, Authors, Abstract, Keywords,
+ * BodyText, TableCaption, FigureCaption, Equation, Reference …) so the file re-imports cleanly.
  */
-export async function exportPaperToDocx(paper: CompletePaper): Promise<Blob> {
-  const { metadata, sections, references } = paper;
-  const theme = resolveTheme(paper.layoutSettings);
-  const COLOR_TITLE = theme.titleColor.slice(1);
 
-  const docParagraphs: (Paragraph | Table)[] = [];
-
-  // 1. Running Header / Journal name
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: `${metadata.journalName || 'Tạp chí Phát triển Khoa học và Công nghệ'} ${metadata.year || 2026}, ${metadata.volume || 7}(${metadata.issue || 2}):${metadata.firstPage || 1}–${metadata.lastPage || 10}`,
-          font: FONT_SANS,
-          size: 16, // 8pt
-          bold: true,
-          italics: true,
-        }),
-      ],
-      spacing: { after: 100 },
-    })
-  );
-
-  // 2. Open Access Full Text Article & Article Type
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'Open Access Full Text Article        ',
-          font: FONT_AFFIL,
-          size: 16, // 8pt
-          bold: true,
-          color: COLOR_GRAY,
-        }),
-        new TextRun({
-          text: metadata.articleType || 'Bài tổng quan',
-          font: FONT_AFFIL,
-          size: 20, // 10pt
-          bold: true,
-          italics: true,
-          underline: {},
-        }),
-      ],
-      spacing: { after: 200 },
-    })
-  );
-
-  // 3. Article Title - Exact: Calibri 18pt Bold #2B74B7
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: metadata.title,
-          font: FONT_SANS,
-          size: 36, // 18pt
-          bold: true,
-          color: COLOR_TITLE,
-        }),
-      ],
-      spacing: { before: 100, after: 150 },
-    })
-  );
-
-  if (metadata.titleEn) {
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: metadata.titleEn,
-            font: FONT_SANS,
-            size: 24, // 12pt
-            italics: true,
-            color: COLOR_MUTED,
-          }),
-        ],
-        spacing: { after: 200 },
-      })
-    );
-  }
-
-  // 4. Authors with superscript affiliations
-  const authorRuns: TextRun[] = [];
-  metadata.authors.forEach((a, idx) => {
-    authorRuns.push(
-      new TextRun({
-        text: a.name,
-        font: FONT_SANS,
-        size: 22, // 11pt
-        bold: true,
-        color: COLOR_TITLE,
-      })
-    );
-    const affIds = a.affiliationIds && a.affiliationIds.length > 0 ? a.affiliationIds.join(',') : '1';
-    authorRuns.push(
-      new TextRun({
-        text: `${affIds}${a.isCorresponding ? ',*' : ''}`,
-        font: FONT_SANS,
-        size: 16, // 8pt
-        superScript: true,
-        color: COLOR_TITLE,
-      })
-    );
-    if (idx < metadata.authors.length - 1) {
-      authorRuns.push(
-        new TextRun({
-          text: ', ',
-          font: FONT_SANS,
-          size: 22,
-          color: COLOR_TITLE,
-        })
-      );
-    }
-  });
-
-  docParagraphs.push(
-    new Paragraph({
-      children: authorRuns,
-      spacing: { after: 150 },
-    })
-  );
-
-  // 5. Affiliations - Palatino Linotype 8pt Italic
-  metadata.affiliations.forEach((aff) => {
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `${aff.id ? aff.id + '. ' : ''}${aff.name}`,
-            font: FONT_AFFIL,
-            size: 16, // 8pt
-            italics: true,
-            color: '333333',
-          }),
-        ],
-        spacing: { after: 60 },
-      })
-    );
-  });
-
-  // 6. Correspondence & History Sidebar block
-  const corr = metadata.corresponding || (metadata.authors.find((a) => a.isCorresponding) ? {
-    name: metadata.authors.find((a) => a.isCorresponding)?.name || '',
-    email: 'contact@example.edu.vn',
-    affiliation: metadata.affiliations[0]?.name || '',
-  } : null);
-
-function formatJournalDate(dateStr?: string): string {
-  if (!dateStr) return '';
-  const trimmed = dateStr.trim();
-  const parts = trimmed.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
-  if (parts) {
-    const dd = parts[1].padStart(2, '0');
-    const mm = parts[2].padStart(2, '0');
-    const yyyy = parts[3];
-    return `${dd}-${mm}-${yyyy}`;
-  }
-  const isoParts = trimmed.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
-  if (isoParts) {
-    const yyyy = isoParts[1];
-    const mm = isoParts[2].padStart(2, '0');
-    const dd = isoParts[3].padStart(2, '0');
-    return `${dd}-${mm}-${yyyy}`;
-  }
-  return trimmed;
+/** dd/mm/yyyy, d-m-yyyy or yyyy-mm-dd -> dd-mm-yyyy; "?" when missing (as on the PDF). */
+function journalDate(s?: string): string {
+  const t = (s || '').trim();
+  const a = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  if (a) return `${a[1].padStart(2, '0')}-${a[2].padStart(2, '0')}-${a[3]}`;
+  const b = t.match(/^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})$/);
+  if (b) return `${b[3].padStart(2, '0')}-${b[2].padStart(2, '0')}-${b[1]}`;
+  return t || UNKNOWN;
 }
 
-  if (corr) {
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'Liên hệ',
-            font: FONT_AFFIL,
-            size: 14, // 7pt
-            bold: true,
-            color: COLOR_TITLE,
-          }),
-        ],
-        spacing: { before: 120, after: 40 },
-      })
-    );
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `${corr.name}, `,
-            font: FONT_SANS,
-            size: 14, // 7pt
-            bold: true,
-            color: '222222',
-          }),
-          new TextRun({
-            text: `${corr.affiliation} - Email: ${corr.email}`,
-            font: FONT_SANS,
-            size: 14, // 7pt
-            color: '333333',
-          }),
-        ],
-        spacing: { after: 80 },
-      })
-    );
-  }
-
-  if (metadata.dates) {
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'Lịch sử',
-            font: FONT_AFFIL,
-            size: 14, // 7pt
-            bold: true,
-            color: COLOR_TITLE,
-          }),
-        ],
-        spacing: { before: 80, after: 40 },
-      })
-    );
-
-    const dateItems = [
-      { label: 'Ngày nhận: ', val: formatJournalDate(metadata.dates.received) },
-      { label: 'Ngày sửa đổi: ', val: formatJournalDate(metadata.dates.revised) },
-      { label: 'Ngày chấp nhận: ', val: formatJournalDate(metadata.dates.accepted) },
-      { label: 'Ngày đăng: ', val: formatJournalDate(metadata.dates.published) },
-    ].filter((d) => Boolean(d.val));
-
-    dateItems.forEach((d) => {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: '• ',
-              font: FONT_SANS,
-              size: 16, // 8pt
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-            new TextRun({
-              text: d.label,
-              font: FONT_SERIF,
-              size: 16, // 8pt
-              color: '333333',
-            }),
-            new TextRun({
-              text: d.val,
-              font: FONT_SANS,
-              size: 16, // 8pt
-              color: '333333',
-            }),
-          ],
-          spacing: { after: 30 },
-        })
-      );
-    });
-  }
-
-  if (metadata.doi) {
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'DOI : ',
-            font: FONT_SANS,
-            size: 14, // 7pt
-            bold: true,
-            color: COLOR_TITLE,
-          }),
-          new TextRun({
-            text: metadata.doi,
-            font: FONT_AFFIL,
-            size: 14, // 7pt
-            bold: true,
-            color: '000000',
-          }),
-        ],
-        spacing: { before: 80, after: 80 },
-      })
-    );
-  }
-
-  // Bản quyền (Copyright)
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'Bản quyền',
-          font: FONT_AFFIL,
-          size: 14, // 7pt
-          bold: true,
-          color: COLOR_TITLE,
-        }),
-      ],
-      spacing: { before: 80, after: 40 },
+/** "Long P T, Nguyên V T" (family name last in Vietnamese order, then initials). */
+function citeAuthorList(md: PaperMetadata): string {
+  return (md.authors || [])
+    .map((a) => {
+      const parts = (a.name || '').trim().split(/\s+/);
+      const last = parts.pop() || '';
+      return `${last} ${parts.map((p) => p[0]).join(' ')}`.trim();
     })
-  );
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: '© ĐHQG Tp.HCM. Đây là bài báo công bố mở được phát hành theo các điều khoản của the Creative Commons Attribution 4.0 International license.',
-          font: FONT_SANS,
-          size: 14, // 7pt
-          color: '333333',
-        }),
-      ],
-      spacing: { after: 200 },
-    })
-  );
+    .join(', ');
+}
 
-  // 7. Abstract Box - Exact: Calibri 9pt Bold TÓM TẮT, 9.5pt Body
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'TÓM TẮT',
-          font: FONT_SANS,
-          size: 18, // 9pt
-          bold: true,
-          color: COLOR_TITLE,
-        }),
-      ],
-      spacing: { before: 200, after: 100 },
-    })
-  );
+const cleanKeywords = (ks?: string[]) => (ks || []).map((k) => k.trim().replace(/[.;,]+$/, '')).filter(Boolean);
 
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: metadata.abstract,
-          font: FONT_SANS,
-          size: 19, // 9.5pt
-          color: '111111',
-        }),
-      ],
-      alignment: AlignmentType.JUSTIFIED,
-      spacing: { after: 140 },
-    })
-  );
+function frontMatterFor(paper: CompletePaper, lang: 'vi' | 'en'): FrontMatter {
+  const md = paper.metadata;
+  const tmpl = getJournalTemplate(md.journalId);
+  const pub = resolvePublication(md);
+  const year = md.year || String(new Date().getFullYear());
+  const affs = md.affiliations || [];
+  const multi = affs.length > 1;
+  const en = lang === 'en';
+  const name = (s: string) => (en ? toAsciiName(s) : s);
+  const corrAuthor = (md.authors || []).find((a) => a.isCorresponding);
+  const affName = (a: { name: string; nameEn?: string }) => (en ? a.nameEn || a.name : a.name || a.nameEn || '');
+  const abbv = (tmpl.officialAbbvEn || md.journalAbbv || tmpl.shortName || '').replace(/\.$/, '');
+  const published = hasPublicationValue(pub.published) ? journalDate(pub.published) : pub.published;
+  return {
+    lang,
+    articleType: en ? articleTypeToEnglish(md.articleType) : md.articleType || 'Bài nghiên cứu',
+    title: (en ? md.titleEn : md.title) || '',
+    authors: (md.authors || []).map((a) => {
+      const aff = multi && a.affiliationIds?.length ? a.affiliationIds.join(',') : '';
+      return { name: name(a.name), sup: [aff, a.isCorresponding ? '*' : ''].filter(Boolean).join(',') };
+    }),
+    affiliations: affs.map((a) => `${multi ? `${a.id} ` : ''}${affName(a)}`.trim()).filter(Boolean),
+    corrName: name(md.corresponding?.name || corrAuthor?.name || ''),
+    corrAffiliation: en ? affs[0]?.nameEn || md.corresponding?.affiliation || '' : md.corresponding?.affiliation || affs[0]?.name || '',
+    corrEmail: (md.corresponding?.email || corrAuthor?.email || '').replace(/\.+$/, ''),
+    dates: {
+      received: journalDate(md.dates?.received),
+      revised: journalDate(md.dates?.revised),
+      accepted: journalDate(md.dates?.accepted),
+      published,
+    },
+    doi: pub.doi,
+    abstract: (en ? md.abstractEn : md.abstract) || '',
+    keywords: cleanKeywords(en ? md.keywordsEn : md.keywords),
+    cite: {
+      authors: name(citeAuthorList(md)),
+      title: (en ? md.titleEn : md.title) || '',
+      journal: `${abbv}.`,
+      tail: `${year}; ${pub.volume}(${pub.issue}):${pub.firstPage}-${pub.lastPage}.`,
+    },
+    journalLine: `${tmpl.officialNameEn || md.journalName || tmpl.name} ${year}, ${pub.volume}(${pub.issue}):${pub.firstPage}-${pub.lastPage}`,
+  };
+}
 
-  // 8. Keywords - Exact: Calibri 9.5pt
-  docParagraphs.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'Từ khoá: ',
-          font: FONT_SANS,
-          size: 19,
-          bold: true,
-          color: COLOR_TITLE,
-        }),
-        new TextRun({
-          text: metadata.keywords.join(', ') + '.',
-          font: FONT_SANS,
-          size: 19,
-          color: '111111',
-        }),
-      ],
-      spacing: { after: 300 },
-    })
-  );
-
-  // 9. Body sections - Headings in Calibri Bold #2B74B7, Paragraphs in Times New Roman 9.5pt/10pt
-  sections.forEach((sec) => {
-    if (sec.type === 'h1' && sec.title) {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: displayHeading(sec.title, theme.keepSectionNumbers).toUpperCase(),
-              font: FONT_SANS,
-              size: 24, // 12pt
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-          ],
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 300, after: 120 },
-        })
-      );
-      if (sec.content) {
-        docParagraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: sec.content,
-                font: FONT_SERIF,
-                size: 20, // 10pt
-              }),
-            ],
-            alignment: AlignmentType.JUSTIFIED,
-            indent: { firstLine: 360 },
-            spacing: { after: 120 },
-          })
-        );
-      }
-    } else if (sec.type === 'h2' && sec.title) {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: displayHeading(sec.title, theme.keepSectionNumbers),
-              font: FONT_SANS,
-              size: 20, // 10pt
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-          ],
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 200, after: 90 },
-        })
-      );
-      if (sec.content) {
-        docParagraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: sec.content,
-                font: FONT_SERIF,
-                size: 20, // 10pt
-              }),
-            ],
-            alignment: AlignmentType.JUSTIFIED,
-            indent: { firstLine: 360 },
-            spacing: { after: 120 },
-          })
-        );
-      }
-    } else if (sec.type === 'h3' && sec.title) {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: displayHeading(sec.title, theme.keepSectionNumbers),
-              font: FONT_SANS,
-              size: 20, // 10pt
-              bold: true,
-              italics: true,
-              color: COLOR_TITLE,
-            }),
-          ],
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 180, after: 80 },
-        })
-      );
-      if (sec.content) {
-        docParagraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: sec.content,
-                font: FONT_SERIF,
-                size: 20,
-              }),
-            ],
-            alignment: AlignmentType.JUSTIFIED,
-            indent: { firstLine: 360 },
-            spacing: { after: 120 },
-          })
-        );
-      }
-    } else if (sec.type === 'equation' && sec.equation?.latex.trim()) {
-      // Native Word equation, centred, with the "(n)" number flush right.
-      const eqChildren: any[] = [new TextRun({ text: '	' }), latexToDocxMath(sec.equation.latex)];
-      if (sec.equation.numbered) {
-        eqChildren.push(new TextRun({ text: `	(${sec.equation.num ?? ''})`, font: FONT_SERIF, size: 20 }));
-      }
-      docParagraphs.push(
-        new Paragraph({
-          children: eqChildren,
-          tabStops: [
-            { type: TabStopType.CENTER, position: 4500 },
-            { type: TabStopType.RIGHT, position: 9000 },
-          ],
-          spacing: { before: 120, after: 120 },
-        })
-      );
-    } else if (sec.type === 'paragraph' && sec.content) {
-      docParagraphs.push(
-        new Paragraph({
-          children: runsWithMath(sec.content, FONT_SERIF, 20),
-          alignment: AlignmentType.JUSTIFIED,
-          indent: { firstLine: 360 },
-          spacing: { after: 120 },
-        })
-      );
-    } else if (sec.type === 'table' && sec.table) {
-      docParagraphs.push(...buildDocxTable(sec.table, theme));
-    } else if (sec.type === 'figure' && sec.figure) {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Hình ${sec.figure.num}: `,
-              font: FONT_SANS,
-              size: 17, // 8.5pt
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-            new TextRun({
-              text: stripCaptionLabel(sec.figure.caption),
-              font: FONT_SANS,
-              size: 17,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 200, after: sec.figure.source ? 60 : 200 },
-        })
-      );
-      if (sec.figure.source) {
-        docParagraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: sec.figure.source,
-                font: FONT_SANS,
-                size: 15, // 7.5pt
-                italics: true,
-                color: '666666',
-              }),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 200 },
-          })
-        );
-      }
-    } else if (sec.type === 'citation' && sec.content) {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: 'Trích dẫn bài báo này: ',
-              font: FONT_SANS,
-              size: 18,
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-            new TextRun({
-              text: sec.content,
-              font: FONT_SERIF,
-              size: 18,
-              italics: true,
-            }),
-          ],
-          spacing: { before: 200, after: 200 },
-        })
-      );
-    }
+/** Named paragraph styles (ids follow the journal's Word template). */
+function styles(color: string) {
+  const p = (id: string, name: string, run: Record<string, unknown>, paragraph: Record<string, unknown> = {}) => ({
+    id,
+    name,
+    basedOn: 'Normal',
+    next: 'BodyText',
+    quickFormat: true,
+    run,
+    paragraph,
   });
+  const heading = (n: number, size: number, italics = false) =>
+    p(`Heading${n}`, `heading ${n}`, { font: FONT_SANS, size, bold: true, italics, color }, { spacing: { before: n === 1 ? 240 : 180, after: 80 }, keepNext: true, outlineLevel: n - 1 });
+  return {
+    default: { document: { run: { font: FONT_SERIF, size: 18 }, paragraph: { spacing: { after: 0, line: 271 } } } },
+    paragraphStyles: [
+      p('ArticleTitle', 'Article Title', { font: FONT_SANS, size: 36, bold: true, color }, { spacing: { before: 120, after: 200 } }),
+      p('Authors', 'Authors', { font: FONT_SANS, size: 22, bold: true, color }, { spacing: { after: 240 } }),
+      p('SectionAbstract', 'Section Abstract', { font: FONT_SANS, size: 18, bold: true, color }, { spacing: { after: 60 } }),
+      p('Abstract', 'Abstract', { font: FONT_SANS, size: 19 }, { spacing: { after: 0, line: 254 } }),
+      p('Keywords', 'Keywords', { font: FONT_SANS, size: 19 }, { spacing: { before: 40 } }),
+      p('BodyText', 'Body Text', { font: FONT_SERIF, size: 18 }, { spacing: { after: 0, line: 271 } }),
+      heading(1, 24),
+      heading(2, 20),
+      heading(3, 20, true),
+      p('TableCaption', 'Table Caption', { font: FONT_SANS, size: 17, bold: true }, { keepNext: true }),
+      p('FigureCaption', 'Figure Caption', { font: FONT_SANS, size: 17 }, { spacing: { before: 80 } }),
+      p('SourceLine', 'Source Line', { font: FONT_SANS, size: 15, italics: true }),
+      p('Equation', 'Equation', { font: FONT_SERIF, size: 18 }, { spacing: { before: 100, after: 100 } }),
+      p('SectionReferences', 'Section References', { font: FONT_SANS, size: 24, bold: true, color }, { spacing: { before: 240, after: 100 }, keepNext: true }),
+      p('Reference', 'Reference', { font: FONT_SANS, size: 15 }, { spacing: { after: 20 } }),
+    ],
+  };
+}
 
-  // 10. References - Exact: Calibri 7.5pt/8pt with #2B74B7 bold number
-  if (references.length > 0) {
-    docParagraphs.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'TÀI LIỆU THAM KHẢO',
-            font: FONT_SANS,
-            size: 24, // 12pt
-            bold: true,
-            color: COLOR_TITLE,
-          }),
-        ],
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 400, after: 150 },
-      })
-    );
+export interface DocxExportOptions {
+  /** Loads picture bytes for figure src / artwork paths (defaults to data-URL decode + fetch). */
+  loadImage?: ImageLoader;
+}
 
-    references.forEach((ref) => {
-      docParagraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `[${ref.id}] `,
-              font: FONT_SANS,
-              size: 15, // 7.5pt
-              bold: true,
-              color: COLOR_TITLE,
-            }),
-            new TextRun({
-              text: ref.raw,
-              font: FONT_SANS,
-              size: 15,
-            }),
-          ],
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { after: 80 },
-        })
-      );
+export async function exportPaperToDocx(paper: CompletePaper, opts: DocxExportOptions = {}): Promise<Blob> {
+  const theme = resolveTheme(paper.layoutSettings);
+  const color = theme.titleColor.slice(1);
+  const pub = resolvePublication(paper.metadata);
+  const assets = await collectExportAssets(paper, pub.doi, opts.loadImage ?? defaultImageLoader);
+  const vi = frontMatterFor(paper, 'vi');
+  const firstPage = parseInt(pub.firstPage, 10);
+  const page = {
+    size: { width: GEOM.pageW, height: GEOM.pageH },
+    margin: { top: GEOM.top, bottom: GEOM.bottom, left: GEOM.left, right: GEOM.right, header: 500, footer: 450 },
+  };
+
+  const segments = buildBody(paper.sections || [], paper.references || [], {
+    theme,
+    color,
+    figures: assets.figures,
+    lang: 'vi',
+    refTitle: 'TÀI LIỆU THAM KHẢO',
+  });
+  const hf = buildHeadersFooters(vi, color, assets.openAccess);
+  const sections: ISectionOptions[] = [
+    {
+      properties: {
+        titlePage: true,
+        page: { ...page, pageNumbers: Number.isFinite(firstPage) && firstPage > 0 ? { start: firstPage } : undefined },
+      },
+      ...hf,
+      children: buildFrontMatter(vi, color, assets),
+    },
+    ...segments.map((seg) => ({
+      properties: {
+        type: SectionType.CONTINUOUS,
+        page,
+        column: seg.fullWidth ? { count: 1 } : { count: 2, space: GEOM.gap, equalWidth: true },
+      },
+      children: seg.children,
+    })),
+  ];
+
+  if (theme.englishSummaryPage && hasEnglishPageContent(paper.metadata)) {
+    const en = frontMatterFor(paper, 'en');
+    sections.push({
+      properties: { type: SectionType.NEXT_PAGE, titlePage: true, page },
+      ...buildHeadersFooters(en, color, assets.openAccess),
+      children: [...buildFrontMatter(en, color, assets), new Paragraph({ children: [] })],
     });
   }
 
   const doc = new Document({
-    sections: [
-      {
-        properties: {
-          page: {
-            size: {
-              width: 12260, // 8.514 in (matching 612.72 pt in demo PDF and 12260 dxa in demo docx)
-              height: 15840, // 11.00 in (matching 792 pt in demo PDF and 15840 dxa in demo docx)
-            },
-            margin: {
-              top: 1134, // ~2cm
-              bottom: 1134,
-              left: 1134,
-              right: 1134,
-            },
-          },
-        },
-        children: docParagraphs,
-      },
-    ],
+    creator: 'StructPaper',
+    title: paper.metadata.title,
+    evenAndOddHeaderAndFooters: true,
+    styles: styles(color),
+    sections,
   });
-
-  return await Packer.toBlob(doc);
+  return Packer.toBlob(doc);
 }
