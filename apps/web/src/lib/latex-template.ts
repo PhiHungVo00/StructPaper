@@ -433,7 +433,8 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
   let bibLatex = '';
   if (references.length > 0) {
     const balanceCmd = isOneColumn ? '' : '\\beforepage{\\balance} \n\n';
-    bibLatex = `\n${balanceCmd}{\\sffamily\\fontsize{7}{8}\\selectfont \n\n\\begin{thebibliography}{10}\n\n` +
+    // polyglossia resets \refname to "References" at \begin{document}; set the printed heading here
+    bibLatex = `\n${balanceCmd}{\\sffamily\\fontsize{7}{8}\\selectfont \n\n\\renewcommand{\\refname}{Tài liệu tham khảo}\n\\begin{thebibliography}{10}\n\n` +
       references
         .map((r) => `\\bibitem{ref${r.id}}\n${escapeLatex(r.raw)}`)
         .join('\n\n') +
