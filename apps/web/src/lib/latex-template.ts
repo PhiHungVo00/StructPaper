@@ -5,6 +5,9 @@ import { resolveTheme, hexToRgb as themeHexToRgb } from './theme-config';
 import { sanitizeMathForLatex } from './math-text';
 import { escapeLatex } from './latex-escape';
 import { tableToLatex } from './latex-table';
+import { SIZE9_PREAMBLE } from './latex-size9';
+import { displayHeading } from './headings';
+import { resolvePublication, hasPublicationValue, UNKNOWN } from './publication';
 import { buildEnglishPage, hasEnglishPageContent, articleTypeToEnglish } from './latex-english-page';
 
 import { stripCaptionLabel } from './docx-table-extras';
@@ -162,8 +165,13 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
     .replace('\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee}', '\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee,supertabular,array,longtable,pdflscape}')
     .replace('\\definecolor{tableheadrcolor}{RGB}{229, 229, 229}', `\\definecolor{tableheadrcolor}{RGB}{${headRgb.r}, ${headRgb.g}, ${headRgb.b}}\n\\definecolor{tablezebracolor}{RGB}{${zebraRgb.r}, ${zebraRgb.g}, ${zebraRgb.b}}`)
     .replace('left=1.7cm,headsep=.2cm,right=1.3cm,top=1.8cm]', `left=${theme.margins.left}cm,headsep=.2cm,right=${theme.margins.right}cm,top=${theme.margins.top}cm,bottom=${theme.margins.bottom}cm]`)
-    // `article` has no real 9pt option (it silently falls back to 10pt); extarticle does.
-    .replace('\\documentclass[9pt,twocolumn]{article}', `\\documentclass[${fontSize},${docClassCols}]{${fontSize === '9pt' ? 'extarticle' : 'article'}}`)
+    // xeCJK treats curly quotes (U+2018-201F) as CJK punctuation and sets them in a full-width CJK font
+    // (MicrosoftYaHei) - the stray "providers’ perceived" glitch. Declare them ordinary (Default) characters.
+    .replace('\\usepackage{xeCJK}', '\\usepackage{xeCJK}\n\\ifdefined\\xeCJKDeclareCharClass\\xeCJKDeclareCharClass{Default}{"2018,"2019,"201A,"201B,"201C,"201D,"201E,"201F}\\fi')
+    // `article` has no real 9pt option (silent 10pt): emulate it inline, no extra TeX package needed.
+    .replace('\\documentclass[9pt,twocolumn]{article}', fontSize === '9pt'
+      ? `\\documentclass[10pt,${docClassCols}]{article}${SIZE9_PREAMBLE}`
+      : `\\documentclass[${fontSize},${docClassCols}]{article}`)
     .replace('paperheight=11in,paperwidth=8.51in', `paperheight=${paperHeightStr},paperwidth=${paperWidthStr}`)
     .replace('\\setlength{\\paperwidth}{8.51in}', `\\setlength{\\paperwidth}{${paperWidthStr}}`)
     .replace('\\setlength{\\paperheight}{11in}', `\\setlength{\\paperheight}{${paperHeightStr}}`)
@@ -269,19 +277,23 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
   const subAbbv = rawAbbv.replace(/^Sci\.\s*Tech\.\s*Dev\.\s*J\.?\s*/i, '').trim();
   const formattedAbbv = subAbbv ? ` - ${subAbbv.replace(/^-\s*/, '')}` : (rawAbbv && rawAbbv !== tmpl.shortName ? ` - ${rawAbbv}` : '');
 
-  const metaBlock = `\\def\\cmDoi{${escapeLatex(metadata.doi || '')}}
-\\def\\cmVolume{${metadata.volume || '?'}}
-\\def\\cmIssue{${metadata.issue || '?'}}
+  // Publication data: "?" until the editor enters it, blank if deliberately cleared
+  const pub = resolvePublication(metadata);
+  const dateOrUnknown = (v?: string) => formatJournalDate(v) || UNKNOWN;
+  const publishedText = hasPublicationValue(pub.published) ? formatJournalDate(pub.published) : pub.published;
+  const metaBlock = `\\def\\cmDoi{${escapeLatex(pub.doi)}}
+\\def\\cmVolume{${escapeLatex(pub.volume)}}
+\\def\\cmIssue{${escapeLatex(pub.issue)}}
 \\def\\cmMonth{}
 \\def\\cmYear{${metadata.year || new Date().getFullYear().toString()}}
 \\def\\journalabbv{${escapeLatex(formattedAbbv)}}
 
-\\def\\cmReceived{${escapeLatex(formatJournalDate(metadata.dates?.received))}}
-\\def\\cmRevised{${escapeLatex(formatJournalDate(metadata.dates?.revised))}}
-\\def\\cmAccepted{${escapeLatex(formatJournalDate(metadata.dates?.accepted))}}
-\\def\\cmPublished{${escapeLatex(formatJournalDate(metadata.dates?.published))}}
-\\def\\cmfirstpage{${metadata.firstPage || '?'}}
-\\def\\cmlastpage{${metadata.lastPage || '?'}}
+\\def\\cmReceived{${escapeLatex(dateOrUnknown(metadata.dates?.received))}}
+\\def\\cmRevised{${escapeLatex(dateOrUnknown(metadata.dates?.revised))}}
+\\def\\cmAccepted{${escapeLatex(dateOrUnknown(metadata.dates?.accepted))}}
+\\def\\cmPublished{${escapeLatex(publishedText)}}
+\\def\\cmfirstpage{${escapeLatex(pub.firstPage)}}
+\\def\\cmlastpage{${escapeLatex(pub.lastPage)}}
 \\def\\citeauthor{${escapeLatex(citeAuthors)}}
 \\def\\citetitle{\\textbf{${escapeLatex(safeTitle)}}}\\def\\journalname{${escapeLatex(journalSuffix)}}\\def\\actualjournal{${escapeLatex(mainJournalName)}}\\renewcommand{\\refname}{Tài liệu tham khảo}
 `;
@@ -327,14 +339,14 @@ ${isOneColumn
     }
 
     if (sec.type === 'h1' && sec.title) {
-      const displayTitle = sec.title.toUpperCase().replace(/TÁ\s+TRÀNG/g, 'TÁ~TRÀNG');
+      const displayTitle = displayHeading(sec.title, theme.keepSectionNumbers).toUpperCase().replace(/TÁ\s+TRÀNG/g, 'TÁ~TRÀNG');
       bodyLatex += `\n\\section*\n  {\\textbf{${escapeLatex(displayTitle)}}}\n`;
       if (sec.content) bodyLatex += `${formatParagraphText(sec.content)}\n`;
     } else if (sec.type === 'h2' && sec.title) {
-      bodyLatex += `\n\\subsection*\n  {\\textbf{${escapeLatex(sec.title)}}}\n`;
+      bodyLatex += `\n\\subsection*\n  {\\textbf{${escapeLatex(displayHeading(sec.title, theme.keepSectionNumbers))}}}\n`;
       if (sec.content) bodyLatex += `${formatParagraphText(sec.content)}\n`;
     } else if (sec.type === 'h3' && sec.title) {
-      bodyLatex += `\n\\subsubsection*\n  {\\textbf{${escapeLatex(sec.title)}}}\n`;
+      bodyLatex += `\n\\subsubsection*\n  {\\textbf{${escapeLatex(displayHeading(sec.title, theme.keepSectionNumbers))}}}\n`;
       if (sec.content) bodyLatex += `${formatParagraphText(sec.content)}\n`;
     } else if (sec.type === 'paragraph' && sec.content) {
       bodyLatex += `\n${formatParagraphText(sec.content)}\n`;

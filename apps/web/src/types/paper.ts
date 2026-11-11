@@ -1,5 +1,5 @@
-import type { ThemeSettings, PaperEquation } from './paper-extensions';
-export type { ThemeSettings, PaperEquation };
+import type { ThemeSettings, PaperEquation, PublicationInfo } from './paper-extensions';
+export type { ThemeSettings, PaperEquation, PublicationInfo };
 
 import type { Cell } from '@structpaper/doc-model';
 
@@ -54,6 +54,8 @@ export interface PaperMetadata {
   year: string;
   firstPage: number;
   lastPage: number;
+  titleOriginal?: string; // title as typed in Word when the importer changed it (undo)
+  publication?: PublicationInfo; // "?" when not entered yet (see paper-extensions)
 }
 
 export interface PaperFigure {
@@ -98,6 +100,7 @@ export interface PaperTable {
   hasZebraStripes?: boolean; // Sọc màu hàng xen kẽ
   placement?: 'auto' | 'top' | 'here' | 'bottom';
   breakAcrossPages?: 'auto' | 'always' | 'never'; // cho phép bảng ngắt qua trang
+  bodyFill?: 'plain' | 'zebra' | 'shaded'; // nền thân bảng: trắng (mặc định) / sọc / tô đều
 }
 
 /**
@@ -496,6 +499,7 @@ export interface PreflightCheck {
 }
 
 export interface JournalTemplate {
+  doiPrefix?: string; // e.g. 10.32508/vnuhcmj-ebl -> DOI = prefix.v{vol}i{issue}.{articleId}
   officialNameEn?: string; // English journal name printed in headers (when the journal uses it)
   officialAbbvEn?: string; // English abbreviation used in "Cite this article"
   id: string;

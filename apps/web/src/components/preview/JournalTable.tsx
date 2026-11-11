@@ -1,6 +1,7 @@
 import React from 'react';
 import { PaperTable, synthesizeHeaderRows, normalizePaperTable } from '@/types/paper';
 import { DEFAULT_THEME, type ResolvedTheme } from '@/lib/theme-config';
+import { resolveBodyFill, rowIsTinted } from '@/lib/table-fill';
 
 import { stripCaptionLabel } from '@/lib/docx-table-extras';
 interface JournalTableProps {
@@ -17,6 +18,7 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
       : synthesizeHeaderRows(normalized.headers || []);
   const hasComplexHeaders = Boolean(effectiveHeaderRows && effectiveHeaderRows.length > 1);
   const hasComplexBody = Boolean(table.bodyRows && table.bodyRows.length > 0);
+  const bodyFill = resolveBodyFill(table);
   const bodyRowCount = table.bodyRows?.length ?? table.rows?.length ?? 0;
   // Short tables stay together; long ones may break across columns/pages with the header repeated.
   const isLong = bodyRowCount > theme.longTableRowThreshold;
@@ -85,11 +87,10 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
           <tbody className="divide-y divide-gray-200">
             {hasComplexBody && table.bodyRows ? (
               table.bodyRows.map((bRow, rIdx) => {
-                const isEven = rIdx % 2 === 0;
                 return (
                   <tr
                     key={rIdx}
-                    style={{ backgroundColor: isEven ? theme.tableZebraColor : '#FFFFFF' }}
+                    style={{ backgroundColor: rowIsTinted(bodyFill, rIdx) ? theme.tableZebraColor : '#FFFFFF' }}
                   >
                     {bRow.map((cell, cIdx) => (
                       <td
@@ -111,11 +112,10 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
               })
             ) : (
               table.rows.map((row, rI) => {
-                const isEven = rI % 2 === 0;
                 return (
                   <tr
                     key={rI}
-                    style={{ backgroundColor: isEven ? theme.tableZebraColor : '#FFFFFF' }}
+                    style={{ backgroundColor: rowIsTinted(bodyFill, rI) ? theme.tableZebraColor : '#FFFFFF' }}
                   >
                     {row.map((cell, cI) => (
                       <td

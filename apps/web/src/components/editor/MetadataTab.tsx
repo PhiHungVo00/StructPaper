@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { MetadataTabProps } from './types';
 import { Select, SelectOption, DatePicker } from '../ui';
 import { FileText, Calendar, BookOpen, Tag } from 'lucide-react';
+import { PublicationInfoFields } from './PublicationInfoFields';
 import {
   useEditorCommandBus,
   dispatchTitleChange,
@@ -121,6 +122,18 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
           className="w-full min-h-[56px] p-3 rounded-2xl border border-zinc-200 text-sm font-semibold text-zinc-900 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 transition-all leading-snug shadow-2xs"
           placeholder="Nhập tựa đề bài báo tiếng Việt..."
         />
+        {metadata.titleOriginal && metadata.titleOriginal !== metadata.title && (
+          <div className="mt-1.5 flex items-center gap-2 text-[11px] text-zinc-600" data-testid="title-normalized">
+            <span>Tựa đề trong Word viết HOA toàn bộ nên đã đổi sang kiểu câu như bản in.</span>
+            <button
+              type="button"
+              onClick={() => onChange({ ...metadata, title: metadata.titleOriginal as string, titleOriginal: undefined })}
+              className="px-2 py-0.5 rounded-full bg-white border border-zinc-200 font-bold text-zinc-700 hover:bg-zinc-50"
+            >
+              Hoàn tác
+            </button>
+          </div>
+        )}
       </div>
 
       {/* English Title */}
@@ -156,23 +169,6 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
           />
         </div>
 
-        <div>
-          <label className="text-xs font-bold text-zinc-600 block mb-1.5">
-            Mã định danh DOI:
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={metadata.doi || ''}
-              onChange={(e) => dispatchMetadataField(activeBus, 'doi', e.target.value, onChange, metadata)}
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-              className="w-full p-2.5 rounded-2xl border border-zinc-200 text-xs font-mono text-zinc-900 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-300 shadow-2xs"
-              placeholder="10.32508/stdj..."
-            />
-          </div>
-        </div>
       </div>
 
       {/* Publication Dates */}
@@ -181,7 +177,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
           <Calendar className="w-3.5 h-3.5 text-zinc-500" />
           Các mốc thời gian xuất bản (Tòa soạn):
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <DatePicker
             label="Ngày nhận:"
             value={metadata.dates?.received || ''}
@@ -202,15 +198,10 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
             onChange={(val) => dispatchDatesChange(activeBus, { accepted: val }, onChange, metadata)}
             placeholder="08-10-2026"
           />
-
-          <DatePicker
-            label="Ngày xuất bản:"
-            value={metadata.dates?.published || ''}
-            onChange={(val) => dispatchDatesChange(activeBus, { published: val }, onChange, metadata)}
-            placeholder="10-10-2026"
-          />
         </div>
       </div>
+
+      <PublicationInfoFields metadata={metadata} onChange={onChange} />
 
       {/* Tóm tắt & Từ khóa (Abstract & Keywords) */}
       {showAbstractAndKeywords && (

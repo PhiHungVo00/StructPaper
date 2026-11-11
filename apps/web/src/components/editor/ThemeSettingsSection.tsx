@@ -124,6 +124,15 @@ export const ThemeSettingsSection: React.FC<Props> = ({ theme, journalColor, onC
           />
           Lặp lại hàng tiêu đề khi bảng dài sang trang mới
         </label>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-zinc-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={r.keepSectionNumbers}
+            onChange={(e) => set({ keepSectionNumbers: e.target.checked })}
+            className="accent-lime-500"
+          />
+          Giữ số thứ tự mục ("4. Kết quả") khi in
+        </label>
         <NumberField
           label="Bảng dài hơn (số hàng) thì cho phép ngắt trang"
           value={r.longTableRowThreshold}

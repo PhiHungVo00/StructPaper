@@ -103,13 +103,20 @@ Xuất theo JATS 1.2 (`lib/jats-export.ts`): `front` (tạp chí, tác giả, đ
 Kiểm tra bằng bài mẫu EBL ID1750 (so với PDF của tạp chí):
 
 * **Bảng:** nhãn trong ô tiêu đề được tách thành tên bảng (không còn "Bảng 2: Bảng 2"), ô nhiều dòng giữ nguyên từng dòng, bảng nằm trong **trang ngang** của Word được đặt **xoay ngang**, bảng hẹp (≤ 4 cột) để 1 cột và bảng rộng 2 cột, bảng bị bỏ sót được chèn đúng thứ tự số. Dòng "Chú thích:" / "Nguồn:" ngay sau bảng thuộc về bảng.
-* **Hình:** mỗi hình ghép với ảnh gần nó nhất trong XML. Hình vẽ bằng khối Word (không phải ảnh) để trống và được báo "Hình trống" thay vì gắn nhầm ảnh khác.
+* **Hình:** mỗi hình ghép với ảnh gần nó nhất trong XML. Hình vẽ bằng khối Word (ô oval, mũi tên, ô chữ — không phải file ảnh, ví dụ mô hình nghiên cứu) được **vẽ lại**: đọc hình khối trong XML (`lib/drawingml.ts`), dựng SVG rồi chuyển thành PNG ngay trong trình duyệt. Nếu không vẽ được (khối lạ, hoặc chạy ngoài trình duyệt) thì hình để trống và báo "Hình trống" chứ không gắn nhầm ảnh khác.
 * **Chỉ số trên/dưới** (f², R², CO₂…) giữ nguyên dạng công thức; công thức Word (OMML) trên dòng riêng thành khối công thức.
 * **Tác giả/đơn vị:** sửa lỗi tên bị tách ("Nguyễ n"); đơn vị viết hai dòng Việt + Anh gộp thành một (tiếng Anh dùng cho trang tóm tắt cuối).
 * **Không tự bịa** DOI, tập, số, trang, ngày nhận/sửa/chấp nhận/đăng: file Word thường không có, nên để trống, hiện "?" trên đầu trang và cảnh báo ở cổng kiểm tra.
 
 ### Trang tóm tắt tiếng Anh cuối bài
 Nếu có tiêu đề + tóm tắt tiếng Anh, bài PDF kết thúc bằng trang tiếng Anh như bản in của tạp chí (tiêu đề, tác giả, khung Abstract, Key words, đơn vị tiếng Anh, Correspondence, History, DOI, Copyright, "Cite this article"). Tắt bằng `layoutSettings.theme.englishSummaryPage = false`. Thân bài dùng cỡ chữ 9pt thật (`extarticle`); máy biên dịch cần gói `extsizes` (MiKTeX tự cài lần đầu).
+
+### Thông tin xuất bản, tiêu đề, số mục, nền bảng
+* **Thông tin xuất bản** (DOI, tập, số, trang, ngày): chưa có thì ô hiện `?`; người dùng xóa `?` để nhập giá trị, hoặc xóa hết để **để trống** (in ra rỗng). Chưa đụng tới thì in `?`.
+* **Tiêu đề viết hoa toàn bộ** trong Word được chuẩn hóa về dạng câu khi nhập (có nút hoàn tác về tiêu đề gốc).
+* **Số mục** gõ trong Word ("4. Kết quả") không in theo tạp chí; bật "Giữ số thứ tự mục" trong Giao diện để giữ lại (áp dụng cho PDF, Word, XML, xem trước).
+* **Nền thân bảng**: mặc định trắng; tùy chọn "xen kẽ" hoặc "tô toàn bộ" ở từng bảng. Bài cũ từng bật sọc vẫn giữ sọc.
+* **Chữ 9pt** dựng trực tiếp (không cần gói `extsizes`). Dấu nháy cong được khai báo cho xeCJK nên không bị lỗi dấu nháy. Lần biên dịch PDF đầu có thể chậm vì phải tải gói; chạy `pnpm warmup:latex` một lần để tải sẵn.
 
 ## 10. Kiểm tra tự động
 

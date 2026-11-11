@@ -14,6 +14,7 @@ export interface ResolvedTheme {
   continuedTitleText: string;
   continuedFootText: string;
   englishSummaryPage: boolean;
+  keepSectionNumbers: boolean;
 }
 
 /** Defaults replicate the previously hard-coded VNUHCM look. */
@@ -32,6 +33,7 @@ export const DEFAULT_THEME: ResolvedTheme = {
   continuedTitleText: 'Table {n} continued',
   continuedFootText: 'Continued on next page',
   englishSummaryPage: true,
+  keepSectionNumbers: false,
 };
 
 const HEX_RE = /^#?([0-9a-fA-F]{6})$/;
@@ -93,6 +95,7 @@ export function resolveTheme(
     continuedTitleText: sanitizeLabel(t.continuedTitleText, base.continuedTitleText),
     continuedFootText: sanitizeLabel(t.continuedFootText, base.continuedFootText),
     englishSummaryPage: t.englishSummaryPage !== false,
+    keepSectionNumbers: t.keepSectionNumbers === true,
   };
 }
 

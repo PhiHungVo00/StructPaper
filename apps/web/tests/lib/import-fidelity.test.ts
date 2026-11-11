@@ -148,8 +148,12 @@ describe('closing English summary page + 9pt body', () => {
     expect(tex).toContain('VNUHCM J. Econ. Bus. Law.');
   });
 
-  it('typesets 9pt bodies with extarticle (article silently uses 10pt)', () => {
-    expect(generateFullJournalLatex(base())).toContain('\\documentclass[9pt,twocolumn]{extarticle}');
+  it('typesets real 9pt bodies without extarticle/extsizes (works offline on any engine)', () => {
+    const tex = generateFullJournalLatex(base());
+    expect(tex).toContain('\\documentclass[10pt,twocolumn]{article}');
+    expect(tex).toContain('\\@setfontsize\\normalsize{9}{11}');
+    expect(tex).not.toContain('extarticle');
+    expect(tex).not.toContain('extsizes');
     const ten = generateFullJournalLatex(base(), { ...DEFAULT_LAYOUT_SETTINGS, fontSize: '10pt' });
     expect(ten).toContain('{article}');
   });

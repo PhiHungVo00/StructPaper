@@ -3,6 +3,7 @@ import type { ResolvedTheme } from './theme-config';
 import { escapeLatex } from './latex-escape';
 
 import { stripCaptionLabel } from './docx-table-extras';
+import { resolveBodyFill, rowIsTinted } from './table-fill';
 /**
  * LaTeX for one table block. Layout is chosen from the table options:
  *
@@ -31,14 +32,14 @@ export function tableToLatex(
   const fontSize = table.fontSize || '8pt';
   const lineHeight = fontSize === '7pt' ? '9pt' : fontSize === '9pt' ? '11pt' : fontSize === '10pt' ? '12pt' : '10pt';
   const arrayStretch = table.rowStretch || 1.4;
-  const hasZebra = table.hasZebraStripes !== false;
+  const fill = resolveBodyFill(table);
 
   const bodyRows = table.bodyRows && table.bodyRows.length > 0
     ? table.bodyRows
     : paddedRows.map((r) => r.map((c) => ({ text: c })));
 
   const renderRow = (row: any[], rI: number) =>
-    `${hasZebra && rI % 2 === 0 ? '\\rowcolor{tablezebracolor}\n' : ''}${row
+    `${rowIsTinted(fill, rI) ? '\\rowcolor{tablezebracolor}\n' : ''}${row
       .map((cell: any) => {
         const rawText = cell.text !== undefined ? cell.text : String(cell || '');
         let escaped = escapeLatex(rawText);

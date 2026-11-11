@@ -4,12 +4,15 @@ import React from 'react';
 
 type Placement = 'auto' | 'top' | 'here' | 'bottom';
 type BreakMode = 'auto' | 'always' | 'never';
+type BodyFill = 'plain' | 'zebra' | 'shaded';
 
 interface Props {
   placement: Placement;
   onPlacement: (p: Placement) => void;
   breakAcrossPages: BreakMode;
   onBreakAcrossPages: (b: BreakMode) => void;
+  bodyFill: BodyFill;
+  onBodyFill: (f: BodyFill) => void;
 }
 
 const PLACEMENTS = [
@@ -22,6 +25,12 @@ const BREAKS = [
   { key: 'auto' as const, label: 'Tự động', desc: 'Bảng nhiều hàng tự được cắt qua trang' },
   { key: 'always' as const, label: 'Luôn cắt', desc: 'Luôn cho phép cắt bảng qua trang, lặp hàng tiêu đề' },
   { key: 'never' as const, label: 'Giữ nguyên', desc: 'Giữ cả bảng trong một khối' },
+];
+
+const FILLS = [
+  { key: 'plain' as const, label: 'Trắng', desc: 'Nền trắng (mặc định)' },
+  { key: 'zebra' as const, label: 'Sọc xen kẽ', desc: 'Tô nhạt các hàng xen kẽ' },
+  { key: 'shaded' as const, label: 'Tô đều', desc: 'Tô nền nhạt toàn bộ thân bảng (như Bảng 2 bản in)' },
 ];
 
 function Segmented<T extends string>({
@@ -64,8 +73,9 @@ function Segmented<T extends string>({
 }
 
 /** Float placement + page-break behaviour of long tables (extracted from TableSettingsModal). */
-export const TablePlacementAndBreak: React.FC<Props> = ({ placement, onPlacement, breakAcrossPages, onBreakAcrossPages }) => (
+export const TablePlacementAndBreak: React.FC<Props> = ({ placement, onPlacement, breakAcrossPages, onBreakAcrossPages, bodyFill, onBodyFill }) => (
   <>
+    <Segmented label="Nền thân bảng" title="Màu nền các hàng dữ liệu" items={FILLS} value={bodyFill} onChange={onBodyFill} testId="table-fill-option" />
     <Segmented
       label="Vị trí neo"
       title="Vị trí neo trang LaTeX: Vị trí ưu tiên đặt bảng khi biên dịch file PDF [placement]"

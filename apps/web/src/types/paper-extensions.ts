@@ -18,6 +18,8 @@ export interface ThemeSettings {
   repeatTableHeader?: boolean;
   /** Tables with more body rows than this are typeset as breakable tables. Default 12. */
   longTableRowThreshold?: number;
+  /** Keep the section numbers typed in Word ("4. Kết quả"). Default false: the journal prints unnumbered headings. */
+  keepSectionNumbers?: boolean;
   /** Append the closing English summary page (English title/abstract/affiliation). Default true. */
   englishSummaryPage?: boolean;
   /** Marker printed on top of each continuation page; "{n}" is the table number. */
@@ -34,4 +36,19 @@ export interface PaperEquation {
   numbered: boolean;
   /** Optional original OMML kept for lossless DOCX round-trips. */
   omml?: string;
+}
+
+/**
+ * Publication data assigned by the editorial office (volume, issue, pages, DOI, publication date).
+ * Semantics per field: key absent = not entered yet (printed as "?"), "" = deliberately blank, otherwise the value.
+ */
+export interface PublicationInfo {
+  volume?: string;
+  issue?: string;
+  firstPage?: string;
+  lastPage?: string;
+  doi?: string;
+  published?: string;
+  /** Article id on the journal platform (the "a-#" in image URLs, last part of the DOI). */
+  articleId?: string;
 }

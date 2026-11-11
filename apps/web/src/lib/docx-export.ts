@@ -15,6 +15,7 @@ import {
 import { CompletePaper } from '@/types/paper';
 import { latexToDocxMath, splitTextWithMath } from './docx-math';
 import { resolveTheme } from './theme-config';
+import { displayHeading } from './headings';
 import { buildDocxTable } from './docx-table';
 
 import { stripCaptionLabel } from './docx-table-extras';
@@ -404,7 +405,7 @@ function formatJournalDate(dateStr?: string): string {
         new Paragraph({
           children: [
             new TextRun({
-              text: sec.title.toUpperCase(),
+              text: displayHeading(sec.title, theme.keepSectionNumbers).toUpperCase(),
               font: FONT_SANS,
               size: 24, // 12pt
               bold: true,
@@ -436,7 +437,7 @@ function formatJournalDate(dateStr?: string): string {
         new Paragraph({
           children: [
             new TextRun({
-              text: sec.title,
+              text: displayHeading(sec.title, theme.keepSectionNumbers),
               font: FONT_SANS,
               size: 20, // 10pt
               bold: true,
@@ -468,7 +469,7 @@ function formatJournalDate(dateStr?: string): string {
         new Paragraph({
           children: [
             new TextRun({
-              text: sec.title,
+              text: displayHeading(sec.title, theme.keepSectionNumbers),
               font: FONT_SANS,
               size: 20, // 10pt
               bold: true,

@@ -4,6 +4,7 @@ import { JournalFigure } from './JournalFigure';
 import { JournalTable } from './JournalTable';
 import { MathText, MathFormula } from './MathText';
 import { resolveTheme } from '@/lib/theme-config';
+import { displayHeading } from '@/lib/headings';
 
 export const JournalSectionRenderer: React.FC<JournalSectionRendererProps> = ({
   paper,
@@ -17,7 +18,7 @@ export const JournalSectionRenderer: React.FC<JournalSectionRendererProps> = ({
       {sections.map((sec, idx) => {
         // H1 Heading - Exact LaTeX: \fontsize{12pt}{13pt}\selectfont\sffamily\bfseries\color{titlecolor}\MakeTextUppercase
         if (sec.type === 'h1' && sec.title) {
-          const displayTitle = sec.title.replace(/TÁ\s+TRÀNG/g, 'TÁ\u00A0TRÀNG');
+          const displayTitle = displayHeading(sec.title, theme.keepSectionNumbers).replace(/TÁ\s+TRÀNG/g, 'TÁ\u00A0TRÀNG');
           return (
             <div key={sec.id || idx} className="break-inside-avoid mt-4 mb-1.5">
               <h2
@@ -51,7 +52,7 @@ export const JournalSectionRenderer: React.FC<JournalSectionRendererProps> = ({
                   fontWeight: 700,
                 }}
               >
-                {sec.title}
+                {displayHeading(sec.title, theme.keepSectionNumbers)}
               </h3>
             </div>
           );
@@ -71,7 +72,7 @@ export const JournalSectionRenderer: React.FC<JournalSectionRendererProps> = ({
                   fontWeight: 700,
                 }}
               >
-                {sec.title}
+                {displayHeading(sec.title, theme.keepSectionNumbers)}
               </h4>
             </div>
           );

@@ -2,6 +2,9 @@ import type { CompletePaper, PaperSection } from '@/types/paper';
 import { splitMathSegments, xmlEscape } from '@/lib/math-text';
 
 import { stripCaptionLabel } from './docx-table-extras';
+import { resolvePublication, hasPublicationValue } from './publication';
+import { displayHeading } from './headings';
+import { resolveTheme } from './theme-config';
 /**
  * JATS 1.2 XML export for the VNUHCM journal platform.
  *
@@ -34,10 +37,14 @@ function imageExt(src: string): string {
 export function figureHref(paper: CompletePaper, figNum: number, src: string, opts: JatsOptions): string {
   const ext = imageExt(src || '');
   const md = paper.metadata;
-  const articleId = opts.articleId || (md as any).articleId;
-  if (!articleId) return `images/img-${figNum}.${ext}`;
+  const pubInfo = resolvePublication(md);
+  const articleId = opts.articleId || md.publication?.articleId;
+  // The platform URL needs real volume/issue/article numbers; otherwise keep a relative path.
+  if (!articleId || !hasPublicationValue(pubInfo.volume) || !hasPublicationValue(pubInfo.issue)) {
+    return `images/img-${figNum}.${ext}`;
+  }
   const base = (opts.staticBaseUrl || DEFAULT_STATIC_BASE).replace(/\/$/, '');
-  return `${base}/${journalInitial(md.journalId)}/v-${md.volume || 1}/i-${md.issue || 1}/a-${articleId}/img-${figNum}.${ext}`;
+  return `${base}/${journalInitial(md.journalId)}/v-${pubInfo.volume.trim()}/i-${pubInfo.issue.trim()}/a-${articleId}/img-${figNum}.${ext}`;
 }
 
 // Per-export context: ids that must be unique (xml:id) and the reference ids that actually exist.
@@ -101,6 +108,7 @@ interface OpenSec {
 }
 
 function bodyToJats(paper: CompletePaper, opts: JatsOptions): string {
+  const keepNumbers = resolveTheme(paper.layoutSettings).keepSectionNumbers;
   const out: string[] = [];
   const stack: OpenSec[] = [];
   const closeTo = (level: number) => {
@@ -117,7 +125,7 @@ function bodyToJats(paper: CompletePaper, opts: JatsOptions): string {
     const heading = s.type === 'h1' ? 1 : s.type === 'h2' ? 2 : s.type === 'h3' ? 3 : 0;
     if (heading) {
       closeTo(heading);
-      out.push('<sec>', `<title>${xmlEscape(s.title || '')}</title>`);
+      out.push('<sec>', `<title>${xmlEscape(displayHeading(s.title || '', keepNumbers))}</title>`);
       stack.push({ level: heading });
       return;
     }
@@ -167,7 +175,9 @@ export function exportToJatsXml(paper: CompletePaper, opts: JatsOptions = {}): s
   // reserve R<n> first so duplicated numbers cannot steal a citation target
   const refsXmlIds = (paper.references || []).map((r) => ({ r, id: uniqueId(`R${r.id}`) }));
   const md = paper.metadata;
-  const doi = (md.doi || '').replace(/^https?:\/\/doi\.org\//, '');
+  const pubInfo = resolvePublication(md);
+  const val = (v: string) => (hasPublicationValue(v) ? v.trim() : '');
+  const doi = val(pubInfo.doi).replace(/^https?:\/\/doi\.org\//, '');
   const affByNumber = new Map<number, string>();
   const aff = (md.affiliations || [])
     .map((a) => {
@@ -199,7 +209,7 @@ export function exportToJatsXml(paper: CompletePaper, opts: JatsOptions = {}): s
   const history = [dateEl('received', md.dates?.received), dateEl('rev-recd', md.dates?.revised), dateEl('accepted', md.dates?.accepted)]
     .filter(Boolean)
     .join('');
-  const pub = dateEl('pub', md.dates?.published).replace('<date date-type="pub">', '<pub-date pub-type="epub">').replace('</date>', '</pub-date>');
+  const pub = dateEl('pub', val(pubInfo.published)).replace('<date date-type="pub">', '<pub-date pub-type="epub">').replace('</date>', '</pub-date>');
 
   const refs = refsXmlIds
     .map(({ r, id }) => `<ref id="${id}"><label>${r.id}</label><mixed-citation>${xmlEscape(r.raw)}</mixed-citation></ref>`)
@@ -222,9 +232,9 @@ ${contribs}
 </contrib-group>
 ${aff}
 ${pub}
-${md.volume ? `<volume>${xmlEscape(md.volume)}</volume>` : ''}
-${md.issue ? `<issue>${xmlEscape(md.issue)}</issue>` : ''}
-${md.firstPage ? `<fpage>${md.firstPage}</fpage>` : ''}${md.lastPage ? `<lpage>${md.lastPage}</lpage>` : ''}
+${val(pubInfo.volume) ? `<volume>${xmlEscape(val(pubInfo.volume))}</volume>` : ''}
+${val(pubInfo.issue) ? `<issue>${xmlEscape(val(pubInfo.issue))}</issue>` : ''}
+${val(pubInfo.firstPage) ? `<fpage>${xmlEscape(val(pubInfo.firstPage))}</fpage>` : ''}${val(pubInfo.lastPage) ? `<lpage>${xmlEscape(val(pubInfo.lastPage))}</lpage>` : ''}
 ${history ? `<history>${history}</history>` : ''}
 <abstract><p>${inlineToJats(md.abstract || '')}</p></abstract>
 ${md.abstractEn ? `<trans-abstract xml:lang="en"><p>${xmlEscape(md.abstractEn)}</p></trans-abstract>` : ''}

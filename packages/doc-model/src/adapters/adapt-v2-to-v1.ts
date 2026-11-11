@@ -329,6 +329,7 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
               hasZebraStripes: (block.layout as any)?.hasZebraStripes,
               placement: (block.layout as any)?.placement,
               breakAcrossPages: (block.layout as any)?.breakAcrossPages,
+              bodyFill: (block.layout as any)?.bodyFill,
             },
           });
           break;
@@ -386,6 +387,12 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
   for (const rootSec of v2Doc.body || []) {
     flattenSection(rootSec);
   }
+
+  // publication data ("?"/blank semantics) is kept in layoutOverrides
+  const publication = v2Doc.layoutOverrides?.publication as Record<string, string> | undefined;
+  if (publication) (metadata as any).publication = publication;
+  const titleOriginal = v2Doc.layoutOverrides?.titleOriginal as string | undefined;
+  if (titleOriginal) (metadata as any).titleOriginal = titleOriginal;
 
   return {
     id: v2Doc.id,

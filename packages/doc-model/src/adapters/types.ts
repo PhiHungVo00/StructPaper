@@ -90,6 +90,7 @@ export interface V1PaperTable {
   hasZebraStripes?: boolean;
   placement?: 'auto' | 'top' | 'here' | 'bottom';
   breakAcrossPages?: 'auto' | 'always' | 'never';
+  bodyFill?: 'plain' | 'zebra' | 'shaded';
 }
 
 export interface V1PaperEquation {

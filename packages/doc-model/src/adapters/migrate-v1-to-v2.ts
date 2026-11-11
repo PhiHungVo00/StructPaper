@@ -385,6 +385,7 @@ export function migrateV1toV2(
             hasZebraStripes: tbl.hasZebraStripes,
             placement: tbl.placement,
             breakAcrossPages: tbl.breakAcrossPages,
+            bodyFill: tbl.bodyFill,
             tblNum: tbl.num,
           },
         };
@@ -469,6 +470,8 @@ export function migrateV1toV2(
     assets,
     layoutOverrides: {
       layoutSettings: v1Paper.layoutSettings,
+      publication: (v1Paper.metadata as any)?.publication,
+      titleOriginal: (v1Paper.metadata as any)?.titleOriginal,
       templateId: v1Paper.templateId,
       templateName: v1Paper.templateName,
       status: v1Paper.status,

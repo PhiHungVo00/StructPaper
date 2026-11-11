@@ -3,6 +3,7 @@ import type { PaperTable } from '@/types/paper';
 import type { ResolvedTheme } from './theme-config';
 
 import { stripCaptionLabel } from './docx-table-extras';
+import { resolveBodyFill, rowIsTinted } from './table-fill';
 const FONT_SERIF = 'Times New Roman';
 const FONT_SANS = 'Calibri';
 
@@ -19,6 +20,7 @@ function cellParagraphs(text: string, font: string, size: number, bold = false):
  */
 export function buildDocxTable(table: PaperTable, theme: ResolvedTheme): Array<Paragraph | Table> {
   const out: Array<Paragraph | Table> = [];
+  const bodyFill = resolveBodyFill(table);
   const COLOR_TITLE = theme.titleColor.slice(1);
       out.push(
         new Paragraph({
@@ -57,7 +59,7 @@ export function buildDocxTable(table: PaperTable, theme: ResolvedTheme): Array<P
       ];
 
       table.rows.forEach((row, rIdx) => {
-        const fill = rIdx % 2 === 0 ? theme.tableZebraColor.slice(1) : 'FFFFFF';
+        const fill = rowIsTinted(bodyFill, rIdx) ? theme.tableZebraColor.slice(1) : 'FFFFFF';
         tableRows.push(
           new TableRow({
             cantSplit: true,

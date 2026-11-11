@@ -61,6 +61,7 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     // As printed in the reference PDF (EBL ID1750)
     officialNameEn: 'VNUHCM Journal of Economics, Business and Law',
     officialAbbvEn: 'VNUHCM J. Econ. Bus. Law',
+    doiPrefix: '10.32508/vnuhcmj-ebl',
   },
   'VNUHCM-ET': {
     id: 'VNUHCM-ET',

@@ -113,18 +113,27 @@ public class LatexCompilerServiceImpl implements LatexCompilerService {
             processBuilder.directory(workDir);
             processBuilder.redirectErrorStream(true);
 
-            Process process = processBuilder.start();
-
+            // XeLaTeX needs two passes to resolve \cite / \ref (otherwise they print as "?").
+            // Tectonic re-runs by itself, so it only gets one.
+            int passes = !engine.isTectonic() && (finalTex.contains("\\cite{") || finalTex.contains("\\ref{")) ? 2 : 1;
             StringBuilder logOutput = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    logOutput.append(line).append("\n");
+            Process process = null;
+            boolean finished = true;
+            for (int pass = 1; pass <= passes && finished; pass++) {
+                logOutput.setLength(0);
+                process = processBuilder.start();
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        logOutput.append(line).append("\n");
+                    }
+                }
+                finished = process.waitFor(properties.getTimeoutSeconds(), TimeUnit.SECONDS);
+                if (finished && process.exitValue() != 0) {
+                    break;
                 }
             }
-
-            boolean finished = process.waitFor(properties.getTimeoutSeconds(), TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
                 throw new LatexCompilationException(

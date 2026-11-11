@@ -247,10 +247,14 @@ export async function POST(req: NextRequest) {
 
     try {
       if (hasXeLatex) {
-        await execAsync(`xelatex -interaction=nonstopmode -halt-on-error article.tex`, {
-          cwd: jobDir,
-          timeout: 60000,
-        });
+        // Two passes: citations (\cite) and page/table references resolve only on the second run,
+        // otherwise they print as "?". (Tectonic reruns by itself.)
+        for (let pass = 0; pass < 2; pass++) {
+          await execAsync(`xelatex -interaction=nonstopmode -halt-on-error article.tex`, {
+            cwd: jobDir,
+            timeout: 90000,
+          });
+        }
       } else {
         const tectonicBin = resolvedTectonicPath ? `"${resolvedTectonicPath}"` : 'tectonic';
         await execAsync(`${tectonicBin} article.tex`, {

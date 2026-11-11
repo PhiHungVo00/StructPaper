@@ -4,7 +4,10 @@ import { extractDisplayEquations, insertEquations } from './docx-equations';
 import { attachTableFooterLine, placeLeftoverTable, landscapeResolver, applyTableLayoutHints } from './docx-table-extras';
 import { mergeBilingualAffiliations } from './docx-affiliations';
 import { enrichScriptRuns } from './docx-richtext';
-import { pairFiguresWithImages } from './docx-figures';
+import { pairFiguresWithImages, pairShapeDrawings } from './docx-figures';
+import { drawingToSvg, svgToPngDataUrl } from './drawingml';
+import { articleIdFromFileName } from './publication';
+import { normalizeImportedTitle } from './title-case';
 import JSZip from 'jszip';
 import { Author, Affiliation, PaperSection, PaperReference, PreflightCheck, StructuralIssue, CompletePaper, PaperMetadata, TableCell } from '@/types/paper';
 import { JOURNAL_TEMPLATES, getJournalTemplate } from './templates';
@@ -897,6 +900,14 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
         const dataUrl = imageMap.get(name);
         if (dataUrl) figureImageMap.set(num, dataUrl);
       });
+      // Figures made of Word shapes (no picture file): redraw them as SVG, then PNG (browser only).
+      const themeXml = await zip.file('word/theme/theme1.xml')?.async('text');
+      const taken = new Set<number>(figureImageMap.keys());
+      for (const [num, drawingXml] of pairShapeDrawings(docXmlForFigures, taken)) {
+        const svg = drawingToSvg(drawingXml, themeXml);
+        const png = svg ? await svgToPngDataUrl(svg.svg) : null;
+        if (png) figureImageMap.set(num, png);
+      }
     }
   } catch {
     /* keep the order-based pairing */
@@ -1489,8 +1500,11 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   if (!corresponding.name) corresponding.name = authors[0]?.name || '';
   if (!corresponding.affiliation) corresponding.affiliation = affiliations[0]?.name || '';
 
+  // ALL-CAPS titles become sentence case (acronyms found elsewhere in the paper stay capital); original kept for undo
+  const normalizedTitle = normalizeImportedTitle(title, [abstract, keywords.join(' '), ...sections.map((s) => s.content)]);
   const metadata: PaperMetadata = {
-    title,
+    title: normalizedTitle.title,
+    titleOriginal: normalizedTitle.original,
     titleEn,
     articleType,
     journalId: journalInfo.journalId,
@@ -1511,6 +1525,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     year: year || '2026',
     firstPage,
     lastPage,
+    // only the article id is knowable from the file name; the rest stays "?" until the editor enters it
+    publication: articleIdFromFileName(fileName) ? { articleId: articleIdFromFileName(fileName) } : undefined,
   };
 
   const paper: CompletePaper = {

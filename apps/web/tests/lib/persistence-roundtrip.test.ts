@@ -53,3 +53,12 @@ describe('storage round-trip (v1 -> v2 -> v1)', () => {
     expect(out.layoutSettings?.theme).toEqual({ titleColor: '#112233', margins: { left: 2.2 }, repeatTableHeader: false });
   });
 });
+
+describe('publication info round-trip', () => {
+  it('keeps "never entered" (absent) vs "cleared" ("") vs a value', () => {
+    const p = sample();
+    (p.metadata as any).publication = { volume: '10', issue: '', articleId: '1750' };
+    const out = roundTrip(p);
+    expect((out.metadata as any).publication).toEqual({ volume: '10', issue: '', articleId: '1750' });
+  });
+});

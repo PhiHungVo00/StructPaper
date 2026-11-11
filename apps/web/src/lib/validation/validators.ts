@@ -2,6 +2,7 @@ import type { CompletePaper, StructuralIssue } from '@/types/paper';
 import { computePreflightCheck } from '@/lib/docx-parser';
 import { checkLatexMath } from '@/lib/math-text';
 import { analyzeNumbering } from './numbering';
+import { resolvePublication, UNKNOWN } from '../publication';
 
 export type ValidationGate = 'import' | 'export';
 export type ValidationSeverity = 'error' | 'warning' | 'info';
@@ -99,6 +100,10 @@ function coreChecks(paper: CompletePaper, gate: ValidationGate): ValidationIssue
     push({ id: 'date_order_accepted', severity: 'error', code: 'field.date.order', title: 'Ngày chấp nhận trước ngày sửa bài', message: 'Ngày chấp nhận phải sau hoặc bằng ngày sửa bài.', fixTab: 'metadata' });
   }
 
+  if (md.titleOriginal && md.titleOriginal !== md.title) {
+    push({ id: 'title_normalized', severity: 'info', code: 'field.title.normalized', title: 'Tựa đề đã chuyển từ chữ HOA sang kiểu câu', message: `Bản gốc trong Word: "${md.titleOriginal}".`, suggestion: 'Có thể hoàn tác ở thẻ "Tựa đề".', fixTab: 'metadata' });
+  }
+
   // Word titles are often typed in capitals; the journal prints sentence case.
   const titleLetters = (md.title || '').replace(/[^A-Za-zÀ-ỹ]/g, '');
   if (titleLetters.length >= 12 && titleLetters === titleLetters.toUpperCase()) {
@@ -106,12 +111,14 @@ function coreChecks(paper: CompletePaper, gate: ValidationGate): ValidationIssue
   }
 
   // Publication data is assigned by the editorial office; the Word file normally lacks it.
+  // "?" = never entered (warn); blank = the editor deliberately cleared it (no warning).
+  const pubValues = resolvePublication(md);
   const missingPub = [
-    !md.doi?.trim() && 'DOI',
-    !md.volume?.trim() && 'Tập',
-    !md.issue?.trim() && 'Số',
-    !(md.firstPage > 0 && md.lastPage > 0) && 'Trang',
-    !(md.dates?.published || '').trim() && 'Ngày đăng',
+    pubValues.doi === UNKNOWN && 'DOI',
+    pubValues.volume === UNKNOWN && 'Tập',
+    pubValues.issue === UNKNOWN && 'Số',
+    (pubValues.firstPage === UNKNOWN || pubValues.lastPage === UNKNOWN) && 'Trang',
+    pubValues.published === UNKNOWN && 'Ngày đăng',
   ].filter(Boolean) as string[];
   if (missingPub.length) {
     push({ id: 'pub_info_missing', severity: 'warning', code: 'field.publication.missing', title: `Thiếu thông tin xuất bản: ${missingPub.join(', ')}`, message: 'Các trường này do ban biên tập cấp và thường không có trong file Word gốc.', suggestion: 'Nhập ở thẻ "Tựa đề" trước khi xuất bản.', fixTab: 'metadata' });
