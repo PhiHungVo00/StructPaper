@@ -64,6 +64,7 @@ Cùng bộ luật nhưng **mang tính cảnh báo**: bảng liệt kê mọi ph�
 * Khối **Công thức** (`+ Công thức`): nhập LaTeX, xem KaTeX trực tiếp, đánh số tự động `(n)`.
 * Công thức inline `$…$` và dòng riêng `$$…$$` trong đoạn văn cũng được hiển thị.
 * **Nhập Word:** công thức Word (OMML) được chuyển sang LaTeX bằng bộ chuyển theo cấu trúc (`lib/omml.ts`) và chèn lại đúng vị trí. Công thức *nằm giữa dòng chữ* chưa được khôi phục (chỉ công thức trên dòng riêng).
+* **Độ rộng công thức:** mỗi công thức chọn **Trong 1 cột** (mặc định; công thức quá rộng được ngắt dòng tại dấu `=`, `+`, `−` ngoài cùng và xếp thẳng hàng trong khối `aligned`, số `(n)` vẫn bên phải) hoặc **Trải 2 cột** (một dòng liền mạch qua cả hai cột như bảng/hình rộng; PDF dùng khối nổi `figure*`, nên có thể nằm ở đầu trang). Lưu ở `equation.columnSpan`. Bố cục 1 cột thì lựa chọn này không có tác dụng.
 * **Xuất:** LaTeX/PDF dùng môi trường `equation`; **Word** xuất công thức Word gốc (chỉnh sửa được); **XML** xuất `<disp-formula>` / `<inline-formula>` với `<tex-math>`.
 
 ## 6. Bảng: 1 cột / 2 cột / xoay ngang, và bảng dài
@@ -78,6 +79,22 @@ Mỗi bảng chọn được **1 cột**, **2 cột**, **xoay ngang** (Cài đ�
 | Dài, xoay ngang | Các trang ngang (`landscape` + `longtable`), tiêu đề chạy dọc lề phải như bản mẫu |
 
 Mỗi trang tiếp theo có dòng **"Table N continued"** phía trên và **"Continued on next page"** phía dưới (đúng chữ của PDF mẫu EBL ID1750; đổi được trong cài đặt giao diện). Độ rộng cột tự chia theo độ dài nội dung. Word: hàng tiêu đề lặp ở đầu mỗi trang, hàng không bị cắt.
+
+## 6b. Bố cục trang: 1 cột / 2 cột và xoay ngang
+
+| Phạm vi | Tuỳ chọn | Nơi chỉnh | Lưu ở |
+| --- | --- | --- | --- |
+| Toàn bài | 1 cột / 2 cột | Giao diện → Bố cục | `layoutSettings.columnLayout` |
+| Toàn bài | Dọc / Ngang | Giao diện → Bố cục → "Hướng trang" | `layoutSettings.orientation` |
+| Từ một mục trở đi | Trang mới với số cột và hướng riêng | thẻ của mục → "Bố cục trang" | `section.pageLayout` |
+| Một bảng / hình | 1 cột / 2 cột; bảng xoay ngang | Cài đặt bảng / hình | `table`, `figure` |
+| Một công thức | Trong 1 cột / Trải 2 cột | thẻ công thức | `equation.columnSpan` |
+
+* **Dấu bố cục trang** (`pageLayout`): mục mang dấu này **bắt đầu một trang mới** với số cột/hướng đã chọn; bố cục giữ nguyên **cho đến mục kế tiếp có dấu**. Trường để trống = theo mặc định của tài liệu; dấu rỗng `{}` = "trang mới, quay về bố cục chung".
+* **Hướng ngang toàn bài** có hiệu lực từ mục thân bài đầu tiên; trang 1 (khối tiêu đề có cột thông tin bên trái) luôn để dọc, trang tiếng Anh cuối bài luôn dọc.
+* Bảng đặt "xoay ngang" nằm trong một trang đã ngang thì không bị xoay thêm lần nữa.
+* PDF: `\onecolumn`/`\twocolumn` + môi trường `landscape` (gói `pdflscape`), mã ở `lib/latex-page-layout.ts` và `lib/latex-equation.ts`. Xem trước HTML nhanh không mô phỏng các dấu bố cục trang (chỉ PDF và Word).
+* Lưu trữ: các tuỳ chọn này, cùng ngắt trang và số công thức, được giữ qua chuyển đổi v1↔v2 trong `layoutOverrides.sectionExtras` (trước đây ngắt trang và số công thức bị mất khi mở lại bài).
 
 ## 7. Cấu hình động (không hard-code)
 
@@ -122,7 +139,7 @@ Nếu có tiêu đề + tóm tắt tiếng Anh, bài PDF kết thúc bằng tran
 ### Bổ sung khi so với mẫu EES ID850 và bài mẫu template tiếng Việt
 - Tài liệu tham khảo kết thúc bằng "DOI: …" không còn bị nuốt; DOI bài báo chỉ lấy từ dòng "DOI:" ở phần đầu (không lấy DOI của một tài liệu tham khảo, nên mã QR không bao giờ trỏ nhầm bài).
 - Trang tiếng Anh sau tài liệu tham khảo ("Research Article", tiêu đề, ABSTRACT, Keywords – kể cả lỗi gõ "Keywwords") được đọc thành titleEn/abstractEn/keywordsEn/nameEn.
-- Công thức Word (OMML) có số "(n)" gõ bên cạnh được nhận là công thức hiển thị và giữ đúng số (`	ag{n}`); dòng "n là …" ngắn dưới "Trong đó:" được giữ.
+- Công thức Word (OMML) có số "(n)" gõ bên cạnh được nhận là công thức hiển thị và giữ đúng số (`\tag{n}`); dòng "n là …" ngắn dưới "Trong đó:" được giữ.
 - Bảng chứa lưới hình + ô chú thích "Hình N" là một hình (các ô a/b/c được ghép thành một ảnh trong trình duyệt); mã trường "SEQ Bảng" không lọt vào chú thích; ô gộp (tiêu đề nhiều tầng, "Dự báo" gộp 2 dòng) được giữ ở PDF và Word; bảng "Danh mục từ viết tắt" được liệt kê dưới đề mục.
 - Trang hướng dẫn tác giả của template (style GuideHeading/GuideText/Instruction) bị bỏ qua; các mục cuối bài (Đóng góp của các tác giả, Xung đột lợi ích, Tính khả dụng của dữ liệu, …) là đề mục.
 - PDF: tên tạp chí tiếng Anh in như mẫu của từng tạp chí, mã QR 42 pt có logo VNUHCM Press ở giữa (mức sửa lỗi H, vẫn quét được), huy hiệu "Check for updates" và logo đóng gói sẵn trong API (`apps/api/src/main/resources/latex-assets`), số trang bắt đầu từ trang đầu trong số, tiêu đề "TÀI LIỆU THAM KHẢO".
@@ -141,3 +158,40 @@ Chạy cả hệ thống thật: `docker compose -f docker-compose.minio.yml up 
 
 ## 11. Ứng dụng đóng gói (Windows / macOS)
 Bản desktop (Tauri) dùng bản xuất tĩnh của web: tự động lưu và lưu trữ chạy cục bộ (IndexedDB), biên dịch PDF dùng tectonic đi kèm; nếu cấu hình `NEXT_PUBLIC_API_BASE_URL` trỏ tới máy chủ thì đồng bộ DB + MinIO, nếu không thì chỉ hiện "Đã lưu trên máy". `node apps/web/scripts/export-desktop.mjs` vẫn build thành công với các thay đổi này (khâu đóng gói Tauri/Rust chưa chạy trong môi trường này).
+
+## 12. Nhật ký thay đổi (nhập/xuất Word, PDF, trình soạn)
+
+Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
+
+### Trình soạn thảo
+| Commit | Thay đổi |
+| --- | --- |
+| `8ecb161` | Biên dịch/xuất có trạng thái chờ rõ ràng: khung xem trước "Đang biên dịch… Ns", thanh menu "Đang xuất PDF…", mục xuất bị khoá, báo lỗi bằng thông báo nổi (không dùng `alert`). Sửa lỗi lần biên dịch bị thay thế làm tắt vòng quay của lần đang chạy. |
+| `7e8aabd` | **Tạo bài mới bị treo / bị đè về bài cũ.** `PaperContext` tạo lại `setPaper`/`setCurrentJournal` mỗi lần render, làm effect nạp bài theo `?id=` chạy lại vô hạn (đọc IndexedDB + ghi ~4 MB vào `sessionStorage` mỗi vòng) và đặt lại bài cũ lên bài mới. Hàm nay ổn định. Tự lưu không còn coi việc *mở* bài là chỉnh sửa và không lưu bài cũ vào bài mới. |
+
+### Nhập từ Word
+| Commit | Thay đổi |
+| --- | --- |
+| `f083292` | Giữ đủ tài liệu tham khảo (mục kết thúc bằng "DOI: …" không còn bị nuốt, DOI bài báo chỉ lấy từ dòng "DOI:" ở phần đầu), đọc trang tiếng Anh cuối bài thành siêu dữ liệu, giữ công thức Word có số "(n)", đúng tác giả liên hệ, từ khoá không còn dấu chấm thừa. |
+| `70ac7a8` | Bảng chứa lưới hình thành hình nhiều ô (a/b/c ghép lại), ô gộp của tiêu đề bảng, chú thích sạch (không còn mã "SEQ"), bảng "Danh mục từ viết tắt". |
+| `81763ac` | Bỏ qua trang hướng dẫn tác giả của template; các mục cuối bài là đề mục. |
+| `95f5f62` | Bài mẫu template tiếng Việt: nhận "Ngày sửa bài" / "Ngày xuất bản trực tuyến" (ngày sửa trước đây in "?" dù file có); dòng in đậm nghiêng cả dòng là đề mục cấp 2; công thức dài ngắt dòng; ô tiêu đề bảng trống giữ trống (không tự điền "Cột 1"). |
+| `ed1cc68` | Giữ dấu "-" ("không có") dưới các mục cuối bài (Kinh phí, Lời cảm ơn, …) thay vì để đề mục trống. |
+
+### PDF (LaTeX)
+| Commit | Thay đổi |
+| --- | --- |
+| `c51a056` | Tên tạp chí tiếng Anh in đúng từng tạp chí, mã QR có logo VNUHCM Press, huy hiệu "Check for updates" và logo đóng gói sẵn trong API, trang tiếng Anh cuối bài. |
+| `2f61b21` | Tiêu đề "TÀI LIỆU THAM KHẢO" (polyglossia đặt lại `\refname`). |
+| `4e1f296` | Công thức **Trải 2 cột**, **bố cục trang theo mục** (1/2 cột, ngang/dọc), **hướng ngang toàn bài**; lưu các tuỳ chọn qua v1↔v2 (xem mục 6b). |
+
+### Xuất Word (.docx)
+| Commit | Thay đổi |
+| --- | --- |
+| `1679b50` | Bộ xuất Word viết lại: dàn trang như bản in (khổ giấy, lề, đầu/chân trang, cột bên trái, khung tóm tắt, thân 2 cột, ảnh, công thức Word, bảng ô gộp, trang tiếng Anh) và tên style của template. |
+
+### Còn lại / giới hạn đã biết
+* Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).
+* Tiêu đề "MỞ ĐẦU" lấy từ file Word (PDF mẫu của tạp chí ghi "GIỚI THIỆU").
+* Huy hiệu "Check for updates" là ảnh, chưa phải liên kết CrossMark.
+* Xem trước HTML nhanh không mô phỏng dấu bố cục trang; dùng PDF để kiểm tra.
