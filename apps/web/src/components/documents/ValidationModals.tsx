@@ -143,7 +143,13 @@ export const ExportGateModal: React.FC<
     <ModalPortal isOpen={isOpen} onClose={onClose} zIndex={130}>
       <Shell
         title={`Kiểm tra trước khi xuất ${label}`}
-        subtitle={report.canProceed ? 'Không còn lỗi chặn. Bạn có thể xuất file.' : 'Cần sửa các lỗi bên dưới trước khi xuất.'}
+        subtitle={
+          !report.canProceed
+            ? 'PDF chưa biên dịch được nên chưa thể xuất. Hãy sửa lỗi biên dịch trước.'
+            : report.issues.length > 0
+              ? `Tài liệu còn ${report.issues.length} mục chưa hoàn thiện. Bạn vẫn có thể xuất, nhưng nên bổ sung trước khi gửi.`
+              : 'Không phát hiện vấn đề. Bạn có thể xuất file.'
+        }
         onClose={onClose}
       >
         <Counts report={report} />
@@ -165,7 +171,7 @@ export const ExportGateModal: React.FC<
             onClick={onExport}
             className="px-5 py-2 rounded-full bg-[#78C841] text-zinc-950 text-xs font-black disabled:opacity-40 hover:brightness-95"
           >
-            {report.warningCount > 0 ? `Vẫn xuất ${label}` : `Xuất ${label}`}
+            {report.issues.length > 0 ? `Vẫn xuất ${label}` : `Xuất ${label}`}
           </button>
         </div>
       </Shell>

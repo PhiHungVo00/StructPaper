@@ -3,7 +3,7 @@ import { createEmptyPaper, DEFAULT_LAYOUT_SETTINGS, type CompletePaper } from '@
 import { generateFullJournalLatex, escapeLatex } from '@/lib/latex-template';
 import { sanitizeMathForLatex } from '@/lib/math-text';
 
-function paperWithTable(rows: number): CompletePaper {
+function paperWithTable(rows: number, extra: Record<string, unknown> = {}): CompletePaper {
   const p = createEmptyPaper();
   p.metadata.title = 'Tiêu đề';
   p.sections = [
@@ -19,6 +19,7 @@ function paperWithTable(rows: number): CompletePaper {
         source: 'Nguồn: Kết quả của nhóm tác giả',
         headers: ['Cột A', 'Cột B'],
         rows: Array.from({ length: rows }, (_, i) => [`a${i}`, `b${i}`]),
+        ...extra,
       },
     },
   ];
@@ -33,7 +34,7 @@ describe('LaTeX table export', () => {
   });
 
   it('typesets long tables as breakable supertabular with a repeated header row', () => {
-    const tex = generateFullJournalLatex(paperWithTable(40));
+    const tex = generateFullJournalLatex(paperWithTable(40, { columnSpan: '1-column', isFullWidth: false }));
     expect(tex).toContain('\\begin{supertabular}');
     expect(tex).toContain('\\tablehead{');
     expect(tex).toContain('\\tablefirsthead{');
@@ -42,12 +43,62 @@ describe('LaTeX table export', () => {
   });
 
   it('can disable header repetition and move the long-table threshold', () => {
-    const p = paperWithTable(5);
+    const p = paperWithTable(5, { columnSpan: '1-column', isFullWidth: false });
     const settings = { ...DEFAULT_LAYOUT_SETTINGS, theme: { longTableRowThreshold: 3, repeatTableHeader: false } };
     const tex = generateFullJournalLatex(p, settings);
     expect(tex).toContain('\\begin{supertabular}');
     expect(tex).toContain('\\tablefirsthead{');
-    expect(tex).not.toContain('\\tablehead{');
+    // header off: the continuation line stays but the column-header row is not repeated
+    expect(tex).not.toContain('\\tablehead{\\hline');
+    expect(tex).toContain('\\tablehead{\\multicolumn');
+  });
+});
+
+describe('LaTeX long table layouts (1 column / 2 columns / landscape)', () => {
+  it('2-column long table goes on its own one-column page(s) with longtable and continuation markers', () => {
+    const tex = generateFullJournalLatex(paperWithTable(40, { columnSpan: '2-column', isFullWidth: true }));
+    expect(tex).toContain('\\onecolumn');
+    expect(tex).toContain('\\begin{longtable}');
+    expect(tex).toContain('\\endfirsthead');
+    expect(tex).toContain('\\endhead');
+    expect(tex).toContain('Table 1 continued');
+    expect(tex).toContain('Continued on next page');
+    expect(tex).not.toContain('\\begin{landscape}');
+    expect(tex).toContain('\\twocolumn\n');
+  });
+
+  it('rotated long table is typeset on landscape pages', () => {
+    const tex = generateFullJournalLatex(paperWithTable(40, { isRotated: true, columnSpan: '2-column' }));
+    expect(tex).toContain('\\begin{landscape}');
+    expect(tex).toContain('\\begin{longtable}');
+    expect(tex).toContain('\\end{landscape}');
+  });
+
+  it('short rotated table stays a sidewaystable float', () => {
+    const tex = generateFullJournalLatex(paperWithTable(3, { isRotated: true }));
+    expect(tex).toContain('\\begin{sidewaystable');
+    expect(tex).not.toContain('\\begin{longtable}');
+  });
+
+  it('breakAcrossPages "never" keeps a long table whole, "always" breaks a short one', () => {
+    expect(generateFullJournalLatex(paperWithTable(40, { breakAcrossPages: 'never' }))).not.toContain('\\begin{longtable}');
+    expect(generateFullJournalLatex(paperWithTable(3, { breakAcrossPages: 'always' }))).toContain('\\begin{longtable}');
+  });
+
+  it('continuation wording is configurable', () => {
+    const tex = generateFullJournalLatex(paperWithTable(40), {
+      ...DEFAULT_LAYOUT_SETTINGS,
+      theme: { continuedTitleText: 'Bảng {n} (tiếp theo)', continuedFootText: 'Xem tiếp trang sau' },
+    });
+    expect(tex).toContain('Bảng 1 (tiếp theo)');
+    expect(tex).toContain('Xem tiếp trang sau');
+  });
+
+  it('one-column documents do not switch column mode', () => {
+    const tex = generateFullJournalLatex(paperWithTable(40), { ...DEFAULT_LAYOUT_SETTINGS, columnLayout: '1-column' });
+    // already one column: the in-flow breakable table is used and no column switching is emitted
+    expect(tex).toContain('\\begin{supertabular}');
+    expect(tex).not.toContain('\\onecolumn\n');
   });
 });
 

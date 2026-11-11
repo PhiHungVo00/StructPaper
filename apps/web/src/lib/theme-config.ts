@@ -11,6 +11,8 @@ export interface ResolvedTheme {
   margins: { top: number; bottom: number; left: number; right: number };
   repeatTableHeader: boolean;
   longTableRowThreshold: number;
+  continuedTitleText: string;
+  continuedFootText: string;
 }
 
 /** Defaults replicate the previously hard-coded VNUHCM look. */
@@ -22,9 +24,12 @@ export const DEFAULT_THEME: ResolvedTheme = {
   headingFont: 'Calibri',
   bodyFontSizePt: 9,
   lineHeight: 1.38,
-  margins: { top: 1.8, bottom: 3.4, left: 1.7, right: 1.3 },
+  margins: { top: 1.8, bottom: 2, left: 1.7, right: 1.3 },
   repeatTableHeader: true,
   longTableRowThreshold: 12,
+  // Same wording as the journal's reference PDF (EBL ID1750).
+  continuedTitleText: 'Table {n} continued',
+  continuedFootText: 'Continued on next page',
 };
 
 const HEX_RE = /^#?([0-9a-fA-F]{6})$/;
@@ -38,6 +43,10 @@ export function sanitizeHex(value: unknown, fallback: string): string {
 
 function sanitizeFont(value: unknown, fallback: string): string {
   return typeof value === 'string' && FONT_RE.test(value.trim()) ? value.trim() : fallback;
+}
+
+function sanitizeLabel(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim() && value.length <= 80 ? value.trim() : fallback;
 }
 
 function clamp(n: unknown, min: number, max: number, fallback: number): number {
@@ -79,6 +88,8 @@ export function resolveTheme(
     },
     repeatTableHeader: t.repeatTableHeader !== false,
     longTableRowThreshold: Math.round(clamp(t.longTableRowThreshold, 1, 200, base.longTableRowThreshold)),
+    continuedTitleText: sanitizeLabel(t.continuedTitleText, base.continuedTitleText),
+    continuedFootText: sanitizeLabel(t.continuedFootText, base.continuedFootText),
   };
 }
 

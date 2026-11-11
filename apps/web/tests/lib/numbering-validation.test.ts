@@ -105,7 +105,9 @@ describe('validation gates', () => {
     const paper = paperWith([p('a', 'Xem Bảng 5.'), tbl('t', 5)]);
     paper.metadata.title = 'Tiêu đề';
     const before = validateForExport(paper);
-    expect(before.canProceed).toBe(false);
+    // advisory gate: errors are reported but export is still allowed
+    expect(before.errorCount).toBeGreaterThan(0);
+    expect(before.canProceed).toBe(true);
     expect(before.issues.some((i) => i.autoFixable)).toBe(true);
     const after = validateForExport(renumberPaper(paper));
     expect(after.issues.filter((i) => i.code.startsWith('numbering.'))).toHaveLength(0);
@@ -115,6 +117,7 @@ describe('validation gates', () => {
     paper.metadata.title = 'T';
     const r = validateForExport(paper, { format: 'pdf', pdfCompiled: false });
     expect(r.issues.some((i) => i.code === 'export.pdf.compile')).toBe(true);
+    expect(r.canProceed).toBe(false);
   });
   it('flags invalid equations', () => {
     const paper = paperWith([

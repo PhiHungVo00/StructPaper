@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { TablePlacementAndBreak } from './TablePlacementAndBreak';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PaperTable } from '@/types/paper';
@@ -42,6 +43,7 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
   const [rowStretch, setRowStretch] = useState<number>(table.rowStretch || 1.4);
   const [hasZebraStripes, setHasZebraStripes] = useState<boolean>(table.hasZebraStripes !== false);
   const [placement, setPlacement] = useState<'auto' | 'top' | 'here' | 'bottom'>(table.placement || 'auto');
+  const [breakAcrossPages, setBreakAcrossPages] = useState<'auto' | 'always' | 'never'>(table.breakAcrossPages || 'auto');
 
   useEffect(() => {
     setMounted(true);
@@ -64,6 +66,7 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
       setRowStretch(table.rowStretch || 1.4);
       setHasZebraStripes(table.hasZebraStripes !== false);
       setPlacement(table.placement || 'auto');
+      setBreakAcrossPages(table.breakAcrossPages || 'auto');
     }
   }, [isOpen, table]);
 
@@ -88,6 +91,7 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
       rowStretch,
       hasZebraStripes,
       placement,
+      breakAcrossPages,
     };
     onSave(updated);
     onClose();
@@ -361,35 +365,12 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
                 </button>
               </div>
 
-              {/* Float Placement */}
-              <div className="space-y-1.5">
-                <label
-                  className="text-[12px] font-bold text-zinc-600 block"
-                  title="Vị trí neo trang LaTeX: Vị trí ưu tiên đặt bảng khi biên dịch file PDF [placement]"
-                >
-                  Vị trí neo
-                </label>
-                <div className="grid grid-cols-3 gap-1">
-                  {([
-                    { key: 'auto' as const, label: 'Tự động', desc: 'Tự động [!htbp]: LaTeX tự tính toán vị trí đẹp nhất' },
-                    { key: 'top' as const, label: 'Đầu', desc: 'Đầu trang [t]: Ưu tiên đặt bảng ở trên cùng trang giấy' },
-                    { key: 'here' as const, label: 'Tại vị trí', desc: 'Tại vị trí [!h]: Cố gắng đặt bảng ngay cạnh văn bản' },
-                  ] as const).map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setPlacement(item.key)}
-                      className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer text-[11px] font-bold ${placement === item.key
-                        ? 'bg-gray-400 text-white shadow-2xs'
-                        : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
-                        }`}
-                      title={item.desc}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <TablePlacementAndBreak
+                placement={placement}
+                onPlacement={setPlacement}
+                breakAcrossPages={breakAcrossPages}
+                onBreakAcrossPages={setBreakAcrossPages}
+              />
             </div>
           </div>
 

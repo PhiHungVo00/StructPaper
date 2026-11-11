@@ -89,6 +89,7 @@ export interface V1PaperTable {
   rowStretch?: number;
   hasZebraStripes?: boolean;
   placement?: 'auto' | 'top' | 'here' | 'bottom';
+  breakAcrossPages?: 'auto' | 'always' | 'never';
 }
 
 export interface V1PaperEquation {

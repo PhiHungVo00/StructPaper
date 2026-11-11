@@ -3,91 +3,140 @@ import type { ResolvedTheme } from './theme-config';
 import { escapeLatex } from './latex-escape';
 
 /**
- * LaTeX for one table block.
- *  - short tables: floating `tabulary` (kept together)
- *  - long tables (more than theme.longTableRowThreshold body rows): breakable `supertabular`
- *    that flows across columns/pages and repeats the header row (when theme.repeatTableHeader).
+ * LaTeX for one table block. Layout is chosen from the table options:
+ *
+ *  | table is…                         | typeset as                                                    |
+ *  | short                             | floating `table` / `table*` (1 or 2 columns)                  |
+ *  | short + rotated                   | `sidewaystable(*)`                                            |
+ *  | long + 1 column                   | `supertabular` flowing through the column(s)                  |
+ *  | long + 2 columns, or long+rotated | own page(s): one-column `longtable` (landscape if rotated)    |
+ *
+ * Long tables repeat the header row on every page and show the "continued" markers used by the
+ * journal ("Table N continued" on top, "Continued on next page" at the bottom).
  */
 export function tableToLatex(
   table: PaperTable,
   { isOneColumn, theme }: { isOneColumn: boolean; theme: ResolvedTheme }
 ): string {
-  let out = '';
-      const rawHeaders = table.headers && table.headers.length > 0 ? table.headers : ['Cột 1'];
-      const rawRows = table.rows || [];
-      const maxCols = Math.max(rawHeaders.length, ...rawRows.map((r) => r.length), 1);
-      const colFmt = Array(maxCols).fill('L').join('');
-      const headers = Array(maxCols).fill('').map((_, idx) => rawHeaders[idx] || '');
-      const paddedRows = rawRows.map((row) => Array(maxCols).fill('').map((_, idx) => row[idx] || ''));
+  const rawHeaders = table.headers && table.headers.length > 0 ? table.headers : ['Cột 1'];
+  const rawRows = table.rows || [];
+  const maxCols = Math.max(rawHeaders.length, ...rawRows.map((r) => r.length), 1);
+  const headers = Array(maxCols).fill('').map((_, idx) => rawHeaders[idx] || '');
+  const paddedRows = rawRows.map((row) => Array(maxCols).fill('').map((_, idx) => row[idx] || ''));
 
-      // Check rotated vs 1-col vs 2-col
-      const isRotated = !!table.isRotated;
-      const isTabOneCol = isOneColumn || table.columnSpan === '1-column' || table.isFullWidth === false;
-      const tabEnv = isRotated
-        ? (isTabOneCol ? 'sidewaystable' : 'sidewaystable*')
-        : (isTabOneCol ? 'table' : 'table*');
+  const isRotated = !!table.isRotated;
+  const spansOneColumn = isOneColumn || table.columnSpan === '1-column' || table.isFullWidth === false;
 
-      let placement = '!htbp';
-      if (table.placement === 'top') placement = 't';
-      else if (table.placement === 'here') placement = '!h';
-      else if (table.placement === 'bottom') placement = 'b';
+  const fontSize = table.fontSize || '8pt';
+  const lineHeight = fontSize === '7pt' ? '9pt' : fontSize === '9pt' ? '11pt' : fontSize === '10pt' ? '12pt' : '10pt';
+  const arrayStretch = table.rowStretch || 1.4;
+  const hasZebra = table.hasZebraStripes !== false;
 
-      const tblFontSize = table.fontSize || '8pt';
-      const tblLineHeight = tblFontSize === '7pt' ? '9pt' : tblFontSize === '9pt' ? '11pt' : tblFontSize === '10pt' ? '12pt' : '10pt';
-      const tblArrayStretch = table.rowStretch || 1.4;
-      const hasZebra = table.hasZebraStripes !== false;
+  const bodyRows = table.bodyRows && table.bodyRows.length > 0
+    ? table.bodyRows
+    : paddedRows.map((r) => r.map((c) => ({ text: c })));
 
-      const bodyRowsForTable = (table.bodyRows && table.bodyRows.length > 0
-        ? table.bodyRows
-        : paddedRows.map((r) => r.map((c) => ({ text: c }))));
-      const renderRow = (row: any[], rI: number) =>
-        `${hasZebra && rI % 2 === 0 ? '\\rowcolor{tablezebracolor}\n' : ''}${row
-          .map((cell: any) => {
-            const rawText = cell.text !== undefined ? cell.text : String(cell || '');
-            let escaped = escapeLatex(rawText);
-            escaped = escaped.replace(/•/g, '$\\bullet$~');
-            escaped = escaped.replace(/\r?\n/g, ' \\newline ');
-            if (cell.colSpan && cell.colSpan > 1) {
-              const alignChar = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
-              return `\\multicolumn{${cell.colSpan}}{${alignChar}}{${escaped}}`;
-            }
-            return escaped;
-          })
-          .join(' & ')} \\\\`;
-      const tableSourceLine = table.source && table.source.trim()
-        ? `\\par\\vspace{2pt}{\\footnotesize\\textit{${escapeLatex(table.source)}}}`
-        : '';
-      const isLongTable = !isRotated && bodyRowsForTable.length > theme.longTableRowThreshold;
+  const renderRow = (row: any[], rI: number) =>
+    `${hasZebra && rI % 2 === 0 ? '\\rowcolor{tablezebracolor}\n' : ''}${row
+      .map((cell: any) => {
+        const rawText = cell.text !== undefined ? cell.text : String(cell || '');
+        let escaped = escapeLatex(rawText);
+        escaped = escaped.replace(/•/g, '$\\bullet$~');
+        escaped = escaped.replace(/\r?\n/g, ' \\newline ');
+        if (cell.colSpan && cell.colSpan > 1) {
+          const alignChar = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
+          return `\\multicolumn{${cell.colSpan}}{${alignChar}}{${escaped}}`;
+        }
+        return escaped;
+      })
+      .join(' & ')} \\\\`;
 
-      if (isLongTable) {
-        // Breakable table: flows across columns/pages and repeats the header row on every page.
-        const colW = `\\dimexpr(\\linewidth-${2 * maxCols}\\tabcolsep)/${maxCols}\\relax`;
-        const spec = Array(maxCols).fill(`>{\\raggedright\\arraybackslash}p{${colW}}`).join('');
-        const headRow = `\\rowcolor{tableheadrcolor}\n${headers.map((h) => `\\textbf{${escapeLatex(h)}}`).join(' & ')} \\\\ \\hline`;
-        const repeat = theme.repeatTableHeader ? `\\tablehead{\\hline ${headRow}}\n` : '';
-        out += `\n{\\fontsize{${tblFontSize}}{${tblLineHeight}}\\selectfont
-\\def\\arraystretch{${tblArrayStretch}}
+  const sourceLine = table.source && table.source.trim()
+    ? `\\par\\vspace{2pt}{\\footnotesize\\textit{${escapeLatex(table.source)}}}`
+    : '';
+
+  const caption = `\\caption{{\\textbf{${escapeLatex(table.caption)}}}}`;
+  const label = `\\label{tab:${table.num || 1}}`;
+  const headRow = `\\rowcolor{tableheadrcolor}\n${headers.map((h) => `\\textbf{${escapeLatex(h)}}`).join(' & ')} \\\\ \\hline`;
+  const continuedTitle = escapeLatex(theme.continuedTitleText.replace('{n}', String(table.num || '')));
+  const continuedFoot = escapeLatex(theme.continuedFootText);
+  // Column widths proportional to content length (clamped), like a typeset journal table.
+  const weights = headers.map((h, c) => {
+    const lens = [h.length, ...bodyRows.map((r) => String(r[c]?.text ?? r[c] ?? '').length)];
+    const avg = lens.reduce((a, b) => a + b, 0) / lens.length;
+    return Math.max(6, Math.min(60, Math.round(avg)));
+  });
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  const colSpec = weights
+    .map((w) => `>{\\raggedright\\arraybackslash}p{\\dimexpr(\\linewidth-${2 * maxCols}\\tabcolsep)*${w}/${totalWeight}\\relax}`)
+    .join('');
+  const sizeOpen = `{\\fontsize{${fontSize}}{${lineHeight}}\\selectfont\n\\def\\arraystretch{${arrayStretch}}`;
+
+  const breakMode = table.breakAcrossPages ?? 'auto';
+  const isLong = breakMode === 'always' || (breakMode === 'auto' && bodyRows.length > theme.longTableRowThreshold);
+
+  // ---- long table, flowing inside one column ----
+  if (isLong && spansOneColumn && !isRotated) {
+    const contLine = `\\multicolumn{${maxCols}}{c}{\\textit{${continuedTitle}}}\\\\`;
+    const repeat = theme.repeatTableHeader ? `\\tablehead{\\hline ${contLine}\n${headRow}}\n` : `\\tablehead{${contLine}}\n`;
+    return `\n${sizeOpen}
 \\topcaption{{\\textbf{${escapeLatex(table.caption)}}}}
 \\tablefirsthead{\\hline ${headRow}}
-${repeat}\\tabletail{\\hline}
+${repeat}\\tabletail{\\hline \\multicolumn{${maxCols}}{r}{\\textit{${continuedFoot}}}\\\\}
 \\tablelasttail{\\hline}
-\\begin{supertabular}{${spec}}
-${bodyRowsForTable.map(renderRow).join('\n')}
-\\end{supertabular}${tableSourceLine}}
+\\begin{supertabular}{${colSpec}}
+${bodyRows.map(renderRow).join('\n')}
+\\end{supertabular}${sourceLine}}
 \\par\\vspace{4pt}\n`;
-      } else
-      out += `\n\\begin{${tabEnv}}[${placement}]
-\\caption{{\\textbf{${escapeLatex(table.caption)}}}}
-\\label{tab:${table.num || 1}}
-\\centering
-{\\fontsize{${tblFontSize}}{${tblLineHeight}}\\selectfont
-\\def\\arraystretch{${tblArrayStretch}}
-\\begin{tabulary}{\\linewidth}{${colFmt}}
-\\hline \\rowcolor{tableheadrcolor}
-${headers.map((h) => `\\textbf{${escapeLatex(h)}}`).join(' & ')} \\\\ \\hline
-${bodyRowsForTable.map(renderRow).join('\n')}
+  }
+
+  // ---- long table over 2 columns and/or rotated: own page(s), full width ----
+  if (isLong) {
+    const leave = isOneColumn ? '' : '\\onecolumn\n';
+    const back = isOneColumn ? '' : '\\twocolumn\n';
+    const open = isRotated ? '\\begin{landscape}\n' : '';
+    const close = isRotated ? '\\end{landscape}\n' : '';
+    const contLine = `\\multicolumn{${maxCols}}{c}{\\textit{${continuedTitle}}}\\\\`;
+    const endHead = theme.repeatTableHeader
+      ? `\\hline ${contLine}\n${headRow}\n\\endhead`
+      : `\\hline ${contLine}\n\\endhead`;
+    return `\n\\clearpage
+${leave}${open}${sizeOpen}
+\\begin{longtable}{${colSpec}}
+${caption}${label}\\\\
+\\hline ${headRow}
+\\endfirsthead
+${endHead}
+\\hline \\multicolumn{${maxCols}}{r}{\\textit{${continuedFoot}}}\\\\
+\\endfoot
 \\hline
-\\end{tabulary}${tableSourceLine}}
+\\endlastfoot
+${bodyRows.map(renderRow).join('\n')}
+\\end{longtable}${sourceLine}}
+${close}\\clearpage
+${back}`;
+  }
+
+  // ---- short table: floating, kept together ----
+  const tabEnv = isRotated
+    ? (spansOneColumn ? 'sidewaystable' : 'sidewaystable*')
+    : (spansOneColumn ? 'table' : 'table*');
+
+  let placement = '!htbp';
+  if (table.placement === 'top') placement = 't';
+  else if (table.placement === 'here') placement = '!h';
+  else if (table.placement === 'bottom') placement = 'b';
+
+  const colFmt = Array(maxCols).fill('L').join('');
+  return `\n\\begin{${tabEnv}}[${placement}]
+${caption}
+${label}
+\\centering
+${sizeOpen}
+\\begin{tabulary}{\\linewidth}{${colFmt}}
+\\hline ${headRow}
+${bodyRows.map(renderRow).join('\n')}
+\\hline
+\\end{tabulary}${sourceLine}}
 \\end{${tabEnv}}\n`;
-  return out;
 }

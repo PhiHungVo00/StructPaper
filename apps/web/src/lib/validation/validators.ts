@@ -60,7 +60,9 @@ function build(gate: ValidationGate, issues: ValidationIssue[], emptyDoc: boolea
     issues,
     errorCount,
     warningCount,
-    canProceed: gate === 'import' ? !emptyDoc : errorCount === 0,
+    // Import: only an empty file stops. Export is advisory: issues are listed but never block,
+    // except a PDF that could not be compiled (there is nothing to download).
+    canProceed: gate === 'import' ? !emptyDoc : !issues.some((i) => i.code === 'export.pdf.compile'),
   };
 }
 
@@ -181,8 +183,8 @@ export function validateForImport(paper: CompletePaper): ValidationReport {
 }
 
 /**
- * GATE 2 — run before producing the final deliverable. Any remaining error blocks export.
- * Warnings are listed but do not block.
+ * GATE 2 — run before producing the final deliverable. Advisory: every missing/incorrect item is
+ * listed, and the user may still export. Only a failed PDF compile blocks (nothing to export).
  */
 export function validateForExport(paper: CompletePaper, opts: ExportValidationOptions = {}): ValidationReport {
   const issues = dedupe([...fromPreflight(paper, 'export'), ...coreChecks(paper, 'export')]);

@@ -26,20 +26,28 @@ const report = (issues: ValidationIssue[], gate: 'import' | 'export' = 'export',
     issues,
     errorCount,
     warningCount: issues.filter((i) => i.severity === 'warning').length,
-    canProceed: canProceed ?? errorCount === 0,
+    canProceed: canProceed ?? true,
   };
 };
 
 describe('ExportGateModal (gate 2)', () => {
-  it('blocks export while errors remain', () => {
+  it('lists errors but still lets the user export', () => {
     const onExport = vi.fn();
     render(
-      <ExportGateModal isOpen format="docx" report={report([issue({})])} onClose={() => {}} onAutoFix={() => {}} onExport={onExport} />
+      <ExportGateModal isOpen format="docx" report={report([issue({ title: 'Thiếu tác giả' })])} onClose={() => {}} onAutoFix={() => {}} onExport={onExport} />
     );
-    const btn = screen.getByRole('button', { name: /Xuất Word/ });
-    expect((btn as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText('Thiếu tác giả')).toBeTruthy();
+    const btn = screen.getByRole('button', { name: 'Vẫn xuất Word' });
+    expect((btn as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(btn);
-    expect(onExport).not.toHaveBeenCalled();
+    expect(onExport).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks only when the PDF could not be compiled', () => {
+    render(
+      <ExportGateModal isOpen format="pdf" report={report([issue({ code: 'export.pdf.compile' })], 'export', false)} onClose={() => {}} onAutoFix={() => {}} onExport={() => {}} />
+    );
+    expect((screen.getByRole('button', { name: 'Vẫn xuất PDF' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('allows export with warnings only, labelled as acknowledging them', () => {

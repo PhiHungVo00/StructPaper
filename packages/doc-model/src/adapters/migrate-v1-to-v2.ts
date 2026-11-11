@@ -384,6 +384,7 @@ export function migrateV1toV2(
             rowStretch: tbl.rowStretch,
             hasZebraStripes: tbl.hasZebraStripes,
             placement: tbl.placement,
+            breakAcrossPages: tbl.breakAcrossPages,
             tblNum: tbl.num,
           },
         };

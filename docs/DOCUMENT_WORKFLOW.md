@@ -57,7 +57,7 @@ Chạy ngay khi nhập tệp, trước khi cho vào chỉnh sửa; **không ch�
 
 ## 4. Cổng kiểm tra đầu ra (trước khi xuất)
 
-Cùng bộ luật, nhưng **lỗi sẽ chặn xuất** (nút bị khóa); cảnh báo cho phép "Vẫn xuất". PDF còn yêu cầu biên dịch thành công. Quy tắc nằm ở `apps/web/src/lib/validation/` (`numbering.ts`, `validators.ts`).
+Cùng bộ luật nhưng **mang tính cảnh báo**: bảng liệt kê mọi phần còn thiếu/sai, người dùng vẫn bấm **"Vẫn xuất"** được. Chỉ có một trường hợp không xuất được: PDF biên dịch lỗi (không có tệp để tải). Quy tắc nằm ở `apps/web/src/lib/validation/` (`numbering.ts`, `validators.ts`).
 
 ## 5. Công thức toán học
 
@@ -66,11 +66,18 @@ Cùng bộ luật, nhưng **lỗi sẽ chặn xuất** (nút bị khóa); cảnh
 * **Nhập Word:** công thức Word (OMML) được chuyển sang LaTeX bằng bộ chuyển theo cấu trúc (`lib/omml.ts`) và chèn lại đúng vị trí. Công thức *nằm giữa dòng chữ* chưa được khôi phục (chỉ công thức trên dòng riêng).
 * **Xuất:** LaTeX/PDF dùng môi trường `equation`; **Word** xuất công thức Word gốc (chỉnh sửa được); **XML** xuất `<disp-formula>` / `<inline-formula>` với `<tex-math>`.
 
-## 6. Bảng dài
+## 6. Bảng: 1 cột / 2 cột / xoay ngang, và bảng dài
 
-* Bảng nhiều hàng (mặc định > 12 hàng) được dàn thành bảng **ngắt được qua cột/trang** (`supertabular`), **lặp lại hàng tiêu đề** ở mỗi cột/trang, không cắt ngang hàng.
-* Bảng ngắn vẫn giữ nguyên khối. Word: hàng tiêu đề đặt "lặp lại ở đầu mỗi trang" và hàng không bị cắt.
-* Giới hạn: bảng dài luôn chảy theo **một cột** (kể cả khi đặt "chiếm 2 cột").
+Mỗi bảng chọn được **1 cột**, **2 cột**, **xoay ngang** (Cài đặt bảng) và **Ngắt qua trang** (Tự động / Luôn cắt / Giữ nguyên). Bảng dài (mặc định > 12 hàng) được cắt qua trang giống PDF mẫu của tạp chí:
+
+| Kiểu bảng | Cách dàn trang |
+| --- | --- |
+| Ngắn | Khối nổi, giữ nguyên (`table`, `table*`, `sidewaystable`) |
+| Dài, 1 cột | Chảy trong cột (`supertabular`), lặp hàng tiêu đề |
+| Dài, 2 cột | Trang riêng một cột, bảng rộng 2 cột (`longtable`), lặp hàng tiêu đề |
+| Dài, xoay ngang | Các trang ngang (`landscape` + `longtable`), tiêu đề chạy dọc lề phải như bản mẫu |
+
+Mỗi trang tiếp theo có dòng **"Table N continued"** phía trên và **"Continued on next page"** phía dưới (đúng chữ của PDF mẫu EBL ID1750; đổi được trong cài đặt giao diện). Độ rộng cột tự chia theo độ dài nội dung. Word: hàng tiêu đề lặp ở đầu mỗi trang, hàng không bị cắt.
 
 ## 7. Cấu hình động (không hard-code)
 

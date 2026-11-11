@@ -157,7 +157,7 @@ export function generateFullJournalLatex(paper: CompletePaper, customSettings?: 
     .replace('TITLE_COLOR_R', String(rgb.r))
     .replace('TITLE_COLOR_G', String(rgb.g))
     .replace('TITLE_COLOR_B', String(rgb.b))
-    .replace('\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee}', '\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee,supertabular,array}')
+    .replace('\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee}', '\\usepackage{url,multirow,morefloats,floatflt,cancel,tfrupee,supertabular,array,longtable,pdflscape}')
     .replace('\\definecolor{tableheadrcolor}{RGB}{229, 229, 229}', `\\definecolor{tableheadrcolor}{RGB}{${headRgb.r}, ${headRgb.g}, ${headRgb.b}}\n\\definecolor{tablezebracolor}{RGB}{${zebraRgb.r}, ${zebraRgb.g}, ${zebraRgb.b}}`)
     .replace('left=1.7cm,headsep=.2cm,right=1.3cm,top=1.8cm]', `left=${theme.margins.left}cm,headsep=.2cm,right=${theme.margins.right}cm,top=${theme.margins.top}cm,bottom=${theme.margins.bottom}cm]`)
     .replace('\\documentclass[9pt,twocolumn]{article}', `\\documentclass[${fontSize},${docClassCols}]{article}`)

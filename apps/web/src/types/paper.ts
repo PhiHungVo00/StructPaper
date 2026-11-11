@@ -97,6 +97,7 @@ export interface PaperTable {
   rowStretch?: number; // Giãn dòng 1.1x, 1.4x, 1.6x
   hasZebraStripes?: boolean; // Sọc màu hàng xen kẽ
   placement?: 'auto' | 'top' | 'here' | 'bottom';
+  breakAcrossPages?: 'auto' | 'always' | 'never'; // cho phép bảng ngắt qua trang
 }
 
 /**

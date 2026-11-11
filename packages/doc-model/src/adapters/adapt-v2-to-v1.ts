@@ -328,6 +328,7 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
               rowStretch: (block.layout as any)?.rowStretch,
               hasZebraStripes: (block.layout as any)?.hasZebraStripes,
               placement: (block.layout as any)?.placement,
+              breakAcrossPages: (block.layout as any)?.breakAcrossPages,
             },
           });
           break;

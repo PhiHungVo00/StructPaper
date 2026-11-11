@@ -18,6 +18,10 @@ export interface ThemeSettings {
   repeatTableHeader?: boolean;
   /** Tables with more body rows than this are typeset as breakable tables. Default 12. */
   longTableRowThreshold?: number;
+  /** Marker printed on top of each continuation page; "{n}" is the table number. */
+  continuedTitleText?: string;
+  /** Marker printed at the bottom of a table that continues on the next page. */
+  continuedFootText?: string;
 }
 
 export interface PaperEquation {
