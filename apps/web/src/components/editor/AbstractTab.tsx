@@ -3,6 +3,7 @@
 import React from 'react';
 import { AbstractTabProps } from './types';
 import { BookOpen, Tag, Info } from 'lucide-react';
+import { useTabScrollRestoration } from './hooks';
 
 interface AutoResizeTextareaProps {
   value: string;
@@ -56,6 +57,9 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
 };
 
 export const AbstractTab: React.FC<AbstractTabProps> = ({ metadata, onChange }) => {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  useTabScrollRestoration('abstract', scrollContainerRef);
+
   const vnWordCount = metadata.abstract
     ? metadata.abstract.trim().split(/\s+/).filter(Boolean).length
     : 0;
@@ -87,7 +91,7 @@ export const AbstractTab: React.FC<AbstractTabProps> = ({ metadata, onChange }) 
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+    <div ref={scrollContainerRef} className="h-full flex flex-col min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
       {/* Header Title */}
       <div className="flex items-center gap-2 pb-2 border-b border-zinc-200/60">
         <BookOpen className="w-4 h-4 text-zinc-700" />

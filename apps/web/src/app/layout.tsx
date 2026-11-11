@@ -13,6 +13,8 @@ export const metadata: Metadata = {
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/DynamicIslandToast';
 import { PlatformProvider } from '@/platform/provider';
+import { EditorSessionProvider } from '@/context/EditorSessionContext';
+import { DesktopChromeShell } from '@/components/titlebar';
 import { UpdateToastNotifier } from '@/components/platform/UpdateToastNotifier';
 
 export default function RootLayout({
@@ -35,13 +37,17 @@ export default function RootLayout({
           }}
         />
         <PlatformProvider>
-          <PaperProvider>
-            <Toaster />
-            <UpdateToastNotifier />
-            <AppShell>
-              {children}
-            </AppShell>
-          </PaperProvider>
+          <EditorSessionProvider>
+            <PaperProvider>
+              <DesktopChromeShell>
+                <Toaster />
+                <UpdateToastNotifier />
+                <AppShell>
+                  {children}
+                </AppShell>
+              </DesktopChromeShell>
+            </PaperProvider>
+          </EditorSessionProvider>
         </PlatformProvider>
       </body>
     </html>

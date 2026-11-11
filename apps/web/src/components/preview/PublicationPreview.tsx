@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CompletePaper } from '@/lib/sample-papers';
 import { exportToLatex, generateLatexPackageZip } from '@/lib/exporters';
 import { exportPaperToDocx } from '@/lib/docx-export';
+import { extractPaperImagesAsync } from '@/lib/media/figure-image-utils';
 import {
   Download,
   RefreshCw,
@@ -107,32 +108,7 @@ export const PublicationPreview: React.FC<PublicationPreviewProps> = ({
       setCompileErrorInfo(null);
       const startTime = Date.now();
       const texContent = exportToLatex(paper, paper.layoutSettings);
-
-      const images: Record<string, string> = {};
-      let figIdx = 1;
-      (paper.sections || []).forEach((sec, idx) => {
-        if (sec.type === 'figure' && sec.figure?.src) {
-          const num = sec.figure.num || figIdx++;
-          if (sec.figure.src.startsWith('data:image')) {
-            const parts = sec.figure.src.split(',');
-            if (parts[1]) {
-              const base64Data = parts[1];
-              const isJpg =
-                sec.figure.src.startsWith('data:image/jpeg') ||
-                sec.figure.src.startsWith('data:image/jpg');
-              const ext = isJpg ? 'jpg' : 'png';
-
-              images[`fig${num}.${ext}`] = base64Data;
-              images[`fig${num}.png`] = base64Data;
-              images[`fig${num}.jpg`] = base64Data;
-              images[`image${num}.${ext}`] = base64Data;
-              images[`image${idx + 1}.${ext}`] = base64Data;
-              images[`fig${idx + 1}.png`] = base64Data;
-              images[`fig${idx + 1}.jpg`] = base64Data;
-            }
-          }
-        }
-      });
+      const images = await extractPaperImagesAsync(paper);
 
       const response = await fetch('/api/compile-latex', {
         method: 'POST',

@@ -17,6 +17,10 @@ import {
   DesktopShellService,
   type DesktopShellServiceOptions,
 } from './desktop-shell-service';
+import {
+  DesktopWindowService,
+  type DesktopWindowServiceOptions,
+} from './desktop-window-service';
 
 export interface CreateDesktopPlatformOptions {
   config?: Partial<RuntimeConfig>;
@@ -24,6 +28,7 @@ export interface CreateDesktopPlatformOptions {
   updateOptions?: DesktopUpdateServiceOptions;
   fileOptions?: DesktopFileServiceOptions;
   shellOptions?: DesktopShellServiceOptions;
+  windowOptions?: DesktopWindowServiceOptions;
 }
 
 export function createDesktopPlatform(
@@ -58,6 +63,7 @@ export function createDesktopPlatform(
 
   const files = new DesktopFileService(options?.fileOptions);
   const shell = new DesktopShellService(options?.shellOptions);
+  const windowService = new DesktopWindowService(options?.windowOptions);
 
   return {
     capabilities,
@@ -65,9 +71,11 @@ export function createDesktopPlatform(
     files,
     updates,
     shell,
+    window: windowService,
   };
 }
 
 export * from './desktop-update-service';
 export * from './desktop-file-service';
 export * from './desktop-shell-service';
+export * from './desktop-window-service';

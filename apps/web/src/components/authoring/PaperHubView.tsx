@@ -18,6 +18,7 @@ import {
   EmptyPapersState,
 } from '@/components/papers';
 import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
+import { StickyHubToolbar } from '@/components/layout/StickyHubToolbar';
 
 export const PaperHubView: React.FC = () => {
   const router = useRouter();
@@ -72,8 +73,7 @@ export const PaperHubView: React.FC = () => {
       />
 
       {/* 2. Sticky Filter Toolbar */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
-        <div className="absolute inset-0 bg-[#F8F9FA]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
+      <StickyHubToolbar data-testid="paper-hub-sticky-toolbar">
         <PaperFiltersBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -88,7 +88,7 @@ export const PaperHubView: React.FC = () => {
           countsByStatus={countsByStatus}
           onCreateFromTemplate={() => setIsCreateModalOpen(true)}
         />
-      </div>
+      </StickyHubToolbar>
 
       {/* 3. Papers List (Loading Shimmer vs Grid vs Table vs Empty) */}
       {isLoading ? (

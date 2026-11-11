@@ -8,6 +8,7 @@ import { JournalProfileCardShimmer } from './JournalProfileCardShimmer';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
 import { ManagedJournalProfile } from '@/lib/templates/journal-storage';
 import { CreatePaperModal } from '@/components/modals/CreatePaperModal';
+import { StickyHubToolbar } from '@/components/layout/StickyHubToolbar';
 
 export const JournalHubView: React.FC = () => {
   const [selectedJournalForPaper, setSelectedJournalForPaper] =
@@ -37,8 +38,7 @@ export const JournalHubView: React.FC = () => {
       </div>
 
       {/* 2. Top Sticky Filter Toolbar matching Eatzy */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 pb-5 transition-all duration-300">
-        <div className="absolute inset-0 bg-[#F8F9FA]/70 backdrop-blur-sm pointer-events-none -z-10 [mask-image:linear-gradient(to_bottom,black_90%,transparent)]" />
+      <StickyHubToolbar data-testid="journal-hub-sticky-toolbar">
         <JournalFiltersBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -47,7 +47,7 @@ export const JournalHubView: React.FC = () => {
           totalCount={journals.length}
           filteredCount={filteredJournals.length}
         />
-      </div>
+      </StickyHubToolbar>
 
       {/* 3. Journal Profiles Grid */}
       {isLoading ? (

@@ -213,4 +213,76 @@ describe('useEditorAutoSave hook', () => {
     addEventListenerSpy.mockRestore();
     removeEventListenerSpy.mockRestore();
   });
+
+  it('does not auto-save when enabled is false, but manual flush still works', async () => {
+    const mockSave = vi.fn().mockResolvedValue(true);
+    const mockSetIsDirty = vi.fn();
+    const paper = createMockPaper('Tắt tự động lưu');
+
+    const { result } = renderHook(() =>
+      useEditorAutoSave({
+        paperId: paper.id,
+        formData: paper,
+        isDirty: true,
+        setIsDirty: mockSetIsDirty,
+        onSave: mockSave,
+        debounceMs: 1000,
+        enabled: false,
+      })
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(mockSave).not.toHaveBeenCalled();
+
+    await act(async () => {
+      const ok = await result.current.flush();
+      expect(ok).toBe(true);
+    });
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSetIsDirty).toHaveBeenCalledWith(false);
+  });
+
+  it('cancels pending autosave when toggled off mid-debounce and saves when toggled back on while dirty', async () => {
+    const mockSave = vi.fn().mockResolvedValue(true);
+    const mockSetIsDirty = vi.fn();
+    const paper = createMockPaper('Chuyển đổi AutoSave');
+
+    const { rerender } = renderHook(
+      ({ autoSaveEnabled, dirty }) =>
+        useEditorAutoSave({
+          paperId: paper.id,
+          formData: paper,
+          isDirty: dirty,
+          setIsDirty: mockSetIsDirty,
+          onSave: mockSave,
+          debounceMs: 1000,
+          enabled: autoSaveEnabled,
+        }),
+      {
+        initialProps: { autoSaveEnabled: true, dirty: true },
+      }
+    );
+
+    // Mid-debounce turn OFF
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    rerender({ autoSaveEnabled: false, dirty: true });
+
+    // Advance well past original 1000ms timer: must remain cancelled
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(mockSave).not.toHaveBeenCalled();
+
+    // Flip back ON while still dirty: must schedule and execute save
+    rerender({ autoSaveEnabled: true, dirty: true });
+    await act(async () => {
+      vi.advanceTimersByTime(1100);
+    });
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSetIsDirty).toHaveBeenCalledWith(false);
+  });
 });

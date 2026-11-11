@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { supportsCssFieldSizing } from '@/hooks/useSupportsCssFieldSizing';
 
 export interface AutoResizeTextareaProps {
   value: string;
@@ -23,22 +24,29 @@ export const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
 }) => {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const resize = React.useCallback(() => {
+  const adjustHeight = React.useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
+    if (supportsCssFieldSizing()) {
+      if (el.style.height) {
+        el.style.removeProperty('height');
+      }
+      return;
+    }
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, []);
 
   React.useEffect(() => {
-    resize();
-  }, [value, resize]);
+    adjustHeight();
+  }, [value, adjustHeight]);
 
   React.useEffect(() => {
-    const handleWindowResize = () => resize();
+    if (supportsCssFieldSizing()) return;
+    const handleWindowResize = () => adjustHeight();
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
-  }, [resize]);
+  }, [adjustHeight]);
 
   React.useEffect(() => {
     if (autoFocus && textareaRef.current) {
@@ -54,7 +62,9 @@ export const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({
       value={value}
       onChange={(e) => {
         onChange(e.target.value);
-        resize();
+        if (!supportsCssFieldSizing()) {
+          adjustHeight();
+        }
       }}
       onBlur={onBlur}
       onKeyDown={onKeyDown}

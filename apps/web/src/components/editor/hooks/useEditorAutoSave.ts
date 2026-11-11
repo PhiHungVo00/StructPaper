@@ -98,7 +98,12 @@ export function useEditorAutoSave({
 
   // 3. Debounced auto-save effect whenever formData changes while isDirty
   useEffect(() => {
-    if (!enabled || !isDirty) {
+    if (!enabled) {
+      cancel();
+      return;
+    }
+
+    if (!isDirty) {
       return;
     }
 
@@ -141,7 +146,7 @@ export function useEditorAutoSave({
         timerRef.current = null;
       }
     };
-  }, [formData, isDirty, debounceMs, enabled]);
+  }, [formData, isDirty, debounceMs, enabled, cancel]);
 
   // 4. Register window beforeunload event when isDirty
   useEffect(() => {

@@ -6,6 +6,7 @@ import type {
 import { WebUpdateService, type WebUpdateServiceOptions } from './web-update-service';
 import { WebFileService } from './web-file-service';
 import { WebShellService, type WebShellServiceOptions } from './web-shell-service';
+import { WebWindowService } from './web-window-service';
 
 export interface CreateWebPlatformOptions {
   config?: Partial<RuntimeConfig>;
@@ -42,6 +43,7 @@ export function createWebPlatform(options?: CreateWebPlatformOptions): PlatformS
 
   const files = new WebFileService();
   const shell = new WebShellService(options?.shellOptions);
+  const windowService = new WebWindowService();
 
   return {
     capabilities,
@@ -49,9 +51,11 @@ export function createWebPlatform(options?: CreateWebPlatformOptions): PlatformS
     files,
     updates,
     shell,
+    window: windowService,
   };
 }
 
 export * from './web-update-service';
 export * from './web-file-service';
 export * from './web-shell-service';
+export * from './web-window-service';

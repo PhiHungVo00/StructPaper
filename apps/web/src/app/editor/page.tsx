@@ -44,7 +44,7 @@ function EditorContent() {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-white text-sm font-medium">
+      <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex items-center justify-center bg-slate-900 text-white text-sm font-medium">
         Đang tải bản thảo từ cơ sở dữ liệu...
       </div>
     );
@@ -62,7 +62,7 @@ export default function EditorPage() {
   return (
     <Suspense
       fallback={
-        <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-white text-sm font-medium">
+        <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex items-center justify-center bg-slate-900 text-white text-sm font-medium">
           Đang khởi tạo trình soạn thảo...
         </div>
       }

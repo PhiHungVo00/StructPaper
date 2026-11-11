@@ -20,3 +20,32 @@ export {
   type AutosaveStatus,
 } from './useEditorAutoSave';
 
+export {
+  useSyncEditorSession,
+  type UseSyncEditorSessionOptions,
+} from './useSyncEditorSession';
+
+export { useHydrateDisplayName } from './useHydrateDisplayName';
+
+export {
+  applyScrollTopInstantly,
+  createEditorTabStateStore,
+  type EditorTabStateStore,
+  type SectionFilterType,
+  type SectionsTabViewState,
+  type TabScrollSnapshot,
+} from './tab-view-state-store';
+
+export {
+  isElementHiddenByCss,
+  EditorTabStateProvider,
+  useCreateEditorTabStateStore,
+  useEditorTabState,
+  useTabScrollRestoration,
+  useSectionsTabViewState,
+  type EditorTabStateContextValue,
+  type EditorTabStateProviderProps,
+  type UseTabScrollRestorationResult,
+  type UseSectionsTabViewStateResult,
+} from './EditorTabStateContext';
+

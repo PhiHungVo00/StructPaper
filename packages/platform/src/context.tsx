@@ -9,6 +9,7 @@ import type {
   UpdateInfo,
   UpdateService,
   UpdateState,
+  WindowService,
 } from './types';
 
 const PlatformContext = React.createContext<PlatformServices | null>(null);
@@ -36,6 +37,10 @@ export function useCapabilities(): Capabilities {
 
 export function useUpdateService(): UpdateService {
   return usePlatform().updates;
+}
+
+export function useWindowService(): WindowService {
+  return usePlatform().window;
 }
 
 export interface DownloadProgress {
@@ -197,6 +202,15 @@ export function createFakePlatform(options?: {
     shell: {
       openExternal: async () => {},
     },
+    window: {
+      isSupported: () => kind === 'desktop',
+      minimize: async () => {},
+      toggleMaximize: async () => {},
+      close: async () => {},
+      startDragging: async () => {},
+      isMaximized: async () => false,
+      onMaximizedChange: () => () => {},
+    },
   };
 
   if (!options?.overrides) {
@@ -218,5 +232,6 @@ export function createFakePlatform(options?: {
     files: options.overrides.files ?? defaultServices.files,
     updates: options.overrides.updates ?? defaultServices.updates,
     shell: options.overrides.shell ?? defaultServices.shell,
+    window: options.overrides.window ?? defaultServices.window,
   };
 }

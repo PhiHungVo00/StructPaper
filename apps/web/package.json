@@ -25,6 +25,7 @@
     "@structpaper/platform-web": "workspace:*",
     "@structpaper/qc-engine": "workspace:*",
     "@structpaper/storage": "workspace:*",
+    "@tanstack/react-virtual": "^3.14.26",
     "@tiptap/core": "^3.32.2",
     "@tiptap/extension-subscript": "^3.32.2",
     "@tiptap/extension-superscript": "^3.32.2",

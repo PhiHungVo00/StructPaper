@@ -70,7 +70,7 @@ function BuilderContent() {
 
   if (loading || !schema) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-600 gap-3">
+      <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-600 gap-3">
         <Loader2 className="w-6 h-6 animate-spin text-[#78C841]" />
         <span className="text-xs font-semibold tracking-wide">
           Đang nạp cấu trúc Template từ file dữ liệu...
@@ -86,7 +86,7 @@ export default function TemplateBuilderPage() {
   return (
     <Suspense
       fallback={
-        <div className="h-screen w-full flex items-center justify-center bg-[#F8F9FA] text-xs font-semibold text-slate-500">
+        <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex items-center justify-center bg-[#F8F9FA] text-xs font-semibold text-slate-500">
           Đang nạp Trình thiết kế Template StructPaper...
         </div>
       }

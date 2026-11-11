@@ -23,19 +23,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   if (isEditorPage || isBuilderPage || isJournalEditorPage) {
     return (
-      <div className="h-screen w-full bg-[#F8F9FA] overflow-hidden p-2 sm:p-0 flex flex-col">
+      <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full bg-[#F8F9FA] overflow-hidden p-2 sm:p-0 flex flex-col">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col sm:flex-row bg-[#F8F9FA]">
+    <div className="min-h-[calc(100vh-var(--titlebar-height,0px))] flex flex-col sm:flex-row bg-[#F8F9FA]">
       {/* Persistent Main Flow Sidebar */}
       <Sidebar />
 
       {/* Main Application Flow Area */}
-      <div className="w-full flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="w-full flex-1 flex flex-col min-w-0 min-h-[calc(100vh-var(--titlebar-height,0px))]">
         <main className="w-full flex-1 px-3 sm:px-4 lg:px-6 py-3 pb-24 sm:pb-6 flex flex-col min-w-0 min-h-0">
           {children}
         </main>

@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { PaperSection, PaperTable, normalizePaperTable, synthesizeHeaderRows } from '@/types/paper';
+import React, { useMemo, useCallback } from 'react';
+import { PaperSection, PaperTable, normalizePaperTable } from '@/types/paper';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
+import { TablePreviewGrid, resolveTablePreviewRows } from './TablePreviewGrid';
 import { Maximize2, ClipboardPaste, Table as TableIcon } from 'lucide-react';
 
 interface TableSectionItemProps {
@@ -14,7 +15,7 @@ interface TableSectionItemProps {
   onPasteTableFromClipboardButton: (index: number) => void;
 }
 
-export const TableSectionItem: React.FC<TableSectionItemProps> = ({
+const TableSectionItemBase: React.FC<TableSectionItemProps> = ({
   sec,
   idx,
   onUpdateSection,
@@ -22,11 +23,42 @@ export const TableSectionItem: React.FC<TableSectionItemProps> = ({
   onPasteTableData,
   onPasteTableFromClipboardButton,
 }) => {
-  if (!sec.table) return null;
+  const table = sec.table;
+  const normalizedTable = useMemo(
+    () => (table ? normalizePaperTable(table) : null),
+    [table]
+  );
+
+  const handleOpenSpreadsheet = useCallback(
+    (sectionIndex: number) => {
+      if (table) {
+        onOpenTableZoom(sectionIndex, table);
+      }
+    },
+    [onOpenTableZoom, table]
+  );
+
+  if (!table || !normalizedTable) return null;
+
+  const {
+    safeTableHeaders,
+    safeTableRows,
+    safeTableBodyRows,
+    safeNormalizedHeaders,
+    totalRows,
+  } = resolveTablePreviewRows(table, normalizedTable);
 
   const isTableEmpty =
-    (!sec.table.headers || sec.table.headers.length === 0) &&
-    (!sec.table.rows || sec.table.rows.length === 0);
+    safeTableHeaders.length === 0 &&
+    safeTableRows.length === 0 &&
+    safeTableBodyRows.length === 0;
+
+  const colCount =
+    safeNormalizedHeaders.length > 0
+      ? safeNormalizedHeaders.length
+      : safeTableHeaders.length > 0
+        ? safeTableHeaders.length
+        : normalizedTable.headerRows?.[0]?.reduce((sum, cell) => sum + (cell.colSpan || 1), 0) || 0;
 
   return (
     <div className="space-y-2.5 bg-white p-3 rounded-2xl border border-zinc-200/80 shadow-2xs">
@@ -38,7 +70,7 @@ export const TableSectionItem: React.FC<TableSectionItemProps> = ({
           </label>
           <button
             type="button"
-            onClick={() => onOpenTableZoom(idx, sec.table!)}
+            onClick={() => onOpenTableZoom(idx, table)}
             className="px-2 py-0.5 rounded-lg bg-lime-50 hover:bg-lime-100 text-lime-800 text-[10px] font-bold border border-lime-200 flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
             title="Phóng to bảng số liệu toàn màn hình & chỉnh sửa kiểu Google Sheets"
           >
@@ -47,12 +79,12 @@ export const TableSectionItem: React.FC<TableSectionItemProps> = ({
           </button>
         </div>
         <AutoResizeTextarea
-          value={sec.table.caption || ''}
+          value={table.caption || ''}
           onChange={(val) =>
             onUpdateSection(idx, {
               ...sec,
               content: val,
-              table: { ...sec.table!, caption: val },
+              table: { ...table, caption: val },
             })
           }
           placeholder="Nhập tiêu đề bảng (ví dụ: Bảng 1: Kết quả khảo sát...)"
@@ -93,7 +125,7 @@ export const TableSectionItem: React.FC<TableSectionItemProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onOpenTableZoom(idx, sec.table!)}
+              onClick={() => onOpenTableZoom(idx, table)}
               className="px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
             >
               <Maximize2 className="w-3.5 h-3.5 text-lime-600" />
@@ -102,106 +134,19 @@ export const TableSectionItem: React.FC<TableSectionItemProps> = ({
           </div>
         </div>
       ) : (
-        (() => {
-          const normalizedTable = normalizePaperTable(sec.table);
-          const effectiveHeaderRows =
-            normalizedTable.headerRows && normalizedTable.headerRows.length > 0
-              ? normalizedTable.headerRows
-              : synthesizeHeaderRows(normalizedTable.headers || []);
-          return (
-            <div className="overflow-x-auto max-w-full w-full rounded-xl border border-zinc-200">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-zinc-100 text-zinc-800 font-bold border-b border-zinc-200">
-                  {effectiveHeaderRows && effectiveHeaderRows.length > 0 ? (
-                    effectiveHeaderRows.map((hRow, hrIdx) => (
-                      <tr key={hrIdx} className="border-b last:border-b-0 border-zinc-200">
-                        {hRow.map((cell, cIdx) => (
-                          <th
-                            key={cIdx}
-                            colSpan={cell.colSpan || 1}
-                            rowSpan={cell.rowSpan || 1}
-                            className={`px-3 py-2 border-r last:border-r-0 border-zinc-200 min-w-[100px] bg-zinc-100 font-bold text-zinc-900 text-xs ${cell.align === 'center' || (cell.colSpan || 1) > 1
-                              ? 'text-center font-extrabold'
-                              : cell.align === 'right'
-                                ? 'text-right'
-                                : 'text-left'
-                              }`}
-                          >
-                            <span className="break-words">{cell.text}</span>
-                          </th>
-                        ))}
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      {sec.table.headers.map((h, colI) => (
-                        <th
-                          key={colI}
-                          className="px-3 py-2 border-r last:border-r-0 border-zinc-200 min-w-[100px] font-bold text-zinc-900 text-xs"
-                        >
-                          <span className="break-words">{h}</span>
-                        </th>
-                      ))}
-                    </tr>
-                  )}
-                </thead>
-                <tbody>
-                  {sec.table.bodyRows && sec.table.bodyRows.length > 0 ? (
-                    sec.table.bodyRows.map((bRow, rIdx) => {
-                      const isEven = rIdx % 2 === 0;
-                      return (
-                        <tr
-                          key={rIdx}
-                          className={`border-b last:border-b-0 border-zinc-200 ${isEven ? 'bg-[#E7ECF7]/40' : 'bg-white'
-                            } hover:bg-zinc-50/50`}
-                        >
-                          {bRow.map((cell, cIdx) => (
-                            <td
-                              key={cIdx}
-                              colSpan={cell.colSpan || 1}
-                              rowSpan={cell.rowSpan || 1}
-                              className={`px-3 py-2 border-r last:border-r-0 border-zinc-200 min-w-[100px] align-top text-xs text-zinc-800 ${cell.align === 'center' || (cell.colSpan || 1) > 1
-                                ? 'text-center font-medium'
-                                : cell.align === 'right'
-                                  ? 'text-right'
-                                  : 'text-left'
-                                }`}
-                            >
-                              <span className="break-words">{cell.text}</span>
-                            </td>
-                          ))}
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    sec.table.rows.map((row, rI) => (
-                      <tr
-                        key={rI}
-                        className="border-b last:border-b-0 border-zinc-200 hover:bg-zinc-50/50"
-                      >
-                        {row.map((cell, cI) => (
-                          <td
-                            key={cI}
-                            className="px-3 py-2 border-r last:border-r-0 border-zinc-200 min-w-[100px] text-xs text-zinc-800"
-                          >
-                            <span className="break-words">{cell}</span>
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          );
-        })()
+        <TablePreviewGrid
+          table={table}
+          normalizedTable={normalizedTable}
+          idx={idx}
+          onOpenSpreadsheet={handleOpenSpreadsheet}
+        />
       )}
 
       {/* Table Footer Controls */}
       <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
         <button
           type="button"
-          onClick={() => onOpenTableZoom(idx, sec.table!)}
+          onClick={() => onOpenTableZoom(idx, table)}
           className="px-2.5 py-1 rounded-lg bg-lime-50 hover:bg-lime-100 text-lime-800 font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-lime-200 shadow-2xs hover:scale-105 active:scale-95"
           title="Phóng to bảng số liệu toàn màn hình & soạn thảo"
         >
@@ -212,23 +157,26 @@ export const TableSectionItem: React.FC<TableSectionItemProps> = ({
         <div className="flex items-center gap-1.5">
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              sec.table.columnSpan === '2-column' || sec.table.isFullWidth !== false
+              table.columnSpan === '2-column' || table.isFullWidth !== false
                 ? 'bg-[#EEF2FF] text-[#3730A3]'
                 : 'bg-zinc-100 text-zinc-600'
             }`}
           >
-            {sec.table.columnSpan === '2-column' || sec.table.isFullWidth !== false ? '2 Cột' : '1 Cột'}
+            {table.columnSpan === '2-column' || table.isFullWidth !== false ? '2 Cột' : '1 Cột'}
           </span>
-          {sec.table.isRotated && (
+          {table.isRotated && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
               Xoay 90°
             </span>
           )}
           <span className="text-zinc-400 text-[10px] font-medium ml-1">
-            {sec.table.rows.length} hàng × {sec.table.headers.length} cột
+            {totalRows} hàng × {colCount} cột
           </span>
         </div>
       </div>
     </div>
   );
 };
+
+export const TableSectionItem = React.memo(TableSectionItemBase);
+TableSectionItem.displayName = 'TableSectionItem';

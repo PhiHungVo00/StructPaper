@@ -540,6 +540,7 @@ export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = {
 
 export interface CompletePaper {
   id: string;
+  displayName?: string;
   metadata: PaperMetadata;
   sections: PaperSection[];
   references: PaperReference[];

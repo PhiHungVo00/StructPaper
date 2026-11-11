@@ -61,7 +61,7 @@ function PreviewContent() {
 
   if (isLoadingPaper) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#F6F6F9] text-zinc-600 gap-3">
+      <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex flex-col items-center justify-center bg-[#F6F6F9] text-zinc-600 gap-3">
         <RefreshCw className="w-6 h-6 animate-spin text-[#78C841]" />
         <span className="text-xs font-bold">Đang tải bản thảo...</span>
       </div>
@@ -69,7 +69,7 @@ function PreviewContent() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-row p-3 gap-2 sm:gap-3 overflow-hidden bg-[#F6F6F9]">
+    <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex flex-row p-3 gap-2 sm:gap-3 overflow-hidden bg-[#F6F6F9]">
       {/* Minimalist Left Dock: Only the Back Button */}
       <aside
         className="hidden sm:flex flex-col items-center justify-between h-full w-12 sm:w-14 py-2 px-1 flex-shrink-0 select-none relative z-50"
@@ -126,7 +126,7 @@ export default function PreviewPage() {
   return (
     <Suspense
       fallback={
-        <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#F6F6F9] text-zinc-600 gap-3">
+        <div className="h-[calc(100vh-var(--titlebar-height,0px))] w-full flex flex-col items-center justify-center bg-[#F6F6F9] text-zinc-600 gap-3">
           <RefreshCw className="w-6 h-6 animate-spin text-[#78C841]" />
           <span className="text-xs font-bold">Đang khởi tạo xem trước...</span>
         </div>

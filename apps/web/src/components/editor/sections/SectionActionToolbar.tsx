@@ -27,7 +27,7 @@ export interface SectionActionToolbarProps {
   };
 }
 
-export const SectionActionToolbar: React.FC<SectionActionToolbarProps> = ({
+const SectionActionToolbarBase: React.FC<SectionActionToolbarProps> = ({
   totalSections,
   filterType,
   onFilterChange,
@@ -162,3 +162,6 @@ export const SectionActionToolbar: React.FC<SectionActionToolbarProps> = ({
     </div>
   );
 };
+
+export const SectionActionToolbar = React.memo(SectionActionToolbarBase);
+SectionActionToolbar.displayName = 'SectionActionToolbar';

@@ -423,6 +423,10 @@ describe('Task 4: Quản lý Bài báo UI & Top Recent Papers Row', () => {
         expect(screen.getByTestId('papers-grid')).toBeDefined();
       }, { timeout: 3000 });
 
+      const stickyToolbar = screen.getByTestId('paper-hub-sticky-toolbar');
+      expect(stickyToolbar.className).toContain('sticky');
+      expect(stickyToolbar.className).toContain('top-[var(--titlebar-height,0px)]');
+
       // Verify ID630_HS card exists
       expect(screen.getByTestId('paper-card-vnuhcm-hs-id630')).toBeDefined();
 

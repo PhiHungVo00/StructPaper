@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Home, Layers, Sliders, FileEdit } from 'lucide-react';
@@ -29,7 +29,12 @@ import {
   useEditorExport,
   useEditorShortcuts,
   useEditorAutoSave,
+  useSyncEditorSession,
+  useHydrateDisplayName,
+  EditorTabStateProvider,
+  useCreateEditorTabStateStore,
 } from './hooks';
+import { useEditorSession } from '@/context/EditorSessionContext';
 import { usePaperStorage, useEditorQuickEdit } from '@/hooks';
 import { PaperQuickEditModal } from '@/components/papers';
 import { ActionConfirmModal } from '@/components/modals/ActionConfirmModal';
@@ -57,6 +62,14 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   const [isExtractedDrawerOpen, setIsExtractedDrawerOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<EditorTabKey>('metadata');
   const [mobilePane, setMobilePane] = useState<'editor' | 'preview'>('editor');
+  const { store: tabStateStore, markTabPendingReset } = useCreateEditorTabStateStore(formData.id);
+  const handleNavigateFromPreflight = useCallback(
+    (tab: EditorTabKey) => {
+      markTabPendingReset(tab);
+      setActiveSubTab(tab);
+    },
+    [markTabPendingReset]
+  );
 
   const {
     isQuickEditOpen,
@@ -64,14 +77,29 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     handleOpenQuickEdit,
     handleCloseQuickEdit,
     handleSaveQuickEdit,
-  } = useEditorQuickEdit(formData, setFormData);
+  } = useEditorQuickEdit(formData, setFormData, onUpdatePaper);
+
+  const handleHydrateDisplayName = useCallback(
+    (paperId: string, hydratedName: string) => {
+      setFormData((prev) =>
+        prev.id === paperId && !prev.displayName?.trim()
+          ? { ...prev, displayName: hydratedName }
+          : prev
+      );
+    },
+    []
+  );
+  useHydrateDisplayName(formData.id, formData.displayName, handleHydrateDisplayName);
+
+  const { autoSaveEnabled } = useEditorSession();
 
   // Auto-save debounced hook (1.5s background IndexedDB persistence + beforeunload protection)
-  const { autosaveStatus, flush } = useEditorAutoSave({
+  const { autosaveStatus } = useEditorAutoSave({
     paperId: formData.id,
     formData,
     isDirty,
     setIsDirty,
+    enabled: autoSaveEnabled,
     onSave: async (updated) => {
       onUpdatePaper(updated);
       return await savePaper(updated);
@@ -99,6 +127,15 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     sileo.success({ title: 'Đã lưu thay đổi', description: 'Bản thảo bài báo đã được cập nhật thành công vào hệ thống' });
     setTimeout(() => setSaveSuccess(false), 2500);
   }, [formData, onUpdatePaper, savePaper]);
+
+  useSyncEditorSession({
+    paperId: formData.id,
+    displayName: formData.displayName,
+    autosaveStatus,
+    isDirty,
+    saveSuccess,
+    onManualSave: handleSave,
+  });
 
   // Back Navigation Guard handlers
   const handleRequestBack = useCallback(() => {
@@ -158,8 +195,27 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   }, [isDesktop, formData.id, router, compiledPdfUrl]);
 
   useEditorShortcuts({ onSave: handleSave });
+  useEffect(() => {
+    if (isDirty) {
+      setSaveSuccess(false);
+    }
+  }, [isDirty]);
   useEffect(() => { setFormData(JSON.parse(JSON.stringify(paper))); setIsDirty(false); }, [paper.id]);
-  const preflight = computePreflightCheck(formData);
+  useEffect(() => {
+    if (paper.displayName?.trim() && paper.id === formData.id && !formData.displayName?.trim()) {
+      setFormData((prev) => ({ ...prev, displayName: paper.displayName }));
+    }
+  }, [paper.id, paper.displayName, formData.id, formData.displayName]);
+  const deferredFormData = useDeferredValue(formData);
+  const preflight = useMemo(
+    () => computePreflightCheck(deferredFormData),
+    [deferredFormData]
+  );
+
+  const handleSectionsChange = useCallback((sections: PaperSection[]) => {
+    setFormData((prev) => ({ ...prev, sections }));
+    setIsDirty(true);
+  }, []);
 
   const handleApplyLayoutSettings = (newSettings: LayoutSettings, newJournalId?: string) => {
     const journalIdToUse = newJournalId || formData.metadata.journalId || currentJournal;
@@ -216,10 +272,17 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         )}
         {activeSubTab === 'authors' && <AuthorsTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
         {activeSubTab === 'abstract' && <AbstractTab metadata={formData.metadata} onChange={(m) => { setFormData((p) => ({ ...p, metadata: m })); setIsDirty(true); }} />}
-        {activeSubTab === 'sections' && <SectionsTab sections={formData.sections} onChange={(s) => { setFormData((p) => ({ ...p, sections: s })); setIsDirty(true); }} metadata={formData.metadata} references={formData.references} />}
+        {activeSubTab === 'sections' && (
+          <SectionsTab
+            sections={formData.sections}
+            onChange={handleSectionsChange}
+            metadata={formData.metadata}
+            references={formData.references}
+          />
+        )}
         {activeSubTab === 'refs' && <ReferencesTab references={formData.references} onChange={(r) => { setFormData((p) => ({ ...p, references: r })); setIsDirty(true); }} />}
         {activeSubTab === 'citation' && <CitationTab citationText={citationText} onChange={handleUpdateCitation} metadata={formData.metadata} />}
-        {activeSubTab === 'preflight' && <PreflightQCTab preflight={preflight} onNavigateTab={setActiveSubTab} />}
+        {activeSubTab === 'preflight' && <PreflightQCTab preflight={preflight} onNavigateTab={handleNavigateFromPreflight} />}
       </div>
     </div>
   );
@@ -239,7 +302,8 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
   );
 
   return (
-    <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
+    <EditorTabStateProvider paperId={formData.id} store={tabStateStore}>
+      <div className="h-full w-full flex flex-row p-3 min-h-0 gap-2 sm:gap-3 overflow-hidden">
       <EditorLeftDock
         homeHref="/papers"
         paperId={formData.id}
@@ -328,6 +392,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         testId="editor-exit-confirm-modal"
         confirmTestId="editor-save-and-exit-btn"
       />
-    </div>
+      </div>
+    </EditorTabStateProvider>
   );
 };

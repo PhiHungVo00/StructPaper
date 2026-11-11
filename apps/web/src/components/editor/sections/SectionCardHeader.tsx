@@ -22,7 +22,9 @@ import {
 export interface SectionCardHeaderProps {
   sec: PaperSection;
   idx: number;
-  totalSections: number;
+  totalSections?: number;
+  isFirst?: boolean;
+  isLast?: boolean;
   isDeleting: boolean;
   onUpdateSection: (index: number, updated: PaperSection) => void;
   onRemoveSection: (index: number) => void;
@@ -32,7 +34,9 @@ export interface SectionCardHeaderProps {
   onConvertToParagraph: (index: number) => void;
   onConvertToCitation?: (index: number) => void;
   onOpenTableZoom: (index: number, table: PaperTable) => void;
-  activeSettings: {
+  activeModalType?: 'figure' | 'table' | null;
+  settingsTriggerRect?: DOMRect;
+  activeSettings?: {
     secIndex: number;
     type: 'figure' | 'table';
     triggerRect?: DOMRect;
@@ -44,10 +48,12 @@ export interface SectionCardHeaderProps {
   onSaveTableSettings: (index: number, updated: PaperTable) => void;
 }
 
-export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
+const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
   sec,
   idx,
   totalSections,
+  isFirst,
+  isLast,
   isDeleting,
   onUpdateSection,
   onRemoveSection,
@@ -55,8 +61,9 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
   onMoveDown,
   onConvertToHeading,
   onConvertToParagraph,
-  onConvertToCitation,
   onOpenTableZoom,
+  activeModalType,
+  settingsTriggerRect,
   activeSettings,
   onOpenFigureSettings,
   onOpenTableSettings,
@@ -71,9 +78,24 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
   const isCitation = sec.type === 'citation';
 
   const secId = sec.id || `sec_${idx}`;
-  const isCardSettingsOpen = activeSettings?.secIndex === idx;
-  const isFigureOpen = isCardSettingsOpen && activeSettings?.type === 'figure';
-  const isTableOpen = isCardSettingsOpen && activeSettings?.type === 'table';
+  const resolvedModalType =
+    activeModalType !== undefined
+      ? activeModalType
+      : activeSettings?.secIndex === idx
+        ? activeSettings.type
+        : null;
+  const resolvedTriggerRect =
+    settingsTriggerRect !== undefined
+      ? settingsTriggerRect
+      : activeSettings?.secIndex === idx
+        ? activeSettings.triggerRect
+        : undefined;
+  const isFigureOpen = resolvedModalType === 'figure';
+  const isTableOpen = resolvedModalType === 'table';
+  const isCardSettingsOpen = isFigureOpen || isTableOpen;
+  const isMoveUpDisabled = isFirst !== undefined ? isFirst : idx === 0;
+  const isMoveDownDisabled =
+    isLast !== undefined ? isLast : idx === (totalSections ?? 0) - 1;
 
   return (
     <div className="flex items-center justify-between gap-2">
@@ -240,7 +262,7 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
 
         <button
           type="button"
-          disabled={idx === 0}
+          disabled={isMoveUpDisabled}
           onClick={() => onMoveUp(idx)}
           title="Di chuyển lên trên"
           className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-white/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
@@ -250,7 +272,7 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
 
         <button
           type="button"
-          disabled={idx === totalSections - 1}
+          disabled={isMoveDownDisabled}
           onClick={() => onMoveDown(idx)}
           title="Di chuyển xuống dưới"
           className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-white/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
@@ -286,7 +308,7 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
                 <FigureSettingsModal
                   key={`figure-modal-${secId}`}
                   figure={sec.figure}
-                  triggerRect={activeSettings?.triggerRect}
+                  triggerRect={resolvedTriggerRect}
                   onSave={(updated) => onSaveFigureSettings(idx, updated)}
                   onClose={onCloseSettings}
                 />
@@ -296,7 +318,7 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
                 <TableSettingsModal
                   key={`table-modal-${secId}`}
                   table={sec.table}
-                  triggerRect={activeSettings?.triggerRect}
+                  triggerRect={resolvedTriggerRect}
                   onSave={(updated) => onSaveTableSettings(idx, updated)}
                   onClose={onCloseSettings}
                 />
@@ -318,3 +340,6 @@ export const SectionCardHeader: React.FC<SectionCardHeaderProps> = ({
     </div>
   );
 };
+
+export const SectionCardHeader = React.memo(SectionCardHeaderBase);
+SectionCardHeader.displayName = 'SectionCardHeader';

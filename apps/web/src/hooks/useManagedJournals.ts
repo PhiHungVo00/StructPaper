@@ -64,11 +64,12 @@ export function useManagedJournals() {
     (managed: ManagedJournalProfile) => {
       try {
         const journalCode = `VNUHCM-${managed.id.toUpperCase()}`;
+        const journalShort = managed.profile.names?.short || managed.id.toUpperCase();
         const emptyPaper = createEmptyPaper(journalCode);
+        emptyPaper.displayName = `Bản thảo ${journalShort}`;
         emptyPaper.metadata.journalName =
           managed.profile.names?.vi || managed.profile.names?.en || managed.id;
-        emptyPaper.metadata.journalAbbv =
-          managed.profile.names?.short || managed.id.toUpperCase();
+        emptyPaper.metadata.journalAbbv = journalShort;
 
         setPaper(emptyPaper);
         setCurrentJournal(journalCode);

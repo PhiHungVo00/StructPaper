@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AuthorsTabProps } from './types';
 import { UserCheck, Building, Plus } from 'lucide-react';
+import { useTabScrollRestoration } from './hooks';
 import { SelectOption } from '../ui/Select';
 import { normalizeAffiliations } from '@/types/paper';
 import { AuthorItemCard } from './AuthorItemCard';
@@ -25,6 +26,8 @@ export const AuthorsTab: React.FC<AuthorsTabProps> = ({
 }) => {
   const contextCommandBus = useEditorCommandBus().commandBus;
   const activeBus = propCommandBus || contextCommandBus;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useTabScrollRestoration('authors', scrollContainerRef);
 
   const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
   const [deletingAuthorIds, setDeletingAuthorIds] = useState<Set<string>>(new Set());
@@ -135,7 +138,7 @@ export const AuthorsTab: React.FC<AuthorsTabProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 space-y-6 overflow-y-auto p-4 sm:p-5 sm:pb-6">
+    <div ref={scrollContainerRef} className="h-full flex flex-col min-h-0 space-y-6 overflow-y-auto p-4 sm:p-5 sm:pb-6">
       {/* Authors Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80">
