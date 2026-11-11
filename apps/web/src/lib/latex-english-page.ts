@@ -26,6 +26,15 @@ export interface EnglishPageInput {
   preambleWithMaketitle: string;
   /** Builds the \gdef\affbox{...} block for the given affiliation/correspondence strings. */
   buildAffbox: (affiliations: string, name: string, aff: string, email: string) => string;
+  /** QR code block (TeX) built from the article DOI, or a blank space when there is no DOI yet. */
+  qrBlock?: string;
+  /** "Long P T, Nguyen V T, …" (no diacritics), already LaTeX. */
+  citeAuthorsEn?: string;
+}
+
+/** "Võ Thị Nguyên" -> "Vo Thi Nguyen", as printed on the English page. */
+export function toAsciiName(s: string): string {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
 }
 
 /** "Bài nghiên cứu" -> "Research Article" etc. */
@@ -103,7 +112,7 @@ export function buildEnglishPage(input: EnglishPageInput): string | null {
 \\def\\publishershortname{VNUHCM Journal}
 \\def\\copyrighttext{This is an open-access article distributed under the terms of the Creative Commons Attribution 4.0 International license.}
 \\def\\citetext{Cite this article}
-\\def\\citetitle{\\textbf{${title}}}
+\\def\\citetitle{\\textbf{${title}}}${input.citeAuthorsEn ? `\n\\def\\citeauthor{${input.citeAuthorsEn}}` : ''}
 \\def\\absname{ABSTRACT }
 \\def\\@maketitle{${maketitleBody}}
 \\def\\title#1{${titleBody}}
@@ -113,7 +122,7 @@ export function buildEnglishPage(input: EnglishPageInput): string | null {
 \\author{{\\bfseries\\sffamily ${input.authorsFormatted}}}
 
 ${sidebox}
-${open} {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}\\IfFileExists{qr-code.png}{\\includegraphics[scale=.014]{qr-code}}{\\IfFileExists{article-qr.png}{\\includegraphics[scale=.014]{article-qr}}{\\vspace*{1.5cm}}}\\\\
+${open} {\\vspace*{-1pc}\\begin{mdframed}[innerrightmargin=1pc,innerleftmargin=1pc,innertopmargin=1pc,backgroundcolor=unitednationsblue,hidealllines=true]\\begin{textblock*}{.3\\textwidth}(-5cm,0cm)\\begin{center}\\vspace*{-1.15pc} \\hspace*{-.75pc}${input.qrBlock ?? '\\vspace*{1.5cm}'}\\\\
 \\vspace*{-.35pc}{\\fontsize{8pt}{9pt}\\selectfont\\hspace*{-.75pc}\\color{gray}{Use your smartphone to scan~this}\\\\
 \\vspace*{-.15pc}\\hspace*{-.75pc}\\color{gray}{QR code and download this article}}\\end{center}\\end{textblock*}\\begin{onecolabstract}\\def\\baselinestretch{1.06}\\fontsize{9.5pt}{9.5pt}\\selectfont ${escapeLatex(input.abstractEn.trim())}
 

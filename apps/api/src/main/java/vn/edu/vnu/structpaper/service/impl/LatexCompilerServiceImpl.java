@@ -314,49 +314,12 @@ public class LatexCompilerServiceImpl implements LatexCompilerService {
                 }
             }
 
-            // QR Code aliases (using true QR code with VNU logo image2.png)
-            File qrSource = new File(workDir, "image2.png");
-            if (!qrSource.exists()) qrSource = new File(workDir, "article-qr.png");
-            if (qrSource.exists()) {
-                FileUtils.copyFile(qrSource, new File(workDir, "article-qr.png"));
-                FileUtils.copyFile(qrSource, new File(workDir, "qr-code.png"));
-                FileUtils.copyFile(qrSource, new File(workDir, "qr-code"));
-                FileUtils.copyFile(qrSource, new File(imagesDir, "article-qr.png"));
-                FileUtils.copyFile(qrSource, new File(imagesDir, "qr-code.png"));
-                FileUtils.copyFile(qrSource, new File(imagesDir, "qr-code"));
-            }
-
-            // VNUHCM Press logo (image4.jpeg is the official origami press logo)
-            File logoSource = new File(workDir, "image4.jpeg");
-            if (!logoSource.exists()) logoSource = new File(workDir, "logo-vnuhcmpress-color.png");
-            if (logoSource.exists()) {
-                FileUtils.copyFile(logoSource, new File(workDir, "logo-vnuhcmpress-color.png"));
-                FileUtils.copyFile(logoSource, new File(workDir, "logo-vnuhcmpress-color.jpeg"));
-                FileUtils.copyFile(logoSource, new File(workDir, "logo-vnuhcmpress-color"));
-                FileUtils.copyFile(logoSource, new File(imagesDir, "logo-vnuhcmpress-color.png"));
-                FileUtils.copyFile(logoSource, new File(imagesDir, "logo-vnuhcmpress-color.jpeg"));
-                FileUtils.copyFile(logoSource, new File(imagesDir, "logo-vnuhcmpress-color"));
-            }
-
-            // Check for updates badge (image3.jpeg)
-            File checkUpdateSource = new File(workDir, "image3.jpeg");
-            if (!checkUpdateSource.exists()) checkUpdateSource = new File(workDir, "check-update.jpg");
-            if (checkUpdateSource.exists()) {
-                FileUtils.copyFile(checkUpdateSource, new File(workDir, "check-update.jpeg"));
-                FileUtils.copyFile(checkUpdateSource, new File(workDir, "check-update.jpg"));
-                FileUtils.copyFile(checkUpdateSource, new File(imagesDir, "check-update.jpeg"));
-                FileUtils.copyFile(checkUpdateSource, new File(imagesDir, "check-update.jpg"));
-            }
-
-            // Open access icon: the bundled generic icon (a document's own image1.png is usually a figure, not this icon)
-            try (java.io.InputStream in = getClass().getResourceAsStream("/latex-assets/open-access.png")) {
-                if (in != null) {
-                    byte[] icon = in.readAllBytes();
-                    Files.write(new File(workDir, "open-access.png").toPath(), icon);
-                    Files.write(new File(imagesDir, "open-access.png").toPath(), icon);
-                }
-            } catch (java.io.IOException ex) {
-                log.warn("Không thể sao chép biểu tượng Open Access: {}", ex.getMessage());
+            // Journal artwork (Open Access icon, Check for updates badge, VNUHCM Press logo) from the classpath.
+            // The QR code is drawn in TeX from the DOI; paper figures (image2/3/4…) are never aliased to artwork.
+            vn.edu.vnu.structpaper.compile.LatexAssets.copyBundled(workDir, imagesDir);
+            for (String stale : new String[] {"qr-code.png", "qr-code", "article-qr.png"}) {
+                new File(workDir, stale).delete();
+                new File(imagesDir, stale).delete();
             }
 
             // Figure 1 stomach anatomy aliases (image5.jpeg) - only fallback if not already provided

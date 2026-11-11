@@ -223,6 +223,8 @@ public class CompileSandboxService {
 
         // 3. Sao chép các asset demo chuẩn nếu có
         copyDemoAssets(workDir, imagesDir);
+        // 4. Biểu tượng/huy hiệu/logo của tạp chí đóng gói sẵn (không phụ thuộc đường dẫn máy dev)
+        LatexAssets.copyBundled(workDir, imagesDir);
     }
 
     private void copyDemoAssets(File workDir, File imagesDir) {
