@@ -5,6 +5,7 @@ import { attachTableFooterLine, placeLeftoverTable, landscapeResolver, applyTabl
 import { mergeBilingualAffiliations } from './docx-affiliations';
 import { enrichScriptRuns } from './docx-richtext';
 import { loadFigureImages } from './docx-figure-images';
+import { extractListHeadings } from './docx-headings';
 import { articleIdFromFileName } from './publication';
 import { normalizeImportedTitle } from './title-case';
 import JSZip from 'jszip';
@@ -863,6 +864,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     }
   }
 
+  const listHeadings = extractListHeadings((await zip.file('word/document.xml')?.async('text')) || '');
   const rawTextResult = await mammoth.extractRawText(cleanMammothOpts);
   const rawLines = rawTextResult.value
     .split(/\r?\n/)
@@ -1171,6 +1173,18 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       ) {
         continue;
       }
+    }
+
+    // Headings numbered by Word's automatic list ("Tổng quan", "Lý thuyết nền tảng")
+    const listLevel = listHeadings.get(line.trim());
+    if (listLevel !== undefined && isFrontMatterDone) {
+      sections.push({
+        id: `s_${sections.length + 1}`,
+        type: (['h1', 'h2', 'h3'] as const)[listLevel],
+        title: line,
+        content: '',
+      });
+      continue;
     }
 
     // Headings H1

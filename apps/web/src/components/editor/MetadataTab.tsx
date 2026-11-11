@@ -32,6 +32,7 @@ export const HS_ARTICLE_TYPE_OPTIONS: SelectOption[] = [
 // All other journals only have 1 single article type: Research Article
 export const STANDARD_ARTICLE_TYPE_OPTIONS: SelectOption[] = [
   { value: 'Bài báo nghiên cứu', label: 'Bài báo nghiên cứu', badge: 'Research Article', description: 'Công trình nghiên cứu khoa học nguyên bản' },
+  { value: 'Bài nghiên cứu', label: 'Bài nghiên cứu', badge: 'Research Article', description: 'Tên gọi in trên bài mẫu của tạp chí (VNUHCM-EBL)' },
 ];
 
 export const MetadataTab: React.FC<MetadataTabProps> = ({
@@ -78,7 +79,7 @@ export const MetadataTab: React.FC<MetadataTabProps> = ({
 
   // Auto-normalize if an unsupported article type is selected for a non-HS journal
   useEffect(() => {
-    if (!isHealthSciences && metadata.articleType && metadata.articleType !== 'Bài báo nghiên cứu') {
+    if (!isHealthSciences && metadata.articleType && !STANDARD_ARTICLE_TYPE_OPTIONS.some((o) => o.value === metadata.articleType)) {
       dispatchMetadataField(activeBus, 'articleType', 'Bài báo nghiên cứu', onChange, metadata);
     }
   }, [isHealthSciences, metadata.articleType, activeBus, onChange, metadata]);

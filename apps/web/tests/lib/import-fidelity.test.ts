@@ -289,3 +289,15 @@ describe('figure picture pairing', () => {
     expect(figs.find((f) => f.num === 1)?.src).toBe('');
   });
 });
+
+describe('real file: ID1750 list-numbered headings', () => {
+  const file = path.resolve(__dirname, '../../../../fixtures/golden/papers/eic_stdjelm,+Journal+editor,+3.+1750.docx');
+  it.skipIf(!fs.existsSync(file))('keeps "Tổng quan" and its sub-headings', async () => {
+    const buf = fs.readFileSync(file);
+    const p = await parseDocxFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, 'x.docx');
+    const heads = p.sections.filter((s) => ['h1', 'h2', 'h3'].includes(s.type)).map((s) => `${s.type}:${s.title}`);
+    expect(heads).toContain('h1:Tổng quan');
+    expect(heads).toContain('h2:Lý thuyết nền tảng');
+    expect(heads).toContain('h2:Mô hình nghiên cứu');
+  });
+});

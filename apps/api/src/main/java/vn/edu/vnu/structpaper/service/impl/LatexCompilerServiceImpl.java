@@ -348,11 +348,15 @@ public class LatexCompilerServiceImpl implements LatexCompilerService {
                 FileUtils.copyFile(checkUpdateSource, new File(imagesDir, "check-update.jpg"));
             }
 
-            // Open access icon (image1.png)
-            File openAccessSource = new File(workDir, "image1.png");
-            if (openAccessSource.exists()) {
-                FileUtils.copyFile(openAccessSource, new File(workDir, "open-access.png"));
-                FileUtils.copyFile(openAccessSource, new File(imagesDir, "open-access.png"));
+            // Open access icon: the bundled generic icon (a document's own image1.png is usually a figure, not this icon)
+            try (java.io.InputStream in = getClass().getResourceAsStream("/latex-assets/open-access.png")) {
+                if (in != null) {
+                    byte[] icon = in.readAllBytes();
+                    Files.write(new File(workDir, "open-access.png").toPath(), icon);
+                    Files.write(new File(imagesDir, "open-access.png").toPath(), icon);
+                }
+            } catch (java.io.IOException ex) {
+                log.warn("Không thể sao chép biểu tượng Open Access: {}", ex.getMessage());
             }
 
             // Figure 1 stomach anatomy aliases (image5.jpeg) - only fallback if not already provided

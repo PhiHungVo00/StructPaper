@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "generator": "legacy-docx-parser",
-  "generatedAt": "2026-11-11T06:38:18.444Z",
+  "generatedAt": "2026-11-11T06:58:51.028Z",
   "totalFiles": 11,
   "templatesCount": 4,
   "papersCount": 7,
@@ -68,7 +68,7 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 2279,
-        "sectionsLength": 74,
+        "sectionsLength": 75,
         "tablesLength": 5,
         "figuresLength": 0,
         "referencesLength": 36
@@ -119,7 +119,7 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 1307,
-        "sectionsLength": 54,
+        "sectionsLength": 57,
         "tablesLength": 3,
         "figuresLength": 2,
         "referencesLength": 43
