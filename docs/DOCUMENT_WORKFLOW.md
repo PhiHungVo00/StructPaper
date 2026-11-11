@@ -7,7 +7,7 @@ Phần mềm tổ chức quanh **từng tài liệu**: tạo mới (đặt tên)
 | Thao tác | Nơi thực hiện | Cách hoạt động |
 | --- | --- | --- |
 | **Mới** | `Tệp ▸ Mới…` hoặc nút tạo ở trang Bài báo | Hộp thoại có ô **Tên tài liệu**. Để trống thì lấy theo tiêu đề bài báo. |
-| **Nhập Word gốc** | Hộp thoại Mới, bước tải tệp | Chạy **cổng kiểm tra đầu vào** (mục 3) trước khi vào chỉnh sửa. |
+| **Nhập Word gốc** | Hộp thoại Mới, bước tải tệp | Chạy **cổng kiểm tra đầu vào** (mục 3) trước khi vào chỉnh sửa. Chọn **nhiều** tệp cùng lúc thì chuyển sang **nhập hàng loạt** (mục 2b). |
 | **Chỉnh sửa** | Trình soạn thảo | Mọi thay đổi được **tự động lưu** sau ~1,2 giây ngừng gõ, và khi ẩn tab/đóng trang. |
 | **Lưu** | `Tệp ▸ Lưu` / `Ctrl+S` | Lưu ngay và tạo thêm **bản chụp phiên bản** (file JSON trong kho tệp). |
 | **Mở** | `Tệp ▸ Mở…` | Danh sách tài liệu đã lưu, gộp từ máy này (IndexedDB) và máy chủ; tìm theo tên. |
@@ -46,6 +46,21 @@ Khởi chạy MinIO: `docker compose -f docker-compose.minio.yml up -d`, rồi c
 | DELETE | `/{id}` | Xóa mềm |
 | POST/GET | `/{id}/exports` | Lưu / liệt kê bản xuất (multipart `format`, `file`) |
 | GET | `/{id}/exports/{exportId}` | Tải bản xuất |
+
+## 2b. Nhập nhiều tệp Word cùng lúc
+
+Trong hộp thoại **Tạo bài báo mới**, chọn (hoặc kéo thả) **2 tệp .docx trở lên**: mỗi tệp thành một bài báo, hệ thống đọc, lưu và biên dịch PDF **song song**, người dùng không phải chờ hay thao tác từng bài. Một tệp thì giữ nguyên quy trình cũ (mục 3).
+
+1. Chọn tệp → chọn **mẫu tạp chí một lần** cho cả lô (nếu mở từ trang Mẫu tạp chí thì bỏ qua bước này).
+2. Bảng tiến độ: mỗi tệp một dòng với trạng thái *Đang chờ → Đang đọc tệp Word → Đang lưu → Chờ tới lượt biên dịch → Đang biên dịch PDF → Hoàn tất* (hoặc *Không tạo được* / *Đã hủy*), thanh tiến độ chung, số lỗi/cảnh báo của cổng kiểm tra đầu vào cho từng bài.
+3. Giới hạn song song: **2 tệp đọc cùng lúc** (CPU trình duyệt), **3 PDF biên dịch cùng lúc** (CPU máy chủ); phần còn lại xếp hàng theo thứ tự. Tối đa **100 tệp** mỗi lần; tệp không phải Word bị bỏ qua và được báo.
+4. Mỗi dòng có **Mở** (vào `/editor?id=…`, mở được ngay khi bài đã lưu dù PDF còn đang biên dịch) và **tải PDF**; cuối lô có **Tải tất cả PDF (.zip)**, **Thử lại** và **Xong**.
+5. **Hủy** dừng các tệp chưa xong: tệp đang xếp hàng hoặc đang đọc không được tạo; bài đã lưu thì giữ lại và chỉ dừng PDF. Một tệp lỗi (hỏng, không lưu được) **không làm dừng** các tệp khác. **Thử lại** chạy lại tệp lỗi/đã hủy từ đầu, còn bài đã tạo mà chưa có PDF thì chỉ biên dịch lại PDF.
+6. Đóng hộp thoại khi đang chạy **không dừng** lô: có thông báo khi xong và danh sách bài tự tải lại; mở lại hộp thoại sẽ thấy tiến độ.
+
+Khác với nhập một tệp: tên bài lấy theo tiêu đề đọc được (hoặc tên tệp), **tự thêm "(1)", "(2)"** khi trùng thay vì hỏi; ô "Tên tài liệu" không dùng; cổng kiểm tra không chặn mà chỉ hiện số lỗi/cảnh báo, sửa trong trình soạn. Bài được lưu như nhập một tệp (IndexedDB, rồi bản sao máy chủ; PDF được lưu kèm trên máy chủ sau khi bản sao bài đã có).
+
+Mã: `lib/batch-import/` (`limiter.ts` giới hạn đồng thời, `run-batch.ts` điều phối, `default-deps.ts` đọc/lưu/biên dịch thật, `zip-pdfs.ts`, `summary.ts`), `hooks/useBatchImport.ts`, `components/modals/CreatePaperModal/BatchImportPanel.tsx`. Điều phối chạy qua các phụ thuộc truyền vào nên kiểm thử bằng bản giả. Bài đã lưu được giải phóng khỏi bộ nhớ trong lúc chờ biên dịch (đọc lại từ IndexedDB), và chỉ gửi những ảnh mà mã LaTeX thật sự dùng (nhỏ hơn khoảng 6 lần so với trình soạn).
 
 ## 3. Cổng kiểm tra đầu vào (ngay sau khi nhập Word)
 
@@ -196,8 +211,14 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | `e2ac6ff` | Word theo đúng bố cục trang: 1/2 cột toàn bài, công thức Trải 2 cột, dấu bố cục trang theo mục (mỗi dấu là một section Word sang trang mới, có cột và hướng riêng), hướng ngang toàn bài, và bảng "xoay ngang" nằm riêng một trang ngang (trước đây bị bỏ qua). Mã ở `lib/docx-export-layout.ts`. Giới hạn: tab của đầu/chân trang chỉnh theo khổ dọc nên ở trang ngang dòng chữ căn phải không chạm lề phải. |
 | `1679b50` | Bộ xuất Word viết lại: dàn trang như bản in (khổ giấy, lề, đầu/chân trang, cột bên trái, khung tóm tắt, thân 2 cột, ảnh, công thức Word, bảng ô gộp, trang tiếng Anh) và tên style của template. |
 
+### Nhập nhiều tệp cùng lúc
+| Commit | Thay đổi |
+| --- | --- |
+| (commit kế tiếp) | Nhập hàng loạt (mục 2b): chọn nhiều .docx, mỗi tệp thành một bài, đọc/lưu/biên dịch PDF song song với bảng tiến độ, hủy, thử lại, mở, tải PDF/zip. Đã kiểm chứng bằng 7 tệp mẫu thật trên trình duyệt (~57 s, so với ~150 s nếu làm lần lượt) và một đợt rà soát độc lập; sửa theo đó: lưu thất bại không còn báo thành công, hủy được cả bước đọc/lưu bị kẹt, giải phóng bộ nhớ, thử lại riêng phần PDF, lưu PDF máy chủ sau khi bài đã có, tên tệp zip an toàn trên Windows. `savePaperToIndexedDb` giờ trả về `true/false`. |
+
 ### Còn lại / giới hạn đã biết
 * Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).
 * Tiêu đề "MỞ ĐẦU" lấy từ file Word (PDF mẫu của tạp chí ghi "GIỚI THIỆU").
 * Huy hiệu "Check for updates" là ảnh, chưa phải liên kết CrossMark.
 * Xem trước HTML nhanh không mô phỏng dấu bố cục trang; dùng PDF để kiểm tra.
+* Nhập hàng loạt: đọc tệp Word chạy trên luồng chính của trình duyệt nên giao diện có thể khựng khoảng 1 giây khi đọc tệp lớn; trang "Tải file DOCX" riêng (`/upload`) vẫn chỉ nhận một tệp.
