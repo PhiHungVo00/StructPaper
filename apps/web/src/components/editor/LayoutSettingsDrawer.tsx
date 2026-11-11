@@ -25,6 +25,9 @@ import {
 } from '@/types/paper';
 import { JOURNAL_TEMPLATES } from '@/lib/templates';
 import { Select, SelectOption } from '../ui/Select';
+import { ThemeSettingsSection } from './ThemeSettingsSection';
+import { formatSamplePage } from './page-number-format';
+import { PageOrientationSetting } from './PageOrientationSetting';
 
 interface LayoutSettingsDrawerProps {
   isOpen: boolean;
@@ -45,41 +48,6 @@ const JOURNAL_OPTIONS: SelectOption[] = Object.values(JOURNAL_TEMPLATES)
     color: tmpl.color,
     badge: tmpl.id.replace('VNUHCM-', ''),
   }));
-
-function toRoman(num: number): string {
-  const map: Record<string, number> = {
-    M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1
-  };
-  let str = '';
-  let n = Math.max(1, Math.min(3999, Math.floor(num)));
-  for (const k of Object.keys(map)) {
-    const q = Math.floor(n / map[k]);
-    n -= q * map[k];
-    str += k.repeat(q);
-  }
-  return str || 'I';
-}
-
-function formatSamplePage(num: number, format: string, prefix = '', total = 10): string {
-  const pfx = prefix ? `${prefix} ` : '';
-  switch (format) {
-    case 'roman-lower':
-      return `${pfx}${toRoman(num).toLowerCase()}`;
-    case 'roman-upper':
-      return `${pfx}${toRoman(num)}`;
-    case 'alpha-lower':
-      return `${pfx}${String.fromCharCode(96 + ((num - 1) % 26) + 1)}`;
-    case 'alpha-upper':
-      return `${pfx}${String.fromCharCode(64 + ((num - 1) % 26) + 1)}`;
-    case 'page-x-of-y':
-      return `${pfx}${num} / ${total}`;
-    case 'hyphen':
-      return `- ${num} -`;
-    case 'arabic':
-    default:
-      return `${pfx}${num}`;
-  }
-}
 
 export const LayoutSettingsDrawer: React.FC<LayoutSettingsDrawerProps> = ({
   isOpen,
@@ -504,6 +472,11 @@ export const LayoutSettingsDrawer: React.FC<LayoutSettingsDrawerProps> = ({
                 </div>
               </div>
 
+              <PageOrientationSetting
+                value={localSettings.orientation}
+                onChange={(orientation) => setLocalSettings((prev) => ({ ...prev, orientation }))}
+              />
+
               {/* 4. KÍCH THƯỚC KHỔ GIẤY */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -697,6 +670,10 @@ export const LayoutSettingsDrawer: React.FC<LayoutSettingsDrawerProps> = ({
                   </div>
                 </div>
               </div>
+              <ThemeSettingsSection
+                theme={localSettings.theme}
+                onChange={(theme) => setLocalSettings((prev) => ({ ...prev, theme }))}
+              />
             </div>
 
             {/* Footer Actions */}

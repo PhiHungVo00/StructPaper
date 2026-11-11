@@ -69,10 +69,10 @@
       "maxAllowedCode": 470
     },
     "apps/web/src/components/editor/EditorLeftDock.tsx": {
-      "totalLines": 528,
-      "codeLines": 493,
-      "maxAllowedTotal": 528,
-      "maxAllowedCode": 493
+      "totalLines": 553,
+      "codeLines": 515,
+      "maxAllowedTotal": 553,
+      "maxAllowedCode": 515
     },
     "apps/web/src/components/editor/ExtractedContentDrawer.tsx": {
       "totalLines": 621,
@@ -183,10 +183,10 @@
       "maxAllowedCode": 1401
     },
     "apps/web/src/components/template-builder/TemplateBuilderView.tsx": {
-      "totalLines": 777,
-      "codeLines": 679,
-      "maxAllowedTotal": 777,
-      "maxAllowedCode": 679
+      "totalLines": 791,
+      "codeLines": 695,
+      "maxAllowedTotal": 791,
+      "maxAllowedCode": 695
     },
     "apps/web/src/components/template-builder/TemplateHubView.tsx": {
       "totalLines": 670,

@@ -80,4 +80,8 @@ export interface LivePreviewPaneProps {
   compileErrorInfo: CompileErrorInfo | null;
   onRecompile: () => void;
   onClearError: () => void;
+  /** When the running compile started (ms epoch), to show elapsed seconds. */
+  compileStartedAt?: number | null;
+  /** Label of the running job, e.g. 'Đang xuất PDF…' while exporting. */
+  busyLabel?: string;
 }

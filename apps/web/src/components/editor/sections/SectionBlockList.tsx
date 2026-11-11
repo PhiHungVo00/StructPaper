@@ -68,6 +68,7 @@ export interface SectionBlockListProps {
   onAddTable: (insertAfterIndex?: number) => void;
   onAddFigure: (insertAfterIndex?: number) => void;
   onAddCitation?: (insertAfterIndex?: number) => void;
+  onAddEquation?: (insertAfterIndex?: number) => void;
   setFileInputRef: (idx: number, el: HTMLInputElement | null) => void;
   references?: PaperReference[];
   initialScrollOffset?: number;
@@ -123,6 +124,7 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
   onAddTable,
   onAddFigure,
   onAddCitation,
+  onAddEquation,
   setFileInputRef,
   initialScrollOffset,
   initialMeasurementsCache,
@@ -380,6 +382,7 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
                     onAddTable={onAddTable}
                     onAddFigure={onAddFigure}
                     onAddCitation={onAddCitation}
+                    onAddEquation={onAddEquation}
                     setFileInputRef={setFileInputRef}
                     onStartEdit={resolvedOnStartEdit}
                     onEndEdit={resolvedOnEndEdit}

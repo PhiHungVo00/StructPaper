@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { LivePreviewPaneProps } from './types';
 import { CompileErrorModal } from '../preview/CompileErrorModal';
 import { exportToLatex } from '@/lib/exporters';
-import { RefreshCw, AlertTriangle, Check } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Check, Loader2 } from 'lucide-react';
 
 export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   paper,
@@ -13,7 +13,17 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   compileErrorInfo,
   onRecompile,
   onClearError,
+  compileStartedAt,
+  busyLabel,
 }) => {
+  const [now, setNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    if (!isCompilingPdf) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [isCompilingPdf]);
+  const elapsed = isCompilingPdf && compileStartedAt ? Math.max(0, Math.floor((now - compileStartedAt) / 1000)) : 0;
   const [isOverlayActive, setIsOverlayActive] = useState<boolean>(false);
   const [justFinished, setJustFinished] = useState<boolean>(false);
 
@@ -73,11 +83,18 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
         <div
           className={`absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center transition-all duration-500 ease-out ${
             isOverlayActive
-              ? 'opacity-100 backdrop-blur-[2px] bg-white/20 pointer-events-auto'
+              ? `opacity-100 backdrop-blur-[2px] ${compiledPdfUrl ? 'bg-white/40' : 'bg-white/70'} pointer-events-auto`
               : 'opacity-0 backdrop-blur-none bg-transparent pointer-events-none'
           }`}
         >
-          <div className="liquid-glass-pill px-5 py-2.5 rounded-2xl flex items-center gap-2.5 shadow-lg transition-all duration-300">
+          <div
+            role="status"
+            aria-live="polite"
+            aria-busy={isCompilingPdf}
+            data-testid="compile-status"
+            className="liquid-glass-pill px-5 py-2.5 rounded-2xl flex flex-col items-center gap-1 shadow-lg transition-all duration-300"
+          >
+            <div className="flex items-center gap-2.5">
             {justFinished ? (
               <>
                 <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
@@ -94,9 +111,15 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#78C841]"></span>
                 </span>
                 <span className="font-extrabold text-xs text-zinc-900 tracking-tight">
-                  Đang biên dịch PDF XeLaTeX...
+                  {busyLabel || 'Đang biên dịch PDF XeLaTeX…'} {elapsed > 0 ? `${elapsed}s` : ''}
                 </span>
               </>
+            )}
+            </div>
+            {!justFinished && elapsed >= 5 && (
+              <span className="text-[11px] text-zinc-600">
+                Bản PDF dàn trang thường mất 15–40 giây, vui lòng đợi…
+              </span>
             )}
           </div>
         </div>
@@ -124,10 +147,12 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
                 <button
                   type="button"
                   onClick={onRecompile}
-                  className="btn-pill-lime text-xs px-3.5 py-1.5 flex items-center gap-1.5 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer mt-1"
+                  disabled={isCompilingPdf}
+                  aria-busy={isCompilingPdf}
+                  className="btn-pill-lime text-xs px-3.5 py-1.5 flex items-center gap-1.5 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer mt-1 disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100"
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Biên dịch ngay</span>
+                  {isCompilingPdf ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <span>{isCompilingPdf ? 'Đang biên dịch…' : 'Biên dịch ngay'}</span>
                 </button>
               )}
             </div>

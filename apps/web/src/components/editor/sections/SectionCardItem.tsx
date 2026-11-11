@@ -13,6 +13,7 @@ import { HeadingSectionItem } from './HeadingSectionItem';
 import { ParagraphSectionItem } from './ParagraphSectionItem';
 import { TableSectionItem } from './TableSectionItem';
 import { FigureSectionItem } from './FigureSectionItem';
+import { EquationSectionItem } from './EquationSectionItem';
 import { SectionInsertDivider } from './SectionInsertDivider';
 
 export interface SectionCardItemProps {
@@ -56,6 +57,7 @@ export interface SectionCardItemProps {
   onAddTable: (insertAfterIndex?: number) => void;
   onAddFigure: (insertAfterIndex?: number) => void;
   onAddCitation?: (insertAfterIndex?: number) => void;
+  onAddEquation?: (insertAfterIndex?: number) => void;
   setFileInputRef: (idx: number, el: HTMLInputElement | null) => void;
   onStartEdit: (secId: string) => void;
   onEndEdit: () => void;
@@ -102,6 +104,7 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
   onAddTable,
   onAddFigure,
   onAddCitation,
+  onAddEquation,
   setFileInputRef,
   onStartEdit,
   onEndEdit,
@@ -109,6 +112,7 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
   const isHeading = sec.type === 'h1' || sec.type === 'h2' || sec.type === 'h3';
   const isTable = sec.type === 'table';
   const isFigure = sec.type === 'figure';
+  const isEquation = sec.type === 'equation';
   const isParagraph = sec.type === 'paragraph';
   const isCardSettingsOpen = activeModalType === 'figure' || activeModalType === 'table';
   const elevateStack = isCardSettingsOpen || isEditing;
@@ -211,6 +215,9 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
             />
           )}
 
+          {/* 5. EQUATION */}
+          {isEquation && <EquationSectionItem sec={sec} idx={idx} onUpdateSection={onUpdateSection} />}
+
           {/* Quick Add Bar below section */}
           <SectionInsertDivider
             idx={idx}
@@ -219,6 +226,7 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
             onAddTable={onAddTable}
             onAddFigure={onAddFigure}
             onAddCitation={onAddCitation}
+            onAddEquation={onAddEquation}
           />
         </div>
       </div>

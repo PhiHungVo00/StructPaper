@@ -1,4 +1,15 @@
 import mammoth from 'mammoth';
+import { ommlToLatex } from './omml';
+import { extractDisplayEquations, insertEquations, isWhereDefinitionLine } from './docx-equations';
+import { attachTableFooterLine, placeLeftoverTable, placeAbbreviationTable, landscapeResolver, applyTableLayoutHints } from './docx-table-extras';
+import { mergeBilingualAffiliations } from './docx-affiliations';
+import { findEnglishBackMatter, splitKeywords } from './docx-english-backmatter';
+import { enrichScriptRuns } from './docx-richtext';
+import { loadFigureImages } from './docx-figure-images';
+import { figureTableInfo, figureTableAsCaptionParagraph, stripGuideParagraphs } from './docx-figure-tables';
+import { extractListHeadings, isNoneMark } from './docx-headings';
+import { articleIdFromFileName } from './publication';
+import { normalizeImportedTitle } from './title-case';
 import JSZip from 'jszip';
 import { Author, Affiliation, PaperSection, PaperReference, PreflightCheck, StructuralIssue, CompletePaper, PaperMetadata, TableCell } from '@/types/paper';
 import { JOURNAL_TEMPLATES, getJournalTemplate } from './templates';
@@ -42,57 +53,7 @@ export function normalizeVietnameseWordSpacing(name: string): string {
   return s.replace(/\s+/g, ' ').trim();
 }
 
-/**
- * Convert Office Math Markup Language (OMML) to LaTeX math syntax
- */
-export function ommlToLatex(ommlXml: string): string {
-  let s = ommlXml;
-
-  // Fraction <m:f>: <m:num>...</m:num><m:den>...</m:den> -> \frac{num}{den}
-  s = s.replace(
-    /<m:f\b[\s>][\s\S]*?<m:num\b[\s>]([\s\S]*?)<\/m:num>[\s\S]*?<m:den\b[\s>]([\s\S]*?)<\/m:den>[\s\S]*?<\/m:f>/gi,
-    (_, num, den) => `\\frac{${ommlToLatex(num)}}{${ommlToLatex(den)}}`
-  );
-
-  // Superscript <m:sSup>: <m:e>...</m:e><m:sup>...</m:sup> -> {base}^{sup}
-  s = s.replace(
-    /<m:sSup\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<m:sup\b[\s>]([\s\S]*?)<\/m:sup>[\s\S]*?<\/m:sSup>/gi,
-    (_, e, sup) => `{${ommlToLatex(e)}}^{${ommlToLatex(sup)}}`
-  );
-
-  // Subscript <m:sSub>: <m:e>...</m:e><m:sub>...</m:sub> -> {base}_{sub}
-  s = s.replace(
-    /<m:sSub\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<m:sub\b[\s>]([\s\S]*?)<\/m:sub>[\s\S]*?<\/m:sSub>/gi,
-    (_, e, sub) => `{${ommlToLatex(e)}}_{${ommlToLatex(sub)}}`
-  );
-
-  // Sub-Superscript <m:sSubSup>
-  s = s.replace(
-    /<m:sSubSup\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<m:sub\b[\s>]([\s\S]*?)<\/m:sub>[\s\S]*?<m:sup\b[\s>]([\s\S]*?)<\/m:sup>[\s\S]*?<\/m:sSubSup>/gi,
-    (_, e, sub, sup) => `{${ommlToLatex(e)}}_{${ommlToLatex(sub)}}^{${ommlToLatex(sup)}}`
-  );
-
-  // Radical/sqrt <m:rad>
-  s = s.replace(
-    /<m:rad\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<\/m:rad>/gi,
-    (_, e) => `\\sqrt{${ommlToLatex(e)}}`
-  );
-
-  // Delimiter/parentheses <m:d>
-  s = s.replace(
-    /<m:d\b[\s>][\s\S]*?<m:e\b[\s>]([\s\S]*?)<\/m:e>[\s\S]*?<\/m:d>/gi,
-    (_, e) => `\\left(${ommlToLatex(e)}\\right)`
-  );
-
-  // Text inside <m:t>
-  const tMatches = s.match(/<m:t\b[^>]*>([\s\S]*?)<\/m:t>/gi);
-  if (tMatches) {
-    return tMatches.map((m) => m.replace(/<[^>]+>/g, '')).join('');
-  }
-
-  // Strip remaining XML tags
-  return s.replace(/<[^>]+>/g, '').trim();
-}
+export { ommlToLatex };
 
 /**
  * Journal auto-detector prioritizing specific series before fallback STDJ
@@ -156,6 +117,7 @@ export function detectJournalFromContent(
 export interface XmlRun {
   text: string;
   isSup: boolean;
+  isSub?: boolean;
   isBold: boolean;
   isItalic: boolean;
 }
@@ -208,6 +170,8 @@ export async function extractOpenXmlParagraphs(zip: JSZip): Promise<XmlParagraph
       const isSup =
         /<w:vertAlign\s+w:val="superscript"/i.test(rXml) ||
         /<w:position\s+w:val="[1-9]\d*"/i.test(rXml);
+      const isSub =
+        /<w:vertAlign\s+w:val="subscript"/i.test(rXml) || /<w:position\s+w:val="-\d+"/i.test(rXml);
       const isBold = /<w:b[\s\/>]/i.test(rXml) && !/<w:b\s+w:val="(?:0|false)"/i.test(rXml);
       const isItalic = /<w:i[\s\/>]/i.test(rXml) && !/<w:i\s+w:val="(?:0|false)"/i.test(rXml);
 
@@ -218,7 +182,7 @@ export async function extractOpenXmlParagraphs(zip: JSZip): Promise<XmlParagraph
       }
       if (text) {
         text = decodeXml(text);
-        runs.push({ text, isSup, isBold, isItalic });
+        runs.push({ text, isSup, isSub, isBold, isItalic });
         fullText += text;
       }
     }
@@ -247,6 +211,8 @@ export interface ExtractedDocxTable {
   headerRows?: TableCell[][];
   bodyRows?: TableCell[][];
   pos: number;
+  /** The table sits in a landscape section of the Word file. */
+  landscape?: boolean;
   placed?: boolean;
 }
 
@@ -323,7 +289,8 @@ export function parseOpenXmlTable(tblXml: string): {
           return cleanEndNoteText(decodeXml(raw));
         })
         .filter((t) => t.length > 0);
-      const cellText = pTexts.join(' ').trim();
+      // one line per paragraph: multi-line cells (e.g. 4 value lines) must stay aligned across columns
+      const cellText = pTexts.join('\n').trim();
 
       if (vMerge === 'continue') {
         let parentRow = r - 1;
@@ -431,7 +398,7 @@ export function parseOpenXmlTable(tblXml: string): {
         parts.push(txt);
       }
     }
-    finalHeaders.push(parts.join(' / ') || `Cột ${c + 1}`);
+    finalHeaders.push(parts.join(' / ')); // an empty corner cell stays empty, as in the file
   }
 
   // Build data rows
@@ -497,6 +464,7 @@ export async function extractOpenXmlTables(
   const docXml = await docXmlFile.async('text');
 
   const tables: ExtractedDocxTable[] = [];
+  const isLandscapeAt = landscapeResolver(docXml);
   const tblRegex = /<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi;
   let tblMatch: RegExpExecArray | null;
 
@@ -512,7 +480,8 @@ export async function extractOpenXmlTables(
     let tableNum = 0;
 
     for (let pI = pMatches.length - 1; pI >= Math.max(0, pMatches.length - 3); pI--) {
-      const pText = pMatches[pI].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      // Text runs only: field codes (" SEQ Bảng \* ARABIC ") live in <w:instrText> and must not leak into the caption
+      const pText = (pMatches[pI].match(/<w:t\b[^>]*>[\s\S]*?<\/w:t>/gi) || []).map((t) => t.replace(/<[^>]+>/g, '')).join('').replace(/\s+/g, ' ').trim();
       const cleanP = normalizeVietnameseWordSpacing(cleanEndNoteText(decodeXml(pText)));
 
       const tableCapMatch = cleanP.match(/^(?:b\s*ảng|bảng|table|b\.)\s*(\d*)\s*[:.-]?\s*(.*)/i);
@@ -547,7 +516,11 @@ export async function extractOpenXmlTables(
     if (!parsed) continue;
 
     // Check embedded banner in row 0
-    if (!detectedCaption && parsed.rows.length > 0 && parsed.headers.length === 1) {
+    // (a banner that spans every column yields N identical header cells, not just one)
+    const isBannerRow =
+      parsed.headers.length === 1 ||
+      (parsed.headers.length > 1 && !!parsed.headers[0] && parsed.headers.every((h) => h === parsed.headers[0]));
+    if (!detectedCaption && parsed.rows.length > 0 && isBannerRow) {
       const h0 = parsed.headers[0];
       const embMatch = h0.match(/^(?:b\s*ảng|bảng|table|b\.)\s*(\d*)[:.-]?\s*(.*)/i);
       if (embMatch) {
@@ -557,6 +530,13 @@ export async function extractOpenXmlTables(
         if (parsed.rows.length > 0) {
           parsed.headers = parsed.rows[0];
           parsed.rows = parsed.rows.slice(1);
+          // keep the structured rows in step: the first body row becomes the header row
+          if (parsed.bodyRows && parsed.bodyRows.length > 0) {
+            parsed.headerRows = [parsed.bodyRows[0]];
+            parsed.bodyRows = parsed.bodyRows.slice(1);
+          } else {
+            parsed.headerRows = [];
+          }
         }
       }
     }
@@ -568,7 +548,7 @@ export async function extractOpenXmlTables(
       !detectedCaption &&
       (allText.includes('đại học') || allText.includes('bộ môn') || allText.includes('khoa ') || allText.includes('email:'));
     const isSingleCellBox = parsed.totalRowCount === 1 && parsed.colCount === 1;
-    const isFigureTable = /<w:drawing|<w:pict/i.test(tblXml) && parsed.totalRowCount <= 2;
+    const isFigureTable = (/<w:drawing|<w:pict/i.test(tblXml) && parsed.totalRowCount <= 2) || !!figureTableInfo(tblXml);
     const isUncaptionedSmall = !detectedCaption && (parsed.totalRowCount <= 2 || parsed.colCount <= 1);
 
     if (isAuthorBox || isSingleCellBox || isFigureTable || isUncaptionedSmall) {
@@ -595,6 +575,7 @@ export async function extractOpenXmlTables(
       headerRows: parsed.headerRows,
       bodyRows: parsed.bodyRows,
       pos: tblPos,
+      landscape: isLandscapeAt(tblPos),
       placed: false,
     });
   }
@@ -660,7 +641,7 @@ export function extractAuthorsAndAffiliationsFromRuns(paragraphs: XmlParagraph[]
                     id: `a_${authors.length + 1}`,
                     name,
                     affiliationIds: curAffIds.length > 0 ? Array.from(new Set(curAffIds)) : [1],
-                    isCorresponding: curIsCorr || authors.length === 0,
+                    isCorresponding: curIsCorr,
                   });
                 }
                 curName = '';
@@ -671,7 +652,9 @@ export function extractAuthorsAndAffiliationsFromRuns(paragraphs: XmlParagraph[]
                 if (part.includes('*')) curIsCorr = true;
                 const trailingNums = (part.match(/\d+/g) || []).map(Number);
                 if (trailingNums.length > 0) curAffIds.push(...trailingNums);
-                curName += (curName ? ' ' : '') + part.replace(/[\d*()]/g, '').trim();
+                // Runs of one name are contiguous ("Nguy" + "ễ" + "n Thanh H"): keep the raw text,
+                // do not insert a space between runs (that produced "Nguyễ n").
+                curName += parts[partIdx].replace(/[\d*()]/g, '');
               }
             }
           }
@@ -684,7 +667,7 @@ export function extractAuthorsAndAffiliationsFromRuns(paragraphs: XmlParagraph[]
               id: `a_${authors.length + 1}`,
               name,
               affiliationIds: curAffIds.length > 0 ? Array.from(new Set(curAffIds)) : [1],
-              isCorresponding: curIsCorr || authors.length === 0,
+              isCorresponding: curIsCorr,
             });
           }
         }
@@ -859,69 +842,22 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
 
   const zip = await JSZip.loadAsync(fileBuffer);
 
-  const imageMap = new Map<string, string>();
-  const mediaFiles = Object.keys(zip.files).filter(
-    (path) => path.startsWith('word/media/') && !zip.files[path].dir
-  );
-
-  for (const mediaPath of mediaFiles) {
-    const file = zip.file(mediaPath);
-    if (file) {
-      const ext = mediaPath.split('.').pop()?.toLowerCase() || 'png';
-      if (['emf', 'wmf'].includes(ext)) continue;
-      const base64 = await file.async('base64');
-      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'png' ? 'image/png' : 'image/jpeg';
-      const dataUrl = `data:${mime};base64,${base64}`;
-      const name = mediaPath.replace('word/media/', '');
-      imageMap.set(name, dataUrl);
-    }
-  }
-
-  const figureImageMap = new Map<number, string>();
-  if (html) {
-    const chunkRegex = /(<img[^>]+>|<p[^>]*>[\s\S]*?<\/p>|<h1[^>]*>[\s\S]*?<\/h1>|<h2[^>]*>[\s\S]*?<\/h2>)/gi;
-    let match: RegExpExecArray | null;
-    let pendingImg: string | null = null;
-    while ((match = chunkRegex.exec(html)) !== null) {
-      const chunk = match[0];
-      if (chunk.startsWith('<img')) {
-        const srcMatch = chunk.match(/src="([^"]+)"/);
-        if (srcMatch && srcMatch[1]) {
-          pendingImg = srcMatch[1];
-        }
-      } else {
-        const text = chunk.replace(/<[^>]+>/g, '').trim();
-        const figMatch = text.match(/^(?:h\s*ình|hình|figure|fig\.|h\.)\s*(\d*)[:.]/i);
-        if (figMatch) {
-          const figNum = figMatch[1] ? parseInt(figMatch[1], 10) : figureImageMap.size + 1;
-          if (pendingImg) {
-            figureImageMap.set(figNum, pendingImg);
-            pendingImg = null;
-          }
-        }
-      }
-    }
-  }
-
-  if (figureImageMap.size === 0 && imageMap.size > 0) {
-    let figIdx = 1;
-    imageMap.forEach((dataUrl) => {
-      figureImageMap.set(figIdx, dataUrl);
-      figIdx++;
-    });
-  }
+  const { imageMap, figureImageMap, xmlCaptionNumbers } = await loadFigureImages(zip, html);
 
   const openXmlTables = await extractOpenXmlTables(zip);
   const openXmlParagraphs = await extractOpenXmlParagraphs(zip);
-  const { authors, affiliations, corresponding } = extractAuthorsAndAffiliationsFromRuns(openXmlParagraphs);
+  const { authors, affiliations: rawAffiliations, corresponding } = extractAuthorsAndAffiliationsFromRuns(openXmlParagraphs);
+  // VI + EN lines of the same affiliation become one entry (nameEn)
+  const affiliations = mergeBilingualAffiliations(rawAffiliations);
 
   // Generate clean document text without table cells to prevent table cell fragments leaking into body paragraphs
   const docXmlFile = zip.file('word/document.xml');
   let cleanMammothOpts = mammothOpts;
   if (docXmlFile) {
     const docXml = await docXmlFile.async('text');
-    if (docXml.includes('<w:tbl')) {
-      const cleanDocXml = docXml.replace(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi, '');
+    if (docXml.includes('<w:tbl') || /w:val="(Guide|Instruction)/.test(docXml)) {
+      // Tables leave the text pass; a picture grid with a "Hình N" caption leaves its caption behind
+      const cleanDocXml = stripGuideParagraphs(docXml.replace(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi, (t) => figureTableAsCaptionParagraph(t) ?? ''));
       const cleanZip = await JSZip.loadAsync(fileBuffer);
       cleanZip.file('word/document.xml', cleanDocXml);
       const cleanBuffer = await cleanZip.generateAsync({ type: 'arraybuffer' });
@@ -932,6 +868,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     }
   }
 
+  const listHeadings = extractListHeadings((await zip.file('word/document.xml')?.async('text')) || '');
   const rawTextResult = await mammoth.extractRawText(cleanMammothOpts);
   const rawLines = rawTextResult.value
     .split(/\r?\n/)
@@ -960,7 +897,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
               id: `a_${nIdx + 1}`,
               name,
               affiliationIds: [1],
-              isCorresponding: nIdx === 0 || rLine.includes('*'),
+              isCorresponding: rLine.includes('*') ? new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^,;]*\\*').test(rLine) : nIdx === 0,
             });
           });
           break;
@@ -988,8 +925,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   let volume = '';
   let issue = '';
   let year = '';
-  let firstPage = 1;
-  let lastPage = 10;
+  let firstPage = 0;
+  let lastPage = 0;
 
   let i = 0;
 
@@ -1026,10 +963,20 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   let isReadingReferences = false;
   let isFrontMatterDone = false;
   let tableCursor = 0;
+  // English summary page after the references ("Research Article", title, authors, ABSTRACT, Keywords)
+  const enBack = findEnglishBackMatter(rawLines);
 
   for (; i < rawLines.length; i++) {
     const line = rawLines[i];
     if (!line) continue;
+    if (enBack && i === enBack.start) {
+      isReadingReferences = false;
+      isReadingAbstract = false;
+      isReadingAbstractEn = false;
+      isFrontMatterDone = true;
+      i = enBack.end;
+      continue;
+    }
 
     // Explicit Article Type
     if (/^(loại bài|loại bài viết|article type):\s*(.+)/i.test(line)) {
@@ -1055,22 +1002,23 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       dates.received = line.replace(/.*ngày nhận( bài)?:\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
-    if (/ngày (nhận )?chỉnh sửa|ngày sửa đổi:/i.test(line)) {
-      dates.revised = line.replace(/.*(ngày (nhận )?chỉnh sửa|ngày sửa đổi):\s*/i, '').replace(/;$/, '').trim();
+    if (/ngày (nhận )?chỉnh sửa|ngày sửa (đổi|bài):/i.test(line)) {
+      dates.revised = line.replace(/.*(ngày (nhận )?chỉnh sửa|ngày sửa (đổi|bài)):\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
     if (/ngày chấp nhận:/i.test(line)) {
       dates.accepted = line.replace(/.*ngày chấp nhận:\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
-    if (/ngày đăng:/i.test(line)) {
-      dates.published = line.replace(/.*ngày đăng:\s*/i, '').replace(/;$/, '').trim();
+    if (/ngày (đăng|xuất bản)( trực tuyến)?:/i.test(line)) {
+      dates.published = line.replace(/.*ngày (đăng|xuất bản)( trực tuyến)?:\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
 
-    // DOI
-    if (/DOI\s*:\s*(.+)/i.test(line)) {
-      doi = line.replace(/.*DOI\s*:\s*/i, '').trim();
+    // Article DOI: only the labelled line in the front matter / side box. References and body text
+    // quote other papers' DOIs ("… DOI: https://doi.org/…"); those lines must reach the reference parser.
+    if (!isReadingReferences && !isFrontMatterDone && /^\s*DOI\s*:\s*\S/i.test(line)) {
+      if (!doi) doi = line.replace(/^\s*DOI\s*:\s*/i, '').trim().replace(/[.;,]$/, '');
       continue;
     }
 
@@ -1119,11 +1067,11 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     }
 
     // Keywords triggers
-    if (/^(keywords|từ khóa|từ khoá):/i.test(line)) {
+    if (/^(key\s?w+ords?|từ khóa|từ khoá)\s*:/i.test(line)) {
       isReadingAbstract = false;
       isReadingAbstractEn = false;
-      const kwStr = line.replace(/^(keywords|từ khóa|từ khoá):\s*/i, '').trim();
-      const kwItems = kwStr.split(/[,;]/).map((k) => k.trim()).filter(Boolean);
+      const kwStr = line.replace(/^(key\s?w+ords?|từ khóa|từ khoá)\s*:\s*/i, '').trim();
+      const kwItems = splitKeywords(kwStr);
       if (/từ khóa|từ khoá/i.test(line)) {
         keywords.push(...kwItems);
       } else {
@@ -1132,12 +1080,12 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       continue;
     }
 
-    if (/^(từ khóa|từ khoá|keywords)$/i.test(line)) {
+    if (/^(từ khóa|từ khoá|key\s?w+ords?)$/i.test(line)) {
       isReadingAbstract = false;
       isReadingAbstractEn = false;
       if (i + 1 < rawLines.length) {
         const nextLine = cleanEndNoteText(rawLines[i + 1]);
-        const kwItems = nextLine.split(/[,;]/).map((k) => k.trim()).filter(Boolean);
+        const kwItems = splitKeywords(nextLine);
         if (/từ khóa|từ khoá/i.test(line)) {
           keywords.push(...kwItems);
         } else {
@@ -1150,8 +1098,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
 
     if (isReadingAbstract) {
       if (
-        /^(giới thiệu|đặt vấn đề|introduction|mở đầu|keywords|từ khóa|từ khoá|abstract):/i.test(line) ||
-        /^(abstract|keywords|từ khóa|từ khoá)$/i.test(line) ||
+        /^(giới thiệu|đặt vấn đề|introduction|mở đầu|key\s?w+ords?|từ khóa|từ khoá|abstract)\s*:/i.test(line) ||
+        /^(abstract|key\s?w+ords?|từ khóa|từ khoá)$/i.test(line) ||
         /^(\d+\.)\s+[A-ZÀ-Ỹ]/i.test(line)
       ) {
         isReadingAbstract = false;
@@ -1164,8 +1112,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
 
     if (isReadingAbstractEn) {
       if (
-        /^(giới thiệu|đặt vấn đề|introduction|mở đầu|keywords|từ khóa|từ khoá):/i.test(line) ||
-        /^(keywords|từ khóa|từ khoá)$/i.test(line) ||
+        /^(giới thiệu|đặt vấn đề|introduction|mở đầu|key\s?w+ords?|từ khóa|từ khoá)\s*:/i.test(line) ||
+        /^(key\s?w+ords?|từ khóa|từ khoá)$/i.test(line) ||
         /^(\d+\.)\s+[A-ZÀ-Ỹ]/i.test(line)
       ) {
         isReadingAbstractEn = false;
@@ -1233,7 +1181,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
         line === titleEn ||
         line.startsWith('Use your smartphone to scan') ||
         /^(open access|bài nghiên|bài tổng|loại bài|review article|research article|lịch sử|bản quyền|copyright|trích dẫn bài báo này|cite this article|doi\s*:)/i.test(line) ||
-        /^(ngày nhận|ngày sửa đổi|ngày chấp nhận|ngày đăng)/i.test(line) ||
+        /^(ngày nhận|ngày sửa|ngày chỉnh sửa|ngày chấp nhận|ngày đăng|ngày xuất bản)/i.test(line) ||
         /©|Creative Commons|hvu@uhsvnu|tạp chí phát triển/i.test(line) ||
         keywords.some((k) => line.includes(k)) ||
         /^(không steroid|thuốc ức chế)/i.test(line)
@@ -1242,9 +1190,21 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       }
     }
 
+    // Headings numbered by Word's automatic list ("Tổng quan", "Lý thuyết nền tảng")
+    const listLevel = listHeadings.get(line.trim());
+    if (listLevel !== undefined && isFrontMatterDone) {
+      sections.push({
+        id: `s_${sections.length + 1}`,
+        type: (['h1', 'h2', 'h3'] as const)[listLevel],
+        title: line,
+        content: '',
+      });
+      continue;
+    }
+
     // Headings H1
     if (
-      /^(giới thiệu|đặt vấn đề|mở đầu|introduction|phương pháp|methods|phương pháp nghiên cứu|vật liệu và phương pháp|kết quả|results|kết quả và thảo luận|bàn luận|thảo luận|discussion|kết luận|conclusion|conclusions|lời cảm ơn|acknowledgements|danh mục từ viết tắt|tuyên bố đóng góp của tác giả|tuyên bố xung đột lợi ích):?$/i.test(
+      /^(giới thiệu|đặt vấn đề|mở đầu|introduction|phương pháp|methods|phương pháp nghiên cứu|vật liệu và phương pháp|kết quả|results|kết quả và thảo luận|bàn luận|thảo luận|discussion|kết luận|conclusion|conclusions|lời cảm ơn|acknowledgements|danh mục từ viết tắt|tuyên bố đóng góp của tác giả|tuyên bố xung đột lợi ích|đóng góp của các tác giả|xung đột lợi ích|tính khả dụng của dữ liệu|chấp thuận về đạo đức nghiên cứu|nguồn kinh phí|kinh phí|tài trợ|funding|author contributions|conflicts? of interest|data availability|ethics approval):?$/i.test(
         line
       ) ||
       /^(\d+)\.\s+([A-ZÀ-Ỹa-z\s:]{3,60})$/i.test(line) ||
@@ -1261,11 +1221,12 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     }
 
     // Subheadings H2
-    if (/^(\d+\.\d+(\.\d+)*)\s+(.+)/.test(line)) {
+    // "4.1. Kết quả…" / "4.2.2 Kiểm định…": short numbered line starting with a capital, not a sentence
+    if (/^\d+\.\d+(?:\.\d+)*\.?\s+[A-ZÀ-Ỹ]/.test(line) && line.length <= 110 && !/[.;:]$/.test(line)) {
       isFrontMatterDone = true;
       sections.push({
         id: `s_${sections.length + 1}`,
-        type: 'h2',
+        type: /^\d+\.\d+\.\d+/.test(line) ? 'h3' : 'h2',
         title: line,
         content: '',
       });
@@ -1284,7 +1245,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       const matchedImg =
         figureImageMap.get(figNum) ||
         figureImageMap.get(explicitNum) ||
-        (figNum <= imageList.length ? imageList[figNum - 1] : '') ||
+        (!xmlCaptionNumbers.has(figNum) && figNum <= imageList.length ? imageList[figNum - 1] : '') ||
         '';
 
       sections.push({
@@ -1408,8 +1369,11 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       }
     }
 
-    // Paragraph
-    if (line.length > 20) {
+    // "Chú thích: …" / "Nguồn: …" right after a table belong to that table
+    if (attachTableFooterLine(sections, line)) continue;
+
+    // Paragraph (short "n là số lượng mẫu" lines after "Trong đó:" are kept too)
+    if (line.length > 20 || (isFrontMatterDone && (isWhereDefinitionLine(line, sections[sections.length - 1]) || isNoneMark(line, sections[sections.length - 1])))) {
       if (!isFrontMatterDone) {
         continue;
       }
@@ -1426,8 +1390,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   for (const t of openXmlTables) {
     if (!t.placed && (t.type === 'table' || t.type === 'appendix')) {
       t.placed = true;
-      sections.push({
-        id: `s_${sections.length + 1}`,
+      placeLeftoverTable(sections, {
+        id: `s_tab_${t.id}`,
         type: 'table',
         content: t.caption,
         table: {
@@ -1441,7 +1405,37 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
           isFullWidth: true,
         },
       });
+    } else if (!t.placed && t.type === 'abbrev') {
+      t.placed = placeAbbreviationTable(sections, t.headers, t.rows);
     }
+  }
+
+  // Recover Word equations (OMML) that the text pipeline cannot see.
+  try {
+    const eqs = extractDisplayEquations(openXmlParagraphs);
+    if (eqs.length) {
+      const res = insertEquations(sections, eqs);
+      sections.splice(0, sections.length, ...res.sections);
+      if (res.unplaced > 0) {
+        console.warn(`[docx-parser] ${res.unplaced} công thức không xác định được vị trí chèn`);
+      }
+    }
+  } catch (eqErr) {
+    console.warn('[docx-parser] Không thể trích xuất công thức Word:', eqErr);
+  }
+
+  // Keep superscripts / subscripts (f², R², CO₂ …) that plain-text extraction flattens
+  enrichScriptRuns(sections, openXmlParagraphs);
+  applyTableLayoutHints(sections, Object.fromEntries(openXmlTables.map((t) => [t.id, !!t.landscape])));
+
+  if (enBack) {
+    if (!titleEn) titleEn = enBack.titleEn;
+    if (!abstractEn) abstractEn = enBack.abstractEn;
+    if (keywordsEn.length === 0) keywordsEn.push(...enBack.keywordsEn);
+    enBack.affiliationsEn.forEach((a) => {
+      const target = affiliations.find((x) => x.id === a.id) ?? (affiliations.length === 1 ? affiliations[0] : undefined);
+      if (target && !target.nameEn) target.nameEn = a.name;
+    });
   }
 
   if (!title) {
@@ -1467,8 +1461,11 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   if (!corresponding.name) corresponding.name = authors[0]?.name || '';
   if (!corresponding.affiliation) corresponding.affiliation = affiliations[0]?.name || '';
 
+  // ALL-CAPS titles become sentence case (acronyms found elsewhere in the paper stay capital); original kept for undo
+  const normalizedTitle = normalizeImportedTitle(title, [abstract, keywords.join(' '), ...sections.map((s) => s.content)]);
   const metadata: PaperMetadata = {
-    title,
+    title: normalizedTitle.title,
+    titleOriginal: normalizedTitle.original,
     titleEn,
     articleType,
     journalId: journalInfo.journalId,
@@ -1482,12 +1479,15 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     keywords: keywords.length > 0 ? keywords : ['Báo cáo khoa học', 'VNUHCM'],
     keywordsEn,
     dates,
-    doi: doi || `https://doi.org/10.32508/${journalInfo.journalId.toLowerCase()}.${Date.now().toString().slice(-4)}`,
-    volume: volume || '7',
-    issue: issue || '2',
+    // Publication data (DOI, volume, issue, pages) is assigned by the editorial office: never invent it.
+    doi,
+    volume,
+    issue,
     year: year || '2026',
-    firstPage: firstPage || 1,
-    lastPage: lastPage || Math.max(firstPage + 8, 10),
+    firstPage,
+    lastPage,
+    // only the article id is knowable from the file name; the rest stays "?" until the editor enters it
+    publication: articleIdFromFileName(fileName) ? { articleId: articleIdFromFileName(fileName) } : undefined,
   };
 
   const paper: CompletePaper = {
@@ -2007,7 +2007,7 @@ export async function parseDocxFileWithAi(
             id: `a_${idx + 1}`,
             name: normalizeVietnameseWordSpacing(a.name || `Tác giả ${idx + 1}`),
             affiliationIds: Array.isArray(a.affiliationIds) && a.affiliationIds.length > 0 ? a.affiliationIds : [1],
-            isCorresponding: Boolean(a.isCorresponding) || idx === 0,
+            isCorresponding: Boolean(a.isCorresponding),
           }));
         }
         if (Array.isArray(aiData.affiliations) && aiData.affiliations.length > 0) {

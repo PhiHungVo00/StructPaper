@@ -4,6 +4,7 @@ import React from 'react';
 import { PaperSection, PaperTable, PaperFigure } from '@/types/paper';
 import { FigureSettingsModal } from '../FigureSettingsModal';
 import { TableSettingsModal } from '../TableSettingsModal';
+import { PageLayoutBadge, PageLayoutControl } from './PageLayoutControl';
 import { AnimatePresence } from 'framer-motion';
 import {
   Table as TableIcon,
@@ -76,6 +77,7 @@ const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
   const isTable = sec.type === 'table';
   const isFigure = sec.type === 'figure';
   const isCitation = sec.type === 'citation';
+  const isEquation = sec.type === 'equation';
 
   const secId = sec.id || `sec_${idx}`;
   const resolvedModalType =
@@ -151,12 +153,20 @@ const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
           </span>
         )}
 
+        {isEquation && (
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 flex items-center gap-1">
+            Công thức {sec.equation?.numbered && sec.equation.num ? `(${sec.equation.num})` : ''}
+          </span>
+        )}
+
         {isCitation && (
           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 flex items-center gap-1 shadow-2xs">
             <Bookmark className="w-3 h-3 text-blue-600" />
             Trích dẫn bài báo này (Citation)
           </span>
         )}
+
+        <PageLayoutBadge layout={sec.pageLayout} />
 
         {/* Heading Level Switcher & Convert to Paragraph */}
         {isHeading && (
@@ -234,6 +244,8 @@ const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
 
       {/* Right Action Icons (Reorder, Page Break & Delete) */}
       <div className="flex items-center gap-1.5 ml-auto">
+        <PageLayoutControl sec={sec} idx={idx} onUpdateSection={onUpdateSection} />
+
         {/* Page Break Toggle */}
         <button
           type="button"

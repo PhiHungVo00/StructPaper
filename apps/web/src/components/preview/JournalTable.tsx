@@ -1,12 +1,16 @@
 import React from 'react';
 import { PaperTable, synthesizeHeaderRows, normalizePaperTable } from '@/types/paper';
+import { DEFAULT_THEME, type ResolvedTheme } from '@/lib/theme-config';
+import { resolveBodyFill, rowIsTinted } from '@/lib/table-fill';
 
+import { stripCaptionLabel } from '@/lib/docx-table-extras';
 interface JournalTableProps {
   table: PaperTable;
   isFullWidth?: boolean;
+  theme?: ResolvedTheme;
 }
 
-export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth = false }) => {
+export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth = false, theme = DEFAULT_THEME }) => {
   const normalized = normalizePaperTable(table);
   const effectiveHeaderRows =
     normalized.headerRows && normalized.headerRows.length > 0
@@ -14,11 +18,15 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
       : synthesizeHeaderRows(normalized.headers || []);
   const hasComplexHeaders = Boolean(effectiveHeaderRows && effectiveHeaderRows.length > 1);
   const hasComplexBody = Boolean(table.bodyRows && table.bodyRows.length > 0);
+  const bodyFill = resolveBodyFill(table);
+  const bodyRowCount = table.bodyRows?.length ?? table.rows?.length ?? 0;
+  // Short tables stay together; long ones may break across columns/pages with the header repeated.
+  const isLong = bodyRowCount > theme.longTableRowThreshold;
   const spansAll = isFullWidth || table.columnSpan === '2-column' || (table.isFullWidth !== false && !table.columnSpan);
 
   return (
     <div
-      className={`my-5 break-inside-avoid ${table.isRotated ? 'p-2.5 bg-zinc-50/70 rounded-xl border border-dashed border-zinc-300' : ''}`}
+      className={`my-5 ${isLong ? '' : 'break-inside-avoid'} ${table.isRotated ? 'p-2.5 bg-zinc-50/70 rounded-xl border border-dashed border-zinc-300' : ''}`}
       style={{ columnSpan: spansAll ? 'all' : undefined }}
     >
       {table.isRotated && (
@@ -32,20 +40,20 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
           className="text-[8.5pt] text-gray-900"
           style={{ fontFamily: "'Source Sans 3', Calibri, Arial, sans-serif" }}
         >
-          <strong className="text-[#2B74B7] font-bold">Bảng {table.num}: </strong>
-          <span>{table.caption}</span>
+          <strong className="font-bold" style={{ color: theme.titleColor }}>Bảng {table.num}: </strong>
+          <span>{stripCaptionLabel(table.caption)}</span>
         </p>
       </div>
 
       {/* Table grid with exact colors: header = #E5E5E5, rows = alternating #E7ECF7 */}
       <div className="border border-gray-300 overflow-x-auto text-[7.5pt] shadow-xs">
         <table className="w-full text-left border-collapse">
-          <thead>
+          <thead style={theme.repeatTableHeader ? { display: 'table-header-group' } : undefined}>
             {effectiveHeaderRows && effectiveHeaderRows.length > 0 ? (
               effectiveHeaderRows.map((hRow, hrIdx) => (
                 <tr
                   key={hrIdx}
-                  className="bg-[#E5E5E5] border-b border-gray-300 font-bold text-gray-900"
+                  className="border-b border-gray-300 font-bold text-gray-900" style={{ backgroundColor: theme.tableHeaderColor }}
                 >
                   {hRow.map((cell, cIdx) => (
                     <th
@@ -63,7 +71,7 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
                 </tr>
               ))
             ) : (
-              <tr className="bg-[#E5E5E5] border-b border-gray-300 font-bold text-gray-900">
+              <tr className="border-b border-gray-300 font-bold text-gray-900" style={{ backgroundColor: theme.tableHeaderColor }}>
                 {table.headers.map((h, i) => (
                   <th
                     key={i}
@@ -79,11 +87,10 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
           <tbody className="divide-y divide-gray-200">
             {hasComplexBody && table.bodyRows ? (
               table.bodyRows.map((bRow, rIdx) => {
-                const isEven = rIdx % 2 === 0;
                 return (
                   <tr
                     key={rIdx}
-                    className={isEven ? 'bg-[#E7ECF7]' : 'bg-white'}
+                    style={{ backgroundColor: rowIsTinted(bodyFill, rIdx) ? theme.tableZebraColor : '#FFFFFF' }}
                   >
                     {bRow.map((cell, cIdx) => (
                       <td
@@ -105,11 +112,10 @@ export const JournalTable: React.FC<JournalTableProps> = ({ table, isFullWidth =
               })
             ) : (
               table.rows.map((row, rI) => {
-                const isEven = rI % 2 === 0;
                 return (
                   <tr
                     key={rI}
-                    className={isEven ? 'bg-[#E7ECF7]' : 'bg-white'}
+                    style={{ backgroundColor: rowIsTinted(bodyFill, rI) ? theme.tableZebraColor : '#FFFFFF' }}
                   >
                     {row.map((cell, cI) => (
                       <td

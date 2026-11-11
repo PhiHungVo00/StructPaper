@@ -205,6 +205,7 @@ export const PaperHubView: React.FC = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onPaperCreated={() => loadRecords()}
+        onBatchFinished={() => loadRecords()}
       />
     </div>
     </LayoutGroup>

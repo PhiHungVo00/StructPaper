@@ -204,6 +204,7 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
 
   // 7. Flatten Body Sections
   const sections: V1PaperSection[] = [];
+  let equationCounter = 0;
 
   function flattenSection(sec: Section) {
     const titleText = inlineToPlainText(sec.title, numbering, refMap);
@@ -315,6 +316,7 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
               id: block.id,
               num: tblNum,
               caption,
+              source: block.source ? inlineToPlainText(block.source, numbering, refMap) : undefined,
               headers,
               rows,
               headerRows: headerRows.length > 0 ? headerRows : undefined,
@@ -326,6 +328,8 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
               rowStretch: (block.layout as any)?.rowStretch,
               hasZebraStripes: (block.layout as any)?.hasZebraStripes,
               placement: (block.layout as any)?.placement,
+              breakAcrossPages: (block.layout as any)?.breakAcrossPages,
+              bodyFill: (block.layout as any)?.bodyFill,
             },
           });
           break;
@@ -361,8 +365,14 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
         case 'equation': {
           sections.push({
             id: block.id,
-            type: 'paragraph',
-            content: `$${block.latex}$`,
+            type: 'equation',
+            content: '',
+            equation: {
+              latex: block.latex,
+              omml: block.omml,
+              numbered: block.numbered,
+              num: block.numbered ? ++equationCounter : undefined,
+            },
           });
           break;
         }
@@ -377,6 +387,24 @@ export function adaptV2toV1(v2Doc: Manuscript): V1CompletePaper {
   for (const rootSec of v2Doc.body || []) {
     flattenSection(rootSec);
   }
+
+  // publication data ("?"/blank semantics) is kept in layoutOverrides
+  const publication = v2Doc.layoutOverrides?.publication as Record<string, string> | undefined;
+  if (publication) (metadata as any).publication = publication;
+  // Restore the per-section options kept aside by migrateV1toV2 (page layout, page break, formula number/width)
+  const extras = (v2Doc.layoutOverrides?.sectionExtras || {}) as Record<string, Record<string, any>>;
+  for (const sec of sections) {
+    const e = extras[sec.id];
+    if (!e) continue;
+    if (e.pageLayout) sec.pageLayout = e.pageLayout;
+    if (e.pageBreakAfter) sec.pageBreakAfter = true;
+    if (sec.equation) {
+      if (e.eqNum !== undefined && sec.equation.numbered) sec.equation.num = e.eqNum;
+      if (e.eqSpan) sec.equation.columnSpan = e.eqSpan;
+    }
+  }
+  const titleOriginal = v2Doc.layoutOverrides?.titleOriginal as string | undefined;
+  if (titleOriginal) (metadata as any).titleOriginal = titleOriginal;
 
   return {
     id: v2Doc.id,

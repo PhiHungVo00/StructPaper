@@ -16,6 +16,10 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     issn: '2734-9276',
     eIssn: '2734-9276',
     headerText: 'Tạp chí Phát triển Khoa học và Công nghệ – Health Sciences',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Health Sciences',
+    officialAbbvEn: 'VNUHCM J. Health Sci.',
+    doiPrefix: '10.32508/vnuhcmj-hs',
   },
   'VNUHCM-STD': {
     id: 'VNUHCM-STD',
@@ -27,6 +31,9 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     issn: '1859-0128',
     eIssn: '2588-1469',
     headerText: 'Science & Technology Development Journal',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Science and Technology Development',
+    officialAbbvEn: 'VNUHCMJ. Sci. Technol. Dev.',
   },
   'VNUHCM-STDJ': {
     id: 'VNUHCM-STDJ',
@@ -38,6 +45,9 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     issn: '1859-0128',
     eIssn: '2588-1469',
     headerText: 'Science & Technology Development Journal',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Science and Technology Development',
+    officialAbbvEn: 'VNUHCMJ. Sci. Technol. Dev.',
   },
   'VNUHCM-SSH': {
     id: 'VNUHCM-SSH',
@@ -48,6 +58,9 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     accentColor: '#00245F',
     issn: '2588-1043',
     headerText: 'Tạp chí Phát triển KH&CN – Khoa học Xã hội & Nhân văn',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Social Sciences and Humanities',
+    officialAbbvEn: 'VNUHCMJ. Soc. Sci. Humanit.',
   },
   'VNUHCM-EBL': {
     id: 'VNUHCM-EBL',
@@ -58,6 +71,10 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     accentColor: '#BA68C8',
     issn: '2588-1108',
     headerText: 'Tạp chí Phát triển KH&CN – Kinh tế, Luật & Quản lý',
+    // As printed in the reference PDF (EBL ID1750)
+    officialNameEn: 'VNUHCM Journal of Economics, Business and Law',
+    officialAbbvEn: 'VNUHCM J. Econ. Bus. Law',
+    doiPrefix: '10.32508/vnuhcmj-ebl',
   },
   'VNUHCM-ET': {
     id: 'VNUHCM-ET',
@@ -68,6 +85,9 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     accentColor: '#F8AB60',
     issn: '2588-1205',
     headerText: 'Tạp chí Phát triển KH&CN – Kỹ thuật & Công nghệ',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Engineering and Technology',
+    officialAbbvEn: 'VNUHCM J. Eng. Technol.',
   },
   'VNUHCM-EES': {
     id: 'VNUHCM-EES',
@@ -78,6 +98,10 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     accentColor: '#00803F',
     issn: '2588-1329',
     headerText: 'Tạp chí Phát triển KH&CN – Môi trường & Khoa học Trái đất',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Environment and Earth Sciences',
+    officialAbbvEn: 'VNUHCM J. Environ. Earth Sci.',
+    doiPrefix: '10.32508/vnuhcmj-ees',
   },
   'VNUHCM-ARNS': {
     id: 'VNUHCM-ARNS',
@@ -88,6 +112,9 @@ export const JOURNAL_TEMPLATES: Record<string, JournalTemplate> = {
     accentColor: '#D32F2F',
     issn: '2588-140X',
     headerText: 'Tạp chí Phát triển KH&CN – Natural Sciences',
+    // As printed on the journal's own sample PDF (header line and 'Cite this article')
+    officialNameEn: 'VNUHCM Journal of Advanced Research and Natural Sciences',
+    officialAbbvEn: 'VNUHCM J. Adv. Res. Nat. Sci.',
   },
 };
 

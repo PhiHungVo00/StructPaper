@@ -374,6 +374,7 @@ export function migrateV1toV2(
           type: 'table',
           id: tbl.id || sec.id || gen.nextId('tbl'),
           caption,
+          source: tbl.source ? parseTextWithCitations(tbl.source, refIdMap, gen) : undefined,
           grid,
           headerRows: headerRowsCount,
           layout: {
@@ -383,10 +384,23 @@ export function migrateV1toV2(
             rowStretch: tbl.rowStretch,
             hasZebraStripes: tbl.hasZebraStripes,
             placement: tbl.placement,
+            breakAcrossPages: tbl.breakAcrossPages,
+            bodyFill: tbl.bodyFill,
             tblNum: tbl.num,
           },
         };
         addBlockToCurrent(tableBlock);
+        break;
+      }
+      case 'equation': {
+        addBlockToCurrent({
+          type: 'equation',
+          id: sec.id || gen.nextId('eq'),
+          latex: sec.equation?.latex || '',
+          omml: sec.equation?.omml,
+          numbered: sec.equation?.numbered ?? true,
+          status: 'ok',
+        });
         break;
       }
       case 'quote': {
@@ -456,9 +470,29 @@ export function migrateV1toV2(
     assets,
     layoutOverrides: {
       layoutSettings: v1Paper.layoutSettings,
+      sectionExtras: collectSectionExtras(v1Paper.sections),
+      publication: (v1Paper.metadata as any)?.publication,
+      titleOriginal: (v1Paper.metadata as any)?.titleOriginal,
       templateId: v1Paper.templateId,
       templateName: v1Paper.templateName,
       status: v1Paper.status,
     },
   };
+}
+
+/**
+ * Per-section options the v2 tree has no slot for (page-layout markers, page break, the number and
+ * width of a formula). Stored by section id in `layoutOverrides.sectionExtras`, restored by adaptV2toV1.
+ */
+function collectSectionExtras(sections: V1PaperSection[] | undefined): Record<string, Record<string, unknown>> | undefined {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const sec of sections || []) {
+    const e: Record<string, unknown> = {};
+    if (sec.pageLayout) e.pageLayout = sec.pageLayout;
+    if (sec.pageBreakAfter) e.pageBreakAfter = true;
+    if (sec.equation?.num !== undefined) e.eqNum = sec.equation.num;
+    if (sec.equation?.columnSpan) e.eqSpan = sec.equation.columnSpan;
+    if (Object.keys(e).length > 0) out[sec.id] = e;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }

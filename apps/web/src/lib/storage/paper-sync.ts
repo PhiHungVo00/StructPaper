@@ -6,8 +6,8 @@ import type { CompletePaper } from '@/types/paper';
  * Persists a CompletePaper (v1 structure) into IndexedDB (v2 structure).
  * Also extracts any base64/dataURI/blob images and persists them as binary Blobs in the assets table.
  */
-export async function savePaperToIndexedDb(paper: CompletePaper): Promise<void> {
-  if (typeof window === 'undefined' || typeof window.indexedDB === 'undefined') return;
+export async function savePaperToIndexedDb(paper: CompletePaper): Promise<boolean> {
+  if (typeof window === 'undefined' || typeof window.indexedDB === 'undefined') return false;
 
   try {
     const repo = new IndexedDbManuscriptRepo(defaultDatabase);
@@ -62,8 +62,10 @@ export async function savePaperToIndexedDb(paper: CompletePaper): Promise<void> 
       pinned: existingRecord?.info?.pinned ?? false,
       archived: existingRecord?.info?.archived ?? false,
     });
+    return true;
   } catch (err) {
     console.error('[paper-sync] Error saving paper to IndexedDB:', err);
+    return false;
   }
 }
 

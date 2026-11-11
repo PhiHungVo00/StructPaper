@@ -31,6 +31,14 @@ structpaper:
     tectonic-path: ""
   storage:
     asset-dir: ${STRUCTPAPER_ASSET_DIR:./data/assets}
+    # local = files on disk (default, dev); minio = S3-compatible MinIO (production)
+    type: ${STRUCTPAPER_STORAGE_TYPE:local}
+    object-dir: ${STRUCTPAPER_OBJECT_DIR:./data/objects}
+    minio:
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${MINIO_ACCESS_KEY:minioadmin}
+      secret-key: ${MINIO_SECRET_KEY:minioadmin}
+      bucket: ${MINIO_BUCKET:structpaper}
   ai:
     openai-api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o-mini}

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { TablePlacementAndBreak } from './TablePlacementAndBreak';
+import { resolveBodyFill } from '@/lib/table-fill';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PaperTable } from '@/types/paper';
@@ -40,8 +42,9 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
   const [isRotated, setIsRotated] = useState<boolean>(!!table.isRotated);
   const [fontSize, setFontSize] = useState<'7pt' | '8pt' | '9pt' | '10pt'>(table.fontSize || '8pt');
   const [rowStretch, setRowStretch] = useState<number>(table.rowStretch || 1.4);
-  const [hasZebraStripes, setHasZebraStripes] = useState<boolean>(table.hasZebraStripes !== false);
+  const [bodyFill, setBodyFill] = useState<'plain' | 'zebra' | 'shaded'>(resolveBodyFill(table));
   const [placement, setPlacement] = useState<'auto' | 'top' | 'here' | 'bottom'>(table.placement || 'auto');
+  const [breakAcrossPages, setBreakAcrossPages] = useState<'auto' | 'always' | 'never'>(table.breakAcrossPages || 'auto');
 
   useEffect(() => {
     setMounted(true);
@@ -62,8 +65,9 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
       setIsRotated(!!table.isRotated);
       setFontSize(table.fontSize || '8pt');
       setRowStretch(table.rowStretch || 1.4);
-      setHasZebraStripes(table.hasZebraStripes !== false);
+      setBodyFill(resolveBodyFill(table));
       setPlacement(table.placement || 'auto');
+      setBreakAcrossPages(table.breakAcrossPages || 'auto');
     }
   }, [isOpen, table]);
 
@@ -74,7 +78,7 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
     setIsRotated(false);
     setFontSize('8pt');
     setRowStretch(1.4);
-    setHasZebraStripes(true);
+    setBodyFill('plain');
     setPlacement('auto');
   };
 
@@ -86,8 +90,10 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
       isRotated,
       fontSize,
       rowStretch,
-      hasZebraStripes,
+      bodyFill,
+      hasZebraStripes: bodyFill === 'zebra',
       placement,
+      breakAcrossPages,
     };
     onSave(updated);
     onClose();
@@ -339,57 +345,14 @@ export const TableSettingsModal: React.FC<TableSettingsModalProps> = ({
 
             {/* 4. SỌC ZEBRA & VỊ TRÍ NEO TRANG */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Sọc Zebra */}
-              <div className="space-y-1.5">
-                <label
-                  className="text-[12px] font-bold text-zinc-600 block"
-                  title="Nền sọc Zebra: Tô màu xám nhạt xen kẽ các hàng để mắt dễ dò dữ liệu theo hàng ngang"
-                >
-                  Nền sọc Zebra
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setHasZebraStripes(!hasZebraStripes)}
-                  className={`w-full py-1.5 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${hasZebraStripes
-                    ? 'bg-[#D9F99D]/40 border-[#B4E50D]/60 text-[#14532D]'
-                    : 'bg-zinc-50 border-zinc-200 text-zinc-500'
-                    }`}
-                  title={hasZebraStripes ? 'Đang bật nền sọc Zebra xen kẽ (bấm để tắt)' : 'Đang tắt nền sọc Zebra (bấm để bật)'}
-                >
-                  <span>{hasZebraStripes ? 'Bật sọc' : 'Không'}</span>
-                  {hasZebraStripes && <Check className="w-3 h-3 text-[#78C841] stroke-[3]" />}
-                </button>
-              </div>
-
-              {/* Float Placement */}
-              <div className="space-y-1.5">
-                <label
-                  className="text-[12px] font-bold text-zinc-600 block"
-                  title="Vị trí neo trang LaTeX: Vị trí ưu tiên đặt bảng khi biên dịch file PDF [placement]"
-                >
-                  Vị trí neo
-                </label>
-                <div className="grid grid-cols-3 gap-1">
-                  {([
-                    { key: 'auto' as const, label: 'Tự động', desc: 'Tự động [!htbp]: LaTeX tự tính toán vị trí đẹp nhất' },
-                    { key: 'top' as const, label: 'Đầu', desc: 'Đầu trang [t]: Ưu tiên đặt bảng ở trên cùng trang giấy' },
-                    { key: 'here' as const, label: 'Tại vị trí', desc: 'Tại vị trí [!h]: Cố gắng đặt bảng ngay cạnh văn bản' },
-                  ] as const).map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setPlacement(item.key)}
-                      className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer text-[11px] font-bold ${placement === item.key
-                        ? 'bg-gray-400 text-white shadow-2xs'
-                        : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
-                        }`}
-                      title={item.desc}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <TablePlacementAndBreak
+                placement={placement}
+                onPlacement={setPlacement}
+                breakAcrossPages={breakAcrossPages}
+                onBreakAcrossPages={setBreakAcrossPages}
+                bodyFill={bodyFill}
+                onBodyFill={setBodyFill}
+              />
             </div>
           </div>
 

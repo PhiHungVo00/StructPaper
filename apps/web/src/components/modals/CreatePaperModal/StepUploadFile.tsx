@@ -4,15 +4,25 @@ import React, { useRef, useState } from 'react';
 import { UploadCloud, FileText, Loader2, Sparkles, FilePlus, AlertCircle } from 'lucide-react';
 import { parseDocxFile } from '@/lib/docx-parser';
 import type { CompletePaper } from '@/types/paper';
+import { MAX_BATCH_FILES } from '@/lib/batch-import/run-batch';
+
+/** Word files among the picked ones, and how many other files were left out. */
+export function pickWordFiles(files: File[]): { words: File[]; skipped: number } {
+  const words = files.filter((f) => /\.docx$/i.test(f.name) || /\.doc$/i.test(f.name));
+  return { words, skipped: files.length - words.length };
+}
 
 interface StepUploadFileProps {
   onSuccess: (result: { parsedPaper?: CompletePaper; isBlank: boolean }) => void;
+  /** Two or more Word files picked at once: create one paper per file. */
+  onBatch?: (files: File[], skipped: number) => void;
   targetJournalName?: string;
   targetJournalCode?: string;
 }
 
 export const StepUploadFile: React.FC<StepUploadFileProps> = ({
   onSuccess,
+  onBatch,
   targetJournalName,
   targetJournalCode,
 }) => {
@@ -23,7 +33,7 @@ export const StepUploadFile: React.FC<StepUploadFileProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleFile = async (file: File) => {
-    if (!file.name.endsWith('.docx') && !file.name.endsWith('.doc')) {
+    if (!/\.docx?$/i.test(file.name)) {
       setErrorMsg('Vui lòng chọn tệp Word định dạng .docx hoặc .doc');
       return;
     }
@@ -54,12 +64,30 @@ export const StepUploadFile: React.FC<StepUploadFileProps> = ({
     }
   };
 
+  /** One file keeps the single-file flow; several go to the batch import. */
+  const handleFiles = (list: FileList | File[] | null | undefined) => {
+    const { words, skipped } = pickWordFiles(Array.from(list || []));
+    if (words.length === 0) {
+      if (skipped > 0) setErrorMsg('Vui lòng chọn tệp Word định dạng .docx hoặc .doc');
+      return;
+    }
+    if (words.length === 1 || !onBatch) {
+      handleFile(words[0]);
+      return;
+    }
+    if (words.length > MAX_BATCH_FILES) {
+      setErrorMsg(`Mỗi lần nhập tối đa ${MAX_BATCH_FILES} tệp (bạn chọn ${words.length}). Hãy chia thành nhiều lần.`);
+      return;
+    }
+    setErrorMsg(null);
+    onBatch(words, skipped);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
+    if (isParsing) return;
+    handleFiles(e.dataTransfer.files);
   };
 
   return (
@@ -86,12 +114,13 @@ export const StepUploadFile: React.FC<StepUploadFileProps> = ({
           ref={fileInputRef}
           type="file"
           accept=".docx,.doc"
+          multiple={!!onBatch}
+          data-testid="create-paper-file-input"
           className="hidden"
           disabled={isParsing}
           onChange={(e) => {
-            if (e.target.files && e.target.files[0]) {
-              handleFile(e.target.files[0]);
-            }
+            handleFiles(e.target.files);
+            e.target.value = ''; // the same files can be picked again
           }}
         />
 
@@ -111,7 +140,7 @@ export const StepUploadFile: React.FC<StepUploadFileProps> = ({
         </div>
 
         <h4 className="text-base font-bold text-slate-900 mb-1">
-          {isParsing ? (statusText || 'Đang xử lý...') : 'Kéo thả file .docx vào đây'}
+          {isParsing ? (statusText || 'Đang xử lý...') : onBatch ? 'Kéo thả một hoặc nhiều file .docx vào đây' : 'Kéo thả file .docx vào đây'}
         </h4>
 
         <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 leading-relaxed">
@@ -119,13 +148,15 @@ export const StepUploadFile: React.FC<StepUploadFileProps> = ({
             ? 'Hệ thống đang trích xuất văn bản, bảng biểu, ảnh vector và công thức toán...'
             : targetJournalName
             ? `Trích xuất OpenXML tự động cấu trúc cho ${targetJournalName}.`
+            : onBatch
+            ? 'Chọn nhiều file cùng lúc: mỗi file thành một bài báo, tự động đọc, lưu và biên dịch PDF song song.'
             : 'Hỗ trợ bóc tách đề mục, tác giả, tóm tắt và tài liệu tham khảo theo chuẩn ĐHQG-HCM.'}
         </p>
 
         {!isParsing && (
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-extrabold bg-[#78C841] hover:bg-[#6cb43a] text-zinc-950 shadow-md shadow-[#78C841]/20 hover:scale-102 active:scale-98 transition-all">
             <FileText className="w-3.5 h-3.5" />
-            <span>Chọn file Word từ máy tính</span>
+            <span>{onBatch ? 'Chọn file Word (một hoặc nhiều)' : 'Chọn file Word từ máy tính'}</span>
           </div>
         )}
 

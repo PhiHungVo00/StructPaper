@@ -49,3 +49,5 @@ export {
   type UseSectionsTabViewStateResult,
 } from './EditorTabStateContext';
 
+export { useUnsavedChangesWarning } from './useUnsavedChangesWarning';
+export { useShowPaperOnSwitch } from './useShowPaperOnSwitch';

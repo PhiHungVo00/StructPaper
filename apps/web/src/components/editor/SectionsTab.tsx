@@ -444,6 +444,20 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     [handleInsertSection]
   );
 
+  // Stable identity: it is passed to the memoised section cards, which must not re-render on every keystroke.
+  const handleAddEquation = useCallback(
+    (insertAfterIndex?: number) => {
+      const newSection: PaperSection = {
+        id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'equation',
+        content: '',
+        equation: { latex: '', numbered: true },
+      };
+      handleInsertSection(insertAfterIndex, newSection);
+    },
+    [handleInsertSection]
+  );
+
   // Conversions between Paragraph and Heading
   const handleConvertToHeading = useCallback(
     (index: number, level: 'h1' | 'h2' | 'h3') => {
@@ -547,6 +561,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         onAddParagraph={handleAddParagraph}
         onAddTable={handleAddTable}
         onAddFigure={handleAddFigure}
+        onAddEquation={() => handleAddEquation()}
         counts={toolbarCounts}
       />
 
@@ -597,6 +612,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         onAddParagraph={handleAddParagraph}
         onAddTable={handleAddTable}
         onAddFigure={handleAddFigure}
+        onAddEquation={handleAddEquation}
         setFileInputRef={mediaHandlers.setFileInputRef}
       />
 

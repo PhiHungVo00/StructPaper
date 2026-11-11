@@ -1,6 +1,7 @@
 import React from 'react';
 import { PaperFigure } from '@/types/paper';
 
+import { stripCaptionLabel } from '@/lib/docx-table-extras';
 interface JournalFigureProps {
   figure: PaperFigure;
   isFullWidth?: boolean;
@@ -34,7 +35,7 @@ export const JournalFigure: React.FC<JournalFigureProps> = ({ figure, isFullWidt
           style={{ fontFamily: "'Source Sans 3', Calibri, Arial, sans-serif" }}
         >
           <strong className="text-[#2B74B7] font-bold">Hình {figure.num}: </strong>
-          <span>{figure.caption}</span>
+          <span>{stripCaptionLabel(figure.caption)}</span>
         </p>
       </div>
     </div>

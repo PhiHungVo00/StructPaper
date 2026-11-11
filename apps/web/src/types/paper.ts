@@ -1,4 +1,4 @@
-import type { Cell } from '@structpaper/doc-model';
+import type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout } from './paper-extensions'; export type { ThemeSettings, PaperEquation, PublicationInfo, SectionPageLayout }; import type { Cell } from '@structpaper/doc-model';
 
 export interface Author {
   id: string;
@@ -51,6 +51,7 @@ export interface PaperMetadata {
   year: string;
   firstPage: number;
   lastPage: number;
+  titleOriginal?: string; publication?: PublicationInfo; // Word title before normalization (undo); "?" publication fields until entered
 }
 
 export interface PaperFigure {
@@ -80,6 +81,8 @@ export interface PaperTable {
   id: string;
   num: number;
   caption: string;
+  /** Source line shown under the table, e.g. "Nguồn: Kết quả của nhóm tác giả". */
+  source?: string;
   headers: string[];
   rows: string[][];
   headerRows?: TableCell[][];
@@ -92,6 +95,8 @@ export interface PaperTable {
   rowStretch?: number; // Giãn dòng 1.1x, 1.4x, 1.6x
   hasZebraStripes?: boolean; // Sọc màu hàng xen kẽ
   placement?: 'auto' | 'top' | 'here' | 'bottom';
+  breakAcrossPages?: 'auto' | 'always' | 'never'; // cho phép bảng ngắt qua trang
+  bodyFill?: 'plain' | 'zebra' | 'shaded'; // nền thân bảng: trắng (mặc định) / sọc / tô đều
 }
 
 /**
@@ -380,15 +385,16 @@ export function normalizeCompletePaper(paper: CompletePaper): CompletePaper {
   };
 }
 
-
 export interface PaperSection {
   id: string;
-  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation';
+  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation' | 'equation';
+  equation?: PaperEquation;
   title?: string;
   content: string;
   figure?: PaperFigure;
   table?: PaperTable;
   pageBreakAfter?: boolean;
+  pageLayout?: SectionPageLayout; // new page here with these columns/orientation, until the next marker
 }
 
 export function createEmptyPaper(journalId: string = 'VNUHCM-HS'): CompletePaper {
@@ -489,6 +495,7 @@ export interface PreflightCheck {
 }
 
 export interface JournalTemplate {
+  doiPrefix?: string; officialNameEn?: string; officialAbbvEn?: string; // DOI prefix (DOI = prefix.v{vol}i{issue}.{articleId}); English name/abbreviation for headers and citation
   id: string;
   name: string;
   shortName: string;
@@ -522,7 +529,9 @@ export const DEFAULT_PAGE_NUMBERING: PageNumberingSettings = {
 
 export interface LayoutSettings {
   paperSize: 'custom' | 'a4' | 'letter' | 'b5';
+  theme?: ThemeSettings;
   columnLayout: '1-column' | '2-column';
+  orientation?: 'portrait' | 'landscape'; // whole body; the first page (title block) stays portrait
   fontSize?: '9pt' | '10pt' | '11pt';
   columnSep?: '1pc' | '1.5pc' | '2pc';
   lineSpacing?: '1.13' | '1.2' | '1.3';

@@ -77,6 +77,7 @@ export interface V1PaperTable {
   id: string;
   num: number;
   caption: string;
+  source?: string;
   headers: string[];
   rows: string[][];
   headerRows?: V1TableCell[][];
@@ -88,16 +89,35 @@ export interface V1PaperTable {
   rowStretch?: number;
   hasZebraStripes?: boolean;
   placement?: 'auto' | 'top' | 'here' | 'bottom';
+  breakAcrossPages?: 'auto' | 'always' | 'never';
+  bodyFill?: 'plain' | 'zebra' | 'shaded';
+}
+
+export interface V1PaperEquation {
+  latex: string;
+  num?: number;
+  numbered: boolean;
+  omml?: string;
+  /** '2-column': the formula is set on one unbroken line across both columns. */
+  columnSpan?: '1-column' | '2-column';
+}
+
+/** Page layout that starts at a section: a new page with these columns / orientation until the next marker. */
+export interface V1SectionPageLayout {
+  columns?: '1-column' | '2-column';
+  orientation?: 'portrait' | 'landscape';
 }
 
 export interface V1PaperSection {
   id: string;
-  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation';
+  type: 'h1' | 'h2' | 'h3' | 'paragraph' | 'figure' | 'table' | 'quote' | 'box' | 'citation' | 'equation';
+  equation?: V1PaperEquation;
   title?: string;
   content: string;
   figure?: V1PaperFigure;
   table?: V1PaperTable;
   pageBreakAfter?: boolean;
+  pageLayout?: V1SectionPageLayout;
 }
 
 export interface V1PaperReference {

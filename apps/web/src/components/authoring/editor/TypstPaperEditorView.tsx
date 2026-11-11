@@ -12,6 +12,7 @@ import { UniversalTemplateSchema } from '@/types/template-builder';
 import { BUILT_IN_TEMPLATES } from '@/data/templates';
 import { computePreflightCheck } from '@/lib/docx-extractor';
 import { exportPaperToDocx } from '@/lib/docx-export';
+import { exportBaseName } from '@/components/editor/hooks/useEditorExport';
 import { compilePaperToTypst } from '@/lib/authoring/typst-paper-compiler';
 import { saveAuthoringPaper } from '@/lib/authoring/paper-storage';
 import {
@@ -210,7 +211,13 @@ export const TypstPaperEditorView: React.FC<TypstPaperEditorViewProps> = ({
   const handleDownloadDocx = async () => {
     setIsExportingDocx(true);
     try {
-      await exportPaperToDocx(formData);
+      const blob = await exportPaperToDocx(formData);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${exportBaseName(formData)}.docx`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
       sileo.success({
         title: 'Đã xuất file Word',
         description: 'Tệp bản thảo .docx đã được tạo thành công.',

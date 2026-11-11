@@ -113,18 +113,27 @@ public class LatexCompilerServiceImpl implements LatexCompilerService {
             processBuilder.directory(workDir);
             processBuilder.redirectErrorStream(true);
 
-            Process process = processBuilder.start();
-
+            // XeLaTeX needs two passes to resolve \cite / \ref (otherwise they print as "?").
+            // Tectonic re-runs by itself, so it only gets one.
+            int passes = !engine.isTectonic() && (finalTex.contains("\\cite{") || finalTex.contains("\\ref{")) ? 2 : 1;
             StringBuilder logOutput = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    logOutput.append(line).append("\n");
+            Process process = null;
+            boolean finished = true;
+            for (int pass = 1; pass <= passes && finished; pass++) {
+                logOutput.setLength(0);
+                process = processBuilder.start();
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        logOutput.append(line).append("\n");
+                    }
+                }
+                finished = process.waitFor(properties.getTimeoutSeconds(), TimeUnit.SECONDS);
+                if (finished && process.exitValue() != 0) {
+                    break;
                 }
             }
-
-            boolean finished = process.waitFor(properties.getTimeoutSeconds(), TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
                 throw new LatexCompilationException(
@@ -305,45 +314,12 @@ public class LatexCompilerServiceImpl implements LatexCompilerService {
                 }
             }
 
-            // QR Code aliases (using true QR code with VNU logo image2.png)
-            File qrSource = new File(workDir, "image2.png");
-            if (!qrSource.exists()) qrSource = new File(workDir, "article-qr.png");
-            if (qrSource.exists()) {
-                FileUtils.copyFile(qrSource, new File(workDir, "article-qr.png"));
-                FileUtils.copyFile(qrSource, new File(workDir, "qr-code.png"));
-                FileUtils.copyFile(qrSource, new File(workDir, "qr-code"));
-                FileUtils.copyFile(qrSource, new File(imagesDir, "article-qr.png"));
-                FileUtils.copyFile(qrSource, new File(imagesDir, "qr-code.png"));
-                FileUtils.copyFile(qrSource, new File(imagesDir, "qr-code"));
-            }
-
-            // VNUHCM Press logo (image4.jpeg is the official origami press logo)
-            File logoSource = new File(workDir, "image4.jpeg");
-            if (!logoSource.exists()) logoSource = new File(workDir, "logo-vnuhcmpress-color.png");
-            if (logoSource.exists()) {
-                FileUtils.copyFile(logoSource, new File(workDir, "logo-vnuhcmpress-color.png"));
-                FileUtils.copyFile(logoSource, new File(workDir, "logo-vnuhcmpress-color.jpeg"));
-                FileUtils.copyFile(logoSource, new File(workDir, "logo-vnuhcmpress-color"));
-                FileUtils.copyFile(logoSource, new File(imagesDir, "logo-vnuhcmpress-color.png"));
-                FileUtils.copyFile(logoSource, new File(imagesDir, "logo-vnuhcmpress-color.jpeg"));
-                FileUtils.copyFile(logoSource, new File(imagesDir, "logo-vnuhcmpress-color"));
-            }
-
-            // Check for updates badge (image3.jpeg)
-            File checkUpdateSource = new File(workDir, "image3.jpeg");
-            if (!checkUpdateSource.exists()) checkUpdateSource = new File(workDir, "check-update.jpg");
-            if (checkUpdateSource.exists()) {
-                FileUtils.copyFile(checkUpdateSource, new File(workDir, "check-update.jpeg"));
-                FileUtils.copyFile(checkUpdateSource, new File(workDir, "check-update.jpg"));
-                FileUtils.copyFile(checkUpdateSource, new File(imagesDir, "check-update.jpeg"));
-                FileUtils.copyFile(checkUpdateSource, new File(imagesDir, "check-update.jpg"));
-            }
-
-            // Open access icon (image1.png)
-            File openAccessSource = new File(workDir, "image1.png");
-            if (openAccessSource.exists()) {
-                FileUtils.copyFile(openAccessSource, new File(workDir, "open-access.png"));
-                FileUtils.copyFile(openAccessSource, new File(imagesDir, "open-access.png"));
+            // Journal artwork (Open Access icon, Check for updates badge, VNUHCM Press logo) from the classpath.
+            // The QR code is drawn in TeX from the DOI; paper figures (image2/3/4…) are never aliased to artwork.
+            vn.edu.vnu.structpaper.compile.LatexAssets.copyBundled(workDir, imagesDir);
+            for (String stale : new String[] {"qr-code.png", "qr-code", "article-qr.png"}) {
+                new File(workDir, stale).delete();
+                new File(imagesDir, stale).delete();
             }
 
             // Figure 1 stomach anatomy aliases (image5.jpeg) - only fallback if not already provided

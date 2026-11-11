@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
     copyAlias('image2.png', 'article-qr.png', 'qr-code.png', 'qr-code');
     copyAlias('image4.jpeg', 'logo-vnuhcmpress-color.png', 'logo-vnuhcmpress-color.jpeg', 'logo-vnuhcmpress-color');
     copyAlias('image3.jpeg', 'check-update.jpeg', 'check-update.jpg');
-    copyAlias('image1.png', 'open-access.png');
+    // open-access.png comes from public/demo-images (image1.png is usually a figure, not the icon)
 
     // Only copy default sample figure 1 if client did not supply a custom figure
     const hasCustomFig1 = images && (images['fig1.png'] || images['fig1.jpg'] || images['fig_1.png']);
@@ -247,10 +247,14 @@ export async function POST(req: NextRequest) {
 
     try {
       if (hasXeLatex) {
-        await execAsync(`xelatex -interaction=nonstopmode -halt-on-error article.tex`, {
-          cwd: jobDir,
-          timeout: 60000,
-        });
+        // Two passes: citations (\cite) and page/table references resolve only on the second run,
+        // otherwise they print as "?". (Tectonic reruns by itself.)
+        for (let pass = 0; pass < 2; pass++) {
+          await execAsync(`xelatex -interaction=nonstopmode -halt-on-error article.tex`, {
+            cwd: jobDir,
+            timeout: 90000,
+          });
+        }
       } else {
         const tectonicBin = resolvedTectonicPath ? `"${resolvedTectonicPath}"` : 'tectonic';
         await execAsync(`${tectonicBin} article.tex`, {

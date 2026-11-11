@@ -272,7 +272,8 @@ describe('Task 4.2: UnifiedEditorView & Editor Shell', () => {
     );
 
     // Make dirty by editing title
-    const titleInput = screen.getAllByDisplayValue('Nghiên cứu cấu trúc tự động hóa bản thảo')[0];
+    // the metadata field (the menu bar also shows the name, but renames there only commit on Enter/blur)
+    const titleInput = screen.getAllByDisplayValue('Nghiên cứu cấu trúc tự động hóa bản thảo').find((e) => e.tagName === 'TEXTAREA') as HTMLElement;
     fireEvent.change(titleInput, { target: { value: 'Tiêu đề đã chỉnh sửa' } });
 
     // Click back button
@@ -308,7 +309,8 @@ describe('Task 4.2: UnifiedEditorView & Editor Shell', () => {
     );
 
     // Make dirty by editing title
-    const titleInput = screen.getAllByDisplayValue('Nghiên cứu cấu trúc tự động hóa bản thảo')[0];
+    // the metadata field (the menu bar also shows the name, but renames there only commit on Enter/blur)
+    const titleInput = screen.getAllByDisplayValue('Nghiên cứu cấu trúc tự động hóa bản thảo').find((e) => e.tagName === 'TEXTAREA') as HTMLElement;
     fireEvent.change(titleInput, { target: { value: 'Tiêu đề lưu và thoát' } });
 
     // Click back button

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { CompletePaper } from '@/lib/sample-papers';
 import { computePreflightCheck } from '@/lib/docx-extractor';
 import { PreflightCheck, normalizeCompletePaper, createEmptyPaper } from '@/types/paper';
@@ -39,19 +39,21 @@ export function PaperProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
-  const setPaper = (newPaper: CompletePaper) => {
+  // The setters must keep their identity across renders: effects list them as dependencies
+  // (e.g. the /editor page loads a paper by id), and a changing identity re-runs them forever.
+  const setPaper = useCallback((newPaper: CompletePaper) => {
     const normalized = normalizeCompletePaper(newPaper);
     setPaperState(normalized);
     try {
       sessionStorage.setItem('structpaper_current_paper', JSON.stringify(normalized));
     } catch {}
-  };
+  }, []);
 
-  const updatePaper = (updated: CompletePaper) => {
+  const updatePaper = useCallback((updated: CompletePaper) => {
     setPaper(updated);
-  };
+  }, [setPaper]);
 
-  const setCurrentJournal = (journalId: string) => {
+  const setCurrentJournal = useCallback((journalId: string) => {
     setCurrentJournalState(journalId);
     try {
       sessionStorage.setItem('structpaper_current_journal', journalId);
@@ -69,7 +71,7 @@ export function PaperProvider({ children }: { children: React.ReactNode }) {
       } catch {}
       return next;
     });
-  };
+  }, []);
 
   const preflight = computePreflightCheck(paper);
 

@@ -63,53 +63,58 @@ export function useEditorCompilation({
   const [compileErrorInfo, setCompileErrorInfo] = useState<CompileErrorInfo | null>(null);
 
   const monitorRef = useRef<NetworkMonitor | null>(customNetworkMonitor ?? null);
-  if (!monitorRef.current) {
-    monitorRef.current = new NetworkMonitor({
-      serverEndpoint: '/api/health',
-      timeoutMs: 3000,
-    });
-  }
-
   const routerRef = useRef<CompilerRouter | null>(customRouter ?? null);
-  if (!routerRef.current) {
-    const monitor = monitorRef.current;
-    const remoteCompiler = new RemoteCompiler({
-      endpoint: '/api/compile-latex',
-    });
-    const wasmCompiler = new WasmCompiler();
-    const isDesktop = isTauriEnvironment();
-    const localCompiler = isDesktop ? new TauriDesktopCompiler() : wasmCompiler;
-
-    routerRef.current = new CompilerRouter({
-      local: localCompiler,
-      server: remoteCompiler,
-      getContext: () => ({
-        online: monitor.isOnline(),
-        serverReachable: monitor.isServerReachable(),
-        localEnv: isDesktop ? 'ready' : typeof Worker !== 'undefined' ? 'ready' : 'missing',
-        localEnvMatches: true,
-        deviceScore: typeof Worker !== 'undefined' || isDesktop ? 100 : 'unsupported',
-        pageEstimate: 5,
-        assetBytes: 1024 * 1024,
-        recentLocalFailures: [],
-        userPreference: isDesktop ? 'local' : 'server',
-        parity: 'same',
-        localDisabledByFlag: false,
-        saveData: false,
-      }),
-    });
-  }
-
   const schedulerRef = useRef<CompileScheduler | null>(null);
-  if (!schedulerRef.current) {
-    schedulerRef.current = new CompileScheduler({
-      compiler: routerRef.current,
-      debounceMs,
-    });
-  }
+
+  /**
+   * Create (or re-create after an unmount/remount, e.g. React StrictMode in dev) the network
+   * monitor, compiler router and scheduler. A disposed instance is never reused.
+   */
+  const ensureInfra = () => {
+    if (!monitorRef.current) {
+      monitorRef.current = new NetworkMonitor({ serverEndpoint: '/api/health', timeoutMs: 3000 });
+    }
+    if (!routerRef.current) {
+      const isDesktop = isTauriEnvironment();
+      const localCompiler = isDesktop ? new TauriDesktopCompiler() : new WasmCompiler();
+      routerRef.current = new CompilerRouter({
+        local: localCompiler,
+        server: new RemoteCompiler({ endpoint: '/api/compile-latex' }),
+        getContext: () => {
+          const monitor = monitorRef.current;
+          return {
+            online: monitor ? monitor.isOnline() : true,
+            serverReachable: monitor ? monitor.isServerReachable() : true,
+            localEnv: isDesktop ? 'ready' : typeof Worker !== 'undefined' ? 'ready' : 'missing',
+            localEnvMatches: true,
+            deviceScore: typeof Worker !== 'undefined' || isDesktop ? 100 : 'unsupported',
+            pageEstimate: 5,
+            assetBytes: 1024 * 1024,
+            recentLocalFailures: [],
+            userPreference: isDesktop ? 'local' : 'server',
+            parity: 'same',
+            localDisabledByFlag: false,
+            saveData: false,
+          };
+        },
+      });
+    }
+    if (!schedulerRef.current) {
+      schedulerRef.current = new CompileScheduler({ compiler: routerRef.current, debounceMs });
+    }
+    return schedulerRef.current;
+  };
+  ensureInfra();
+
+  /** Each compile owns the busy flag: a superseded/aborted compile must not hide the spinner of the newer one. */
+  const compileSeqRef = useRef(0);
+  /** Outcome of the last finished compile, so callers can tell "cancelled" from "failed". */
+  const lastOutcomeRef = useRef<'success' | 'cancelled' | 'error' | null>(null);
+  const [compileStartedAt, setCompileStartedAt] = useState<number | null>(null);
 
   // NetworkMonitor subscription and Sticky Toast management
   useEffect(() => {
+    ensureInfra();
     const monitor = monitorRef.current;
     if (!monitor) return;
 
@@ -150,6 +155,7 @@ export function useEditorCompilation({
       unsubscribe();
       if (!customNetworkMonitor) {
         monitor.dispose();
+        monitorRef.current = null;
       }
     };
   }, [customNetworkMonitor]);
@@ -158,8 +164,10 @@ export function useEditorCompilation({
   useEffect(() => {
     return () => {
       schedulerRef.current?.dispose();
+      schedulerRef.current = null;
       if (!customRouter) {
         routerRef.current?.dispose();
+        routerRef.current = null;
       }
     };
   }, [customRouter]);
@@ -169,14 +177,16 @@ export function useEditorCompilation({
       const paperToCompile = customPaperData || formData;
       const settings = paperToCompile.layoutSettings || DEFAULT_LAYOUT_SETTINGS;
 
+      const seq = ++compileSeqRef.current;
+      const isLatest = () => seq === compileSeqRef.current;
       try {
         setIsCompilingPdf(true);
+        setCompileStartedAt(Date.now());
         setCompileErrorInfo(null);
         const texContent = exportToLatex(paperToCompile, settings);
         const images = await extractPaperImagesAsync(paperToCompile);
 
-        const scheduler = schedulerRef.current;
-        if (!scheduler) return null;
+        const scheduler = ensureInfra();
 
         const result = await scheduler.compileNow({
           tex: texContent,
@@ -189,7 +199,7 @@ export function useEditorCompilation({
           const url =
             result.pdfUrl ||
             (result.pdfBlob ? URL.createObjectURL(result.pdfBlob) : null);
-          if (url) {
+          if (url && isLatest()) {
             setCompiledPdfUrl(url);
           }
           const engineKind = result.producedBy?.kind;
@@ -207,6 +217,7 @@ export function useEditorCompilation({
             engine: engineName,
             producedBy: result.producedBy,
           });
+          lastOutcomeRef.current = 'success';
           return url;
         } else if (
           result.cancelled ||
@@ -215,8 +226,11 @@ export function useEditorCompilation({
           result.error?.includes('aborted')
         ) {
           // Bỏ qua khi yêu cầu bị hủy hoặc thay thế bởi tác vụ mới (debounce)
+          lastOutcomeRef.current = 'cancelled';
           return null;
         } else {
+          if (!isLatest()) return null;
+          lastOutcomeRef.current = 'error';
           setCompileErrorInfo({
             error: result.error || 'Biên dịch thất bại',
             details: result.details,
@@ -235,15 +249,21 @@ export function useEditorCompilation({
           e?.message?.includes('superseded')
         ) {
           // Yêu cầu bị hủy bình thường do debounce hoặc chuyển bản thảo
+          lastOutcomeRef.current = 'cancelled';
           return null;
         }
+        if (!isLatest()) return null;
+        lastOutcomeRef.current = 'error';
         setCompileErrorInfo({
           error: 'Lỗi kết nối máy chủ biên dịch',
           details: e?.message || 'Không thể gửi yêu cầu biên dịch tới backend.',
         });
         return null;
       } finally {
-        setIsCompilingPdf(false);
+        if (isLatest()) {
+          setIsCompilingPdf(false);
+          setCompileStartedAt(null);
+        }
       }
     },
     [formData]
@@ -281,6 +301,8 @@ export function useEditorCompilation({
     compiledPdfUrl,
     setCompiledPdfUrl,
     isCompilingPdf,
+    compileStartedAt,
+    lastOutcomeRef,
     compileStats,
     setCompileStats,
     compileErrorInfo,

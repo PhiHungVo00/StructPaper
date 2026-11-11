@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { CompletePaper } from './sample-papers';
 import { generateFullJournalLatex, generateLatexPackageZip } from './latex-template';
+import { exportToJatsXml } from './jats-export';
 import {
   appendFigureImagesToZip,
   rewriteBlobFigureSrcsForArchive,
@@ -106,81 +107,7 @@ export function exportToHtml(paper: CompletePaper): string {
 </html>`;
 }
 
-export function exportToJatsXml(paper: CompletePaper): string {
-  const { metadata, sections, references } = paper;
-
-  const escapeXml = (str: string) =>
-    (str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-
-  // Group sections by h1
-  let bodyXml = '';
-  let inSec = false;
-
-  for (const s of sections) {
-    if (s.type === 'h1') {
-      if (inSec) bodyXml += '    </sec>\n';
-      bodyXml += `    <sec>\n      <title>${escapeXml(s.title || '')}</title>\n`;
-      inSec = true;
-    } else if (s.type === 'h2') {
-      bodyXml += `      <sec>\n        <title>${escapeXml(s.title || '')}</title>\n      </sec>\n`;
-    } else if (s.type === 'paragraph') {
-      bodyXml += `      <p>${escapeXml(s.content)}</p>\n`;
-    } else if (s.type === 'figure' && s.figure) {
-      bodyXml += `      <fig id="fig-${s.figure.num}">\n        <label>Hình ${s.figure.num}</label>\n        <caption><p>${escapeXml(s.figure.caption)}</p></caption>\n      </fig>\n`;
-    } else if (s.type === 'table' && s.table) {
-      bodyXml += `      <table-wrap id="tbl-${s.table.num}">\n        <label>Bảng ${s.table.num}</label>\n        <caption><p>${escapeXml(s.table.caption)}</p></caption>\n        <table>\n          <thead><tr>${s.table.headers.map((h) => `<th>${escapeXml(h)}</th>`).join('')}</tr></thead>\n          <tbody>${s.table.rows.map((r) => `<tr>${r.map((c) => `<td>${escapeXml(c)}</td>`).join('')}</tr>`).join('')}</tbody>\n        </table>\n      </table-wrap>\n`;
-    }
-  }
-  if (inSec) bodyXml += '    </sec>\n';
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD v1.2 20190208//EN" "JATS-archivearticle1.dtd">
-<article xmlns:xlink="http://www.w3.org/1999/xlink" article-type="${escapeXml(metadata.articleType)}">
-  <front>
-    <journal-meta>
-      <journal-id journal-id-type="publisher-id">${escapeXml(metadata.journalId)}</journal-id>
-      <journal-title-group>
-        <journal-title>${escapeXml(metadata.journalName)}</journal-title>
-      </journal-title-group>
-      <issn pub-type="epub">2615-9783</issn>
-      <publisher><publisher-name>ĐHQG TP.HCM</publisher-name></publisher>
-    </journal-meta>
-    <article-meta>
-      <article-id pub-id-type="doi">${escapeXml(metadata.doi.replace('https://doi.org/', ''))}</article-id>
-      <title-group>
-        <article-title>${escapeXml(metadata.title)}</article-title>
-        ${metadata.titleEn ? `<trans-title-group xml:lang="en"><trans-title>${escapeXml(metadata.titleEn)}</trans-title></trans-title-group>` : ''}
-      </title-group>
-      <contrib-group>
-        ${metadata.authors
-          .map(
-            (a) => `<contrib contrib-type="author" ${a.isCorresponding ? 'corresp="yes"' : ''}>
-          <name><surname>${escapeXml(a.name.split(' ').pop() || '')}</surname><given-names>${escapeXml(a.name.split(' ').slice(0, -1).join(' '))}</given-names></name>
-          ${a.email ? `<email>${escapeXml(a.email)}</email>` : ''}
-        </contrib>`
-          )
-          .join('\n        ')}
-      </contrib-group>
-      <abstract><p>${escapeXml(metadata.abstract)}</p></abstract>
-      <kwd-group kwd-group-type="author">
-        ${metadata.keywords.map((k) => `<kwd>${escapeXml(k)}</kwd>`).join('\n        ')}
-      </kwd-group>
-    </article-meta>
-  </front>
-  <body>
-${bodyXml}  </body>
-  <back>
-    <ref-list>
-      <title>TÀI LIỆU THAM KHẢO</title>
-      ${references.map((r) => `<ref id="R${r.id}"><mixed-citation publication-type="journal">${escapeXml(r.raw)}</mixed-citation></ref>`).join('\n      ')}
-    </ref-list>
-  </back>
-</article>`;
-}
+export { exportToJatsXml };
 
 export async function generatePaperZip(paper: CompletePaper): Promise<Blob> {
   const zip = new JSZip();

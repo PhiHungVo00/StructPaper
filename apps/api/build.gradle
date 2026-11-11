@@ -36,6 +36,9 @@ dependencies {
     // OpenAPI 3 / Swagger Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
+    // Object storage (MinIO / S3) for snapshots, exports and images
+    implementation 'io.minio:minio:8.5.12'
+
     // Utilities
     implementation 'commons-io:commons-io:2.16.1'
 
