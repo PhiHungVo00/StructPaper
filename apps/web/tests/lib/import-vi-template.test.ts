@@ -105,3 +105,15 @@ describe('empty header cells', () => {
     expect(p.sections.filter((s) => s.type === 'table').some((s) => s.table!.headers.some((h) => /^Cột \d+$/.test(h)))).toBe(false);
   }, 60_000);
 });
+
+describe('back-matter "none" marks', () => {
+  it('keeps the "-" the file writes under Kinh phí / Lời cảm ơn instead of leaving empty headings', async () => {
+    const buf = fs.readFileSync(FIXTURE);
+    const p = await parseDocxFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, 'vi.docx');
+    for (const title of ['Chấp thuận về đạo đức nghiên cứu', 'Lời cảm ơn', 'Kinh phí', 'Tính khả dụng của dữ liệu']) {
+      const i = p.sections.findIndex((s) => s.type === 'h1' && s.title === title);
+      expect(i, title).toBeGreaterThanOrEqual(0);
+      expect(p.sections[i + 1].content, title).toBe('-');
+    }
+  }, 60_000);
+});

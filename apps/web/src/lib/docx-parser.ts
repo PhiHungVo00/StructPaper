@@ -7,7 +7,7 @@ import { findEnglishBackMatter, splitKeywords } from './docx-english-backmatter'
 import { enrichScriptRuns } from './docx-richtext';
 import { loadFigureImages } from './docx-figure-images';
 import { figureTableInfo, figureTableAsCaptionParagraph, stripGuideParagraphs } from './docx-figure-tables';
-import { extractListHeadings } from './docx-headings';
+import { extractListHeadings, isNoneMark } from './docx-headings';
 import { articleIdFromFileName } from './publication';
 import { normalizeImportedTitle } from './title-case';
 import JSZip from 'jszip';
@@ -1373,7 +1373,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     if (attachTableFooterLine(sections, line)) continue;
 
     // Paragraph (short "n là số lượng mẫu" lines after "Trong đó:" are kept too)
-    if (line.length > 20 || (isFrontMatterDone && isWhereDefinitionLine(line, sections[sections.length - 1]))) {
+    if (line.length > 20 || (isFrontMatterDone && (isWhereDefinitionLine(line, sections[sections.length - 1]) || isNoneMark(line, sections[sections.length - 1])))) {
       if (!isFrontMatterDone) {
         continue;
       }

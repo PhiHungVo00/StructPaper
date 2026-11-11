@@ -26,3 +26,11 @@ export function extractListHeadings(docXml: string): Map<string, number> {
   }
   return out;
 }
+
+/**
+ * A lone dash under a heading ("Kinh phí" / "-") is the journal's way of writing "none". It is the
+ * content the file states, so it is kept instead of leaving an empty heading.
+ */
+export function isNoneMark(line: string, prev: { type: string; content?: string } | undefined): boolean {
+  return /^[-–—]$/.test(line.trim()) && prev?.type === 'h1' && !prev.content;
+}
