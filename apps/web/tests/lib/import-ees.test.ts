@@ -5,6 +5,8 @@ import type { CompletePaper } from '@/types/paper';
 import { parseDocxFile } from '@/lib/docx-parser';
 import { findEnglishBackMatter, splitKeywords } from '@/lib/docx-english-backmatter';
 import { extractDisplayEquations } from '@/lib/docx-equations';
+import { tableToLatex } from '@/lib/latex-table';
+import { resolveTheme } from '@/lib/theme-config';
 
 const FIXTURE = path.resolve(
   __dirname,
@@ -51,6 +53,34 @@ describe('real file: EES ID850 imported from Word', () => {
     expect(eqs[6][1]).toBe(String.raw`CSI=\frac{A}{A+B+C}`);
     // the short "where" line under the formulas is kept
     expect(paper.sections.some((s) => s.type === 'paragraph' && s.content === 'n là số lượng mẫu')).toBe(true);
+  });
+
+  it('turns the picture grids with a "Hình N" caption cell into figures 3–5, not data tables', () => {
+    const figs = paper.sections.filter((s) => s.type === 'figure').map((s) => s.figure!.num);
+    const tabs = paper.sections.filter((s) => s.type === 'table').map((s) => s.table!);
+    expect(figs).toEqual([1, 2, 3, 4, 5]);
+    expect(tabs.map((t) => t.num)).toEqual([1, 2]);
+    // the figure follows the paragraph that introduces it
+    const i3 = paper.sections.findIndex((s) => s.type === 'figure' && s.figure!.num === 3);
+    expect(paper.sections[i3 - 1].content).toMatch(/^Hình 3 thể hiện/);
+  });
+
+  it('keeps Word field codes out of captions and keeps merged header cells', () => {
+    const t2 = paper.sections.find((s) => s.type === 'table' && s.table!.num === 2)!.table!;
+    expect(t2.caption).toBe('Bảng 2. Sai số dự báo của mô hình WRF [Nguồn: Nhóm tác giả]');
+    const t1 = paper.sections.find((s) => s.type === 'table' && s.table!.num === 1)!.table!;
+    expect(t1.headerRows?.[0].map((c) => [c.text, c.colSpan ?? 1])).toEqual([['', 2], ['Quan trắc', 3]]);
+    // LaTeX keeps the merged cells and the row-merged 'Dự báo' (no shifted second row)
+    const tex = tableToLatex(t1, { isOneColumn: false, theme: resolveTheme(undefined) });
+    expect(tex).toContain(String.raw`\multicolumn{3}{c}{\textbf{Quan trắc}}`);
+    expect(tex).toContain(' & Không & C & D & C \\\\');
+    expect(tex).toContain(String.raw`\multirow{-2}{*}{Dự báo}`);
+  });
+
+  it('lists the abbreviation table under its heading', () => {
+    const h = paper.sections.findIndex((s) => s.type === 'h1' && /VIẾT TẮT/.test(s.title || ''));
+    expect(paper.sections[h + 1].content).toBe('AI (Artificial Intelligence): Trí tuệ nhân tạo');
+    expect(paper.sections.filter((s) => /^s_abbr_/.test(s.id))).toHaveLength(21); // 22 rows minus the label row
   });
 });
 

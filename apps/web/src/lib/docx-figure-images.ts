@@ -1,5 +1,6 @@
 import type JSZip from 'jszip';
-import { pairFiguresWithImages, pairShapeDrawings } from './docx-figures';
+import { pairFiguresWithImages, pairShapeDrawings, parseImageRelationships } from './docx-figures';
+import { figureTableInfo, composeFigurePanels } from './docx-figure-tables';
 import { drawingToSvg, svgToPngDataUrl } from './drawingml';
 
 export interface FigureImages {
@@ -74,6 +75,17 @@ export async function loadFigureImages(zip: JSZip, html: string | undefined): Pr
         const dataUrl = imageMap.get(name);
         if (dataUrl) figureImageMap.set(num, dataUrl);
       });
+      // Multi-panel figures laid out in a table (a/b/c pictures + caption cell): compose one image.
+      const rels = parseImageRelationships(relsXml);
+      for (const tbl of docXmlForFigures.match(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi) || []) {
+        const info = figureTableInfo(tbl);
+        if (!info || info.panels.length < 2) continue;
+        const panels = info.panels
+          .map((p) => ({ ...p, dataUrl: imageMap.get(rels.get(p.rId) || '') || '' }))
+          .filter((p) => p.dataUrl);
+        const composed = await composeFigurePanels(panels);
+        if (composed) figureImageMap.set(info.num, composed);
+      }
       // Figures made of Word shapes (no picture file): redraw them as SVG, then PNG (browser only).
       const themeXml = await zip.file('word/theme/theme1.xml')?.async('text');
       const taken = new Set<number>(figureImageMap.keys());

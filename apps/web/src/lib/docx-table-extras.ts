@@ -94,3 +94,34 @@ export function applyTableLayoutHints(sections: PaperSection[], landscapeById: R
 export function stripCaptionLabel(caption: string): string {
   return (caption || '').replace(/^\s*(?:b\s*ảng|bảng|table|hình|figure|fig\.?|phụ\s*lục)\s*\d*\s*[:.\-–]\s*/i, '').trim() || caption;
 }
+
+const ABBREV_LABEL_RE =
+  /viết\s*tắt|abbreviation|ý\s*nghĩa|meaning|giải\s*thích|definition|tiếng\s*anh|english|thuật\s*ngữ|term/i;
+
+/**
+ * "DANH MỤC TỪ VIẾT TẮT" is a table in Word (abbreviation | English | meaning). The printed journal
+ * lists it as lines "AI (Artificial Intelligence): Trí tuệ nhân tạo" under the heading, so it is
+ * inserted as paragraphs there (it was dropped entirely before).
+ */
+export function placeAbbreviationTable(sections: PaperSection[], headers: string[], rows: string[][]): true {
+  const isLabelRow = (r: string[]) => r.every((c) => !c.trim() || /^Cột \d+$/.test(c.trim()) || ABBREV_LABEL_RE.test(c));
+  const all = [...(isLabelRow(headers) ? [] : [headers]), ...rows]
+    .map((r) => r.map((c) => (c || '').replace(/\s+/g, ' ').trim()))
+    .filter((r) => r[0]);
+  const paras: PaperSection[] = all.map((r, k) => ({
+    id: `s_abbr_${k + 1}`,
+    type: 'paragraph',
+    content:
+      r.length >= 3 && r[1]
+        ? `${r[0]} (${r[1]}): ${r.slice(2).filter(Boolean).join('; ')}`
+        : `${r[0]}: ${r.slice(1).filter(Boolean).join('; ')}`,
+  }));
+  if (!paras.length) return true;
+  const h = sections.findIndex((s) => /^h[123]$/.test(s.type) && /viết\s*tắt|abbreviation/i.test(s.title || ''));
+  if (h >= 0) {
+    sections.splice(h + 1, 0, ...paras);
+  } else {
+    sections.push({ id: 's_abbr_h', type: 'h1', title: 'DANH MỤC TỪ VIẾT TẮT', content: '' }, ...paras);
+  }
+  return true;
+}

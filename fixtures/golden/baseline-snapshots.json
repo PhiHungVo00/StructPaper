@@ -1,7 +1,7 @@
 {
   "version": "2.0.0",
   "generator": "legacy-docx-parser",
-  "generatedAt": "2026-11-11T12:28:23.064Z",
+  "generatedAt": "2026-11-11T12:35:39.031Z",
   "totalFiles": 11,
   "templatesCount": 4,
   "papersCount": 7,
@@ -136,9 +136,9 @@
         "affiliationsLength": 1,
         "hasAbstract": true,
         "abstractLength": 1746,
-        "sectionsLength": 67,
-        "tablesLength": 5,
-        "figuresLength": 2,
+        "sectionsLength": 88,
+        "tablesLength": 2,
+        "figuresLength": 5,
         "referencesLength": 26
       }
     },
@@ -153,7 +153,7 @@
         "affiliationsLength": 4,
         "hasAbstract": true,
         "abstractLength": 1677,
-        "sectionsLength": 62,
+        "sectionsLength": 68,
         "tablesLength": 5,
         "figuresLength": 4,
         "referencesLength": 31
@@ -187,7 +187,7 @@
         "affiliationsLength": 4,
         "hasAbstract": true,
         "abstractLength": 1907,
-        "sectionsLength": 85,
+        "sectionsLength": 95,
         "tablesLength": 1,
         "figuresLength": 7,
         "referencesLength": 27

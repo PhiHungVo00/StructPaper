@@ -1,11 +1,12 @@
 import mammoth from 'mammoth';
 import { ommlToLatex } from './omml';
 import { extractDisplayEquations, insertEquations, isWhereDefinitionLine } from './docx-equations';
-import { attachTableFooterLine, placeLeftoverTable, landscapeResolver, applyTableLayoutHints } from './docx-table-extras';
+import { attachTableFooterLine, placeLeftoverTable, placeAbbreviationTable, landscapeResolver, applyTableLayoutHints } from './docx-table-extras';
 import { mergeBilingualAffiliations } from './docx-affiliations';
 import { findEnglishBackMatter, splitKeywords } from './docx-english-backmatter';
 import { enrichScriptRuns } from './docx-richtext';
 import { loadFigureImages } from './docx-figure-images';
+import { figureTableInfo, figureTableAsCaptionParagraph } from './docx-figure-tables';
 import { extractListHeadings } from './docx-headings';
 import { articleIdFromFileName } from './publication';
 import { normalizeImportedTitle } from './title-case';
@@ -479,7 +480,8 @@ export async function extractOpenXmlTables(
     let tableNum = 0;
 
     for (let pI = pMatches.length - 1; pI >= Math.max(0, pMatches.length - 3); pI--) {
-      const pText = pMatches[pI].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      // Text runs only: field codes (" SEQ Bảng \* ARABIC ") live in <w:instrText> and must not leak into the caption
+      const pText = (pMatches[pI].match(/<w:t\b[^>]*>[\s\S]*?<\/w:t>/gi) || []).map((t) => t.replace(/<[^>]+>/g, '')).join('').replace(/\s+/g, ' ').trim();
       const cleanP = normalizeVietnameseWordSpacing(cleanEndNoteText(decodeXml(pText)));
 
       const tableCapMatch = cleanP.match(/^(?:b\s*ảng|bảng|table|b\.)\s*(\d*)\s*[:.-]?\s*(.*)/i);
@@ -546,7 +548,7 @@ export async function extractOpenXmlTables(
       !detectedCaption &&
       (allText.includes('đại học') || allText.includes('bộ môn') || allText.includes('khoa ') || allText.includes('email:'));
     const isSingleCellBox = parsed.totalRowCount === 1 && parsed.colCount === 1;
-    const isFigureTable = /<w:drawing|<w:pict/i.test(tblXml) && parsed.totalRowCount <= 2;
+    const isFigureTable = (/<w:drawing|<w:pict/i.test(tblXml) && parsed.totalRowCount <= 2) || !!figureTableInfo(tblXml);
     const isUncaptionedSmall = !detectedCaption && (parsed.totalRowCount <= 2 || parsed.colCount <= 1);
 
     if (isAuthorBox || isSingleCellBox || isFigureTable || isUncaptionedSmall) {
@@ -854,7 +856,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
   if (docXmlFile) {
     const docXml = await docXmlFile.async('text');
     if (docXml.includes('<w:tbl')) {
-      const cleanDocXml = docXml.replace(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi, '');
+      // Tables leave the text pass; a picture grid with a "Hình N" caption leaves its caption behind
+      const cleanDocXml = docXml.replace(/<w:tbl[\s>][\s\S]*?<\/w:tbl>/gi, (t) => figureTableAsCaptionParagraph(t) ?? '');
       const cleanZip = await JSZip.loadAsync(fileBuffer);
       cleanZip.file('word/document.xml', cleanDocXml);
       const cleanBuffer = await cleanZip.generateAsync({ type: 'arraybuffer' });
@@ -1402,6 +1405,8 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
           isFullWidth: true,
         },
       });
+    } else if (!t.placed && t.type === 'abbrev') {
+      t.placed = placeAbbreviationTable(sections, t.headers, t.rows);
     }
   }
 
