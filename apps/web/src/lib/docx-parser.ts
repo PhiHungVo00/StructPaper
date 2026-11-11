@@ -398,7 +398,7 @@ export function parseOpenXmlTable(tblXml: string): {
         parts.push(txt);
       }
     }
-    finalHeaders.push(parts.join(' / ') || `Cột ${c + 1}`);
+    finalHeaders.push(parts.join(' / ')); // an empty corner cell stays empty, as in the file
   }
 
   // Build data rows
@@ -1002,16 +1002,16 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
       dates.received = line.replace(/.*ngày nhận( bài)?:\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
-    if (/ngày (nhận )?chỉnh sửa|ngày sửa đổi:/i.test(line)) {
-      dates.revised = line.replace(/.*(ngày (nhận )?chỉnh sửa|ngày sửa đổi):\s*/i, '').replace(/;$/, '').trim();
+    if (/ngày (nhận )?chỉnh sửa|ngày sửa (đổi|bài):/i.test(line)) {
+      dates.revised = line.replace(/.*(ngày (nhận )?chỉnh sửa|ngày sửa (đổi|bài)):\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
     if (/ngày chấp nhận:/i.test(line)) {
       dates.accepted = line.replace(/.*ngày chấp nhận:\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
-    if (/ngày đăng:/i.test(line)) {
-      dates.published = line.replace(/.*ngày đăng:\s*/i, '').replace(/;$/, '').trim();
+    if (/ngày (đăng|xuất bản)( trực tuyến)?:/i.test(line)) {
+      dates.published = line.replace(/.*ngày (đăng|xuất bản)( trực tuyến)?:\s*/i, '').replace(/;$/, '').trim();
       continue;
     }
 
@@ -1181,7 +1181,7 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
         line === titleEn ||
         line.startsWith('Use your smartphone to scan') ||
         /^(open access|bài nghiên|bài tổng|loại bài|review article|research article|lịch sử|bản quyền|copyright|trích dẫn bài báo này|cite this article|doi\s*:)/i.test(line) ||
-        /^(ngày nhận|ngày sửa đổi|ngày chấp nhận|ngày đăng)/i.test(line) ||
+        /^(ngày nhận|ngày sửa|ngày chỉnh sửa|ngày chấp nhận|ngày đăng|ngày xuất bản)/i.test(line) ||
         /©|Creative Commons|hvu@uhsvnu|tạp chí phát triển/i.test(line) ||
         keywords.some((k) => line.includes(k)) ||
         /^(không steroid|thuốc ức chế)/i.test(line)

@@ -3,6 +3,7 @@ import { CompletePaper, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/
 import { getJournalTemplate } from './templates';
 import { resolveTheme, hexToRgb as themeHexToRgb } from './theme-config';
 import { sanitizeMathForLatex } from './math-text';
+import { breakLongEquation } from './latex-equation-break';
 import { escapeLatex } from './latex-escape';
 import { tableToLatex } from './latex-table';
 import { SIZE9_PREAMBLE } from './latex-size9';
@@ -366,7 +367,7 @@ ${isOneColumn
       const label = sec.equation.numbered ? `\n\\label{eq:${sec.equation.num ?? secIdx + 1}}` : '';
       // Keep the number typed in the source ("(4)") so references in the text stay right.
       const tag = sec.equation.numbered && sec.equation.num ? `\\tag{${sec.equation.num}}` : '';
-      bodyLatex += `\n\\begin{${env}}\n${sanitizeMathForLatex(sec.equation.latex)}${tag}${label}\n\\end{${env}}\n`;
+      bodyLatex += `\n\\begin{${env}}\n${breakLongEquation(sanitizeMathForLatex(sec.equation.latex), isOneColumn ? 90 : 40)}${tag}${label}\n\\end{${env}}\n`;
     } else if (sec.type === 'figure' && sec.figure) {
       const figNum = sec.figure.num || (secIdx + 1);
       let imgName = `fig${figNum}.png`;

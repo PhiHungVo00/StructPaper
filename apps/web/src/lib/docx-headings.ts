@@ -3,17 +3,26 @@
  * bold paragraphs in the text: the number is not in the text, so the importer used to drop short ones
  * ("Tổng quan", "Lý thuyết nền tảng"). Read them from the list level instead: level 0 -> h1, 1 -> h2, 2 -> h3.
  */
+const isOn = (run: string, tag: 'b' | 'i') =>
+  new RegExp(`<w:${tag}[\\s/>]`, 'i').test(run) && !new RegExp(`<w:${tag}\\s+w:val="(?:0|false)"`, 'i').test(run);
+
 export function extractListHeadings(docXml: string): Map<string, number> {
   const out = new Map<string, number>();
-  for (const m of docXml.matchAll(/<w:p\b[\s>][\s\S]*?<\/w:p>/gi)) {
+  const withoutTables = docXml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/gi, '');
+  for (const m of withoutTables.matchAll(/<w:p\b[\s>][\s\S]*?<\/w:p>/gi)) {
     const p = m[0];
     const lvl = p.match(/<w:numPr>[\s\S]*?<w:ilvl w:val="(\d+)"/i)?.[1];
-    if (lvl === undefined) continue;
     const runs = [...p.matchAll(/<w:r\b[\s>][\s\S]*?<\/w:r>/gi)].map((r) => r[0]).filter((r) => /<w:t\b/.test(r));
-    if (!runs.length || !runs.every((r) => /<w:b[\s/>]/i.test(r) && !/<w:b\s+w:val="(?:0|false)"/i.test(r))) continue;
+    if (!runs.length) continue;
+    // Numbered list heading: every run bold. Unnumbered sub-heading typed by hand ("Mô hình nghiên cứu…",
+    // "Đối với nhóm quốc gia…"): every run bold AND italic (the journal template's sub-heading look).
+    const numbered = lvl !== undefined && runs.every((r) => isOn(r, 'b'));
+    const handTyped = lvl === undefined && runs.every((r) => isOn(r, 'b') && isOn(r, 'i'));
+    if (!numbered && !handTyped) continue;
     const text = p.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
     if (text.length < 3 || text.length > 80 || /[.;:,]$/.test(text) || !/^[A-ZÀ-Ỹ]/.test(text)) continue;
-    out.set(text, Math.min(Number(lvl), 2));
+    if (handTyped && /^(hình|bảng|figure|table|nguồn|source|ghi chú|note)\b/i.test(text)) continue;
+    out.set(text, numbered ? Math.min(Number(lvl), 2) : 1);
   }
   return out;
 }
