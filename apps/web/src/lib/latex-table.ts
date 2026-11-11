@@ -45,6 +45,8 @@ export function tableToLatex(
         let escaped = escapeLatex(rawText);
         escaped = escaped.replace(/•/g, '$\\bullet$~');
         escaped = escaped.replace(/\r?\n/g, ' \\newline ');
+        // citations inside cells ("Ho [36,6]") become superscript natbib citations, as in the paragraphs
+        escaped = escaped.replace(/\s*\[(\d+(?:\s*,\s*\d+)*)\]/g, (_m, nums: string) => `\\unskip\\cite{${nums.split(',').map((n) => `ref${n.trim()}`).join(',')}}`);
         if (cell.colSpan && cell.colSpan > 1) {
           const alignChar = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
           return `\\multicolumn{${cell.colSpan}}{${alignChar}}{${escaped}}`;

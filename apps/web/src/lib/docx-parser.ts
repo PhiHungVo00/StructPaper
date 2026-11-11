@@ -1192,11 +1192,12 @@ export async function parseDocxFile(fileBuffer: ArrayBuffer, fileName?: string):
     }
 
     // Subheadings H2
-    if (/^(\d+\.\d+(\.\d+)*)\s+(.+)/.test(line)) {
+    // "4.1. Kết quả…" / "4.2.2 Kiểm định…": short numbered line starting with a capital, not a sentence
+    if (/^\d+\.\d+(?:\.\d+)*\.?\s+[A-ZÀ-Ỹ]/.test(line) && line.length <= 110 && !/[.;:]$/.test(line)) {
       isFrontMatterDone = true;
       sections.push({
         id: `s_${sections.length + 1}`,
-        type: 'h2',
+        type: /^\d+\.\d+\.\d+/.test(line) ? 'h3' : 'h2',
         title: line,
         content: '',
       });
