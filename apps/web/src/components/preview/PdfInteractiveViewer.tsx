@@ -1,7 +1,20 @@
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, ExternalLink, Minus, Plus, RectangleHorizontal, RectangleVertical } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  ExternalLink,
+  Minus,
+  Plus,
+  RectangleHorizontal,
+  RectangleVertical,
+  Search,
+  X,
+} from 'lucide-react';
+import './pdf-viewer.css';
 import { groupItemsIntoLines, type PdfLine, type PdfTextItem } from '@/lib/editor/pdf-section-map';
 import { lineForClick, pageFill } from '@/lib/editor/pdf-click-target';
 
@@ -18,7 +31,7 @@ export interface PdfRotateContext {
   nextLines: string[] | null;
 }
 
-/** A page that a change of paper orientation left mostly empty. */
+/** A page that a layout change left mostly empty. */
 export interface PdfFillIssue {
   page: number;
   /** Share of the page height the text uses (0..1). */
@@ -27,20 +40,14 @@ export interface PdfFillIssue {
   nextLines: string[];
 }
 
-interface PdfLink {
-  rect: [number, number, number, number];
-  url?: string;
-  dest?: unknown;
-}
-
 interface PdfInteractiveViewerProps {
   url: string;
-  /** A click on text: the lines of that page and the index of the clicked line. */
+  /** A double click on content: the lines of that page and the index of the clicked line. */
   onPickText?: (ctx: PdfPickContext) => void;
-  /** "Turn this page": the lines of the page and of the page after it. */
+  /** "Turn this page": the lines of the page and of the pages around it. */
   onRotatePage?: (ctx: PdfRotateContext) => void;
   onLoadError?: () => void;
-  /** Offered for a mostly empty page before an orientation change; the host decides whether it can fill it. */
+  /** Offered for a mostly empty page before a layout change; the host decides whether it can fill it. */
   canFill?: (issue: PdfFillIssue) => boolean;
   onFillPage?: (issue: PdfFillIssue) => void;
 }
@@ -53,91 +60,118 @@ interface PageText {
   items: PdfTextItem[];
   lines: PdfLine[];
 }
-interface Hit {
-  left: number;
-  top: number;
-  w: number;
-  h: number;
-}
 
-/** The compiled PDF drawn with pdf.js so a click can be traced back to the editor and a page can be turned. */
-export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url, onPickText, onRotatePage, onLoadError, canFill, onFillPage }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const pageEls = useRef<(HTMLDivElement | null)[]>([]);
+/**
+ * The compiled PDF in pdf.js's own viewer (text layer, links, zoom, find), so it behaves like a normal PDF preview:
+ * a single click selects text or follows a link. Only a double click on content reaches the editor, and the toolbar
+ * can turn the page being viewed.
+ */
+export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({
+  url,
+  onPickText,
+  onRotatePage,
+  onLoadError,
+  canFill,
+  onFillPage,
+}) => {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const pdfViewerRef = useRef<any>(null);
+  const busRef = useRef<any>(null);
   const docRef = useRef<any>(null);
   const textCache = useRef<Map<number, PageText>>(new Map());
-  const saved = useRef<{ page: number; frac: number }>({ page: 1, frac: 0 });
+  const place = useRef<{ page: number; frac: number; scale: string | number }>({ page: 1, frac: 0, scale: 'page-width' });
+  const [shown, setShown] = useState(false);
   const [sizes, setSizes] = useState<PageSize[]>([]);
-  const [width, setWidth] = useState(0);
-  const [zoom, setZoom] = useState(1);
   const [current, setCurrent] = useState(1);
-  const [hit, setHit] = useState<(Hit & { page: number }) | null>(null);
-  const [issues, setIssues] = useState<PdfFillIssue[]>([]);
+  const [zoom, setZoom] = useState(100);
   const [backTo, setBackTo] = useState<number | null>(null);
+  const [issues, setIssues] = useState<PdfFillIssue[]>([]);
   const [dismissed, setDismissed] = useState<number[]>([]);
+  const [findOpen, setFindOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [found, setFound] = useState<{ current: number; total: number } | null>(null);
 
-  const scaleOf = useCallback((i: number) => (sizes[i] ? ((width - 24) / sizes[i].w) * zoom : 1), [sizes, width, zoom]);
-
+  // a copy of the pane that is not on screen (width 0) loads nothing
   useEffect(() => {
-    const el = scrollRef.current;
+    const el = boxRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    const ro = new ResizeObserver(() => {
+      setShown(el.clientWidth > 0);
+      // a fit-to-width view follows the pane when it is resized (a number the reader zoomed to stays)
+      const v = pdfViewerRef.current;
+      if (v && el.clientWidth > 0 && typeof place.current.scale === 'string') v.currentScaleValue = place.current.scale;
+    });
     ro.observe(el);
-    setWidth(el.clientWidth);
+    setShown(el.clientWidth > 0);
     return () => ro.disconnect();
   }, []);
 
-  // load (and reload after a recompile, keeping the place the reader was at)
-  // (a copy of the pane that is not on screen, width 0, does not load anything)
-  const shown = width > 0;
   useEffect(() => {
     if (!shown) return;
     let dead = false;
+    let doc: any = null;
     (async () => {
       try {
         const pdfjs: any = await import('pdfjs-dist');
+        const lib: any = await import('pdfjs-dist/web/pdf_viewer');
         pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
         const data = await (await fetch(url)).arrayBuffer();
-        const doc = await pdfjs.getDocument({ data }).promise;
+        doc = await pdfjs.getDocument({ data }).promise;
         const dims: PageSize[] = [];
         for (let n = 1; n <= doc.numPages; n++) {
           const v = (await doc.getPage(n)).getViewport({ scale: 1 });
           dims.push({ w: v.width, h: v.height });
         }
-        if (dead) return;
+        if (dead || !boxRef.current || !viewerRef.current) return;
+        const eventBus = new lib.EventBus();
+        const linkService = new lib.PDFLinkService({ eventBus });
+        const findController = new lib.PDFFindController({ eventBus, linkService });
+        const pdfViewer = new lib.PDFViewer({ container: boxRef.current, viewer: viewerRef.current, eventBus, linkService, findController, textLayerMode: 1 });
+        linkService.setViewer(pdfViewer);
+        eventBus.on('pagesinit', () => {
+          pdfViewer.currentScaleValue = place.current.scale;
+          const view = pdfViewer.getPageView(place.current.page - 1);
+          if (view && boxRef.current) boxRef.current.scrollTop = view.div.offsetTop + place.current.frac * view.div.offsetHeight;
+        });
+        eventBus.on('pagechanging', (e: any) => setCurrent(e.pageNumber));
+        eventBus.on('scalechanging', (e: any) => {
+          setZoom(Math.round(e.scale * 100));
+          place.current.scale = pdfViewer.currentScaleValue;
+        });
+        const count = (e: any) => setFound(e.matchesCount && e.matchesCount.total ? { current: e.matchesCount.current, total: e.matchesCount.total } : null);
+        eventBus.on('updatefindmatchescount', count);
+        eventBus.on('updatefindcontrolstate', count);
+        busRef.current = eventBus;
+        pdfViewerRef.current = pdfViewer;
         docRef.current = doc;
         textCache.current.clear();
-        setHit(null);
         setSizes(dims);
-      } catch {
+        pdfViewer.setDocument(doc);
+        linkService.setDocument(doc, null);
+      } catch (err) {
+        console.error('PDF viewer could not open the file', err);
         if (!dead) onLoadError?.();
       }
     })();
     return () => {
       dead = true;
+      const v = pdfViewerRef.current;
+      const box = boxRef.current;
+      if (v && box) {
+        const view = v.getPageView(Math.max(0, v.currentPageNumber - 1));
+        if (view) place.current = { ...place.current, page: v.currentPageNumber, frac: Math.max(0, (box.scrollTop - view.div.offsetTop) / Math.max(1, view.div.offsetHeight)) };
+        v.setDocument(null);
+      }
+      pdfViewerRef.current = null;
+      busRef.current = null;
+      docRef.current = null;
+      doc?.destroy?.();
+      setFound(null);
+      setBackTo(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, shown]);
-
-  // only when a (re)loaded document gets its page boxes
-  useLayoutEffect(() => {
-    const el = pageEls.current[saved.current.page - 1];
-    if (el && scrollRef.current && sizes.length) scrollRef.current.scrollTop = el.offsetTop + saved.current.frac * el.offsetHeight - 8;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sizes]);
-
-  const onScroll = useCallback(() => {
-    const box = scrollRef.current;
-    if (!box) return;
-    const mid = box.scrollTop + box.clientHeight / 3;
-    let page = 1;
-    pageEls.current.forEach((el, i) => {
-      if (el && el.offsetTop <= mid) page = i + 1;
-    });
-    const el = pageEls.current[page - 1];
-    saved.current = { page, frac: el ? Math.max(0, (box.scrollTop - el.offsetTop) / Math.max(1, el.offsetHeight)) : 0 };
-    setCurrent(page);
-  }, []);
 
   const loadText = useCallback(async (n: number): Promise<PageText | null> => {
     const cached = textCache.current.get(n);
@@ -166,16 +200,16 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     let dead = false;
     setDismissed([]);
     (async () => {
-      const found: PdfFillIssue[] = [];
+      const list: PdfFillIssue[] = [];
       for (let p = 1; p < sizes.length; p++) {
         const a = sizes[p - 1];
         const here = await loadText(p);
         const next = await loadText(p + 1);
         if (!here || !next) continue;
         const used = pageFill(here.items, a.w, a.h);
-        if (used < 0.55) found.push({ page: p, used, lines: here.lines.map((l) => l.text), nextLines: next.lines.map((l) => l.text) });
+        if (used < 0.55) list.push({ page: p, used, lines: here.lines.map((l) => l.text), nextLines: next.lines.map((l) => l.text) });
       }
-      if (!dead) setIssues(found.filter((i) => !canFill || canFill(i)));
+      if (!dead) setIssues(list.filter((i) => !canFill || canFill(i)));
     })();
     return () => {
       dead = true;
@@ -183,30 +217,16 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sizes, onFillPage, canFill]);
 
-  /** Follows an internal link (a citation to its reference, a figure mention to the figure) and remembers where from. */
-  const goDest = async (dest: unknown) => {
-    const doc = docRef.current;
-    const box = scrollRef.current;
-    if (!doc || !box) return;
-    try {
-      const d: any = typeof dest === 'string' ? await doc.getDestination(dest) : dest;
-      if (!Array.isArray(d)) return;
-      const idx: number = typeof d[0] === 'object' && d[0] !== null ? await doc.getPageIndex(d[0]) : d[0];
-      const top = d[1]?.name === 'XYZ' ? d[3] : d[1]?.name === 'FitH' ? d[2] : null;
-      const el = pageEls.current[idx];
-      if (!el || !sizes[idx]) return;
-      setBackTo(box.scrollTop);
-      box.scrollTo({ top: el.offsetTop + (top != null ? (sizes[idx].h - top) * scaleOf(idx) : 0) - 24, behavior: 'smooth' });
-    } catch {
-      /* a destination that cannot be resolved is ignored */
-    }
-  };
-
-  const handleClick = async (n: number, e: React.MouseEvent<HTMLDivElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const s = scaleOf(n - 1);
-    const px = (e.clientX - box.left) / s;
-    const py = sizes[n - 1].h - (e.clientY - box.top) / s;
+  /** Double click on content: find the PDF line under the pointer and hand it to the editor. */
+  const handleDoubleClick = async (e: React.MouseEvent<HTMLDivElement>) => {
+    const pdfViewer = pdfViewerRef.current;
+    const pageEl = (e.target as HTMLElement).closest('.page') as HTMLElement | null;
+    if (!pdfViewer || !pageEl || !onPickText) return;
+    const n = Number(pageEl.dataset.pageNumber);
+    const view = pdfViewer.getPageView(n - 1);
+    if (!view?.viewport) return;
+    const rect = view.div.getBoundingClientRect();
+    const [px, py] = view.viewport.convertToPdfPoint(e.clientX - rect.left - view.div.clientLeft, e.clientY - rect.top - view.div.clientTop);
     const text = await loadText(n);
     if (!text || !text.lines.length) return;
     const li = lineForClick(text.items, text.lines, px, py);
@@ -217,8 +237,24 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     const x2 = Math.max(...used.map((it) => it.x + it.width));
     const top = Math.max(...used.map((it) => it.y + it.height));
     const bottom = Math.min(...used.map((it) => it.y)) - 2;
-    setHit({ page: n, left: x1 * s - 3, top: (sizes[n - 1].h - top) * s - 2, w: (x2 - x1) * s + 6, h: (top - bottom) * s + 4 });
-    onPickText?.({ lines: text.lines.map((l) => l.text), center: li });
+    const [ax, ay, bx, by] = view.viewport.convertToViewportRectangle([x1, bottom, x2, top]);
+    const mark = document.createElement('div');
+    mark.setAttribute('data-testid', 'pdf-hit');
+    Object.assign(mark.style, {
+      position: 'absolute',
+      left: `${Math.min(ax, bx) - 3}px`,
+      top: `${Math.min(ay, by) - 2}px`,
+      width: `${Math.abs(bx - ax) + 6}px`,
+      height: `${Math.abs(by - ay) + 4}px`,
+      background: 'rgba(120,200,65,0.28)',
+      outline: '1.5px solid #78C841',
+      borderRadius: '2px',
+      pointerEvents: 'none',
+      zIndex: '5',
+    });
+    view.div.appendChild(mark);
+    setTimeout(() => mark.remove(), 1800);
+    onPickText({ lines: text.lines.map((l) => l.text), center: li });
   };
 
   const turn = async (orientation: 'portrait' | 'landscape') => {
@@ -235,30 +271,88 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     });
   };
 
+  const find = (again = false, previous = false) => {
+    busRef.current?.dispatch('find', {
+      source: window,
+      type: again ? 'again' : '',
+      query,
+      caseSensitive: false,
+      entireWord: false,
+      highlightAll: true,
+      findPrevious: previous,
+      matchDiacritics: false,
+    });
+  };
+
+  // an internal link (a citation to its reference) remembers where the reader was
+  const rememberJump = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('a.internalLink')) setBackTo(boxRef.current?.scrollTop ?? 0);
+  };
+
   const open = issues.filter((i) => !dismissed.includes(i.page));
   const landscape = !!sizes[current - 1] && sizes[current - 1].w > sizes[current - 1].h;
+  const btn = 'p-1 rounded-lg hover:bg-zinc-100 cursor-pointer text-zinc-600';
 
   return (
-    <div className="w-full h-full flex flex-col min-h-0" data-testid="pdf-viewer">
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-200 bg-white text-[11px] flex-shrink-0 flex-wrap">
-        <span className="font-bold text-zinc-700" data-testid="pdf-page-indicator">
-          Trang {current} / {sizes.length || '…'}
-        </span>
-        <div className="flex items-center gap-0.5">
-          <button type="button" aria-label="Thu nhỏ" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.15).toFixed(2)))} className="p-1 rounded-lg hover:bg-zinc-100 cursor-pointer">
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-          <span className="w-9 text-center tabular-nums text-zinc-500">{Math.round(zoom * 100)}%</span>
-          <button type="button" aria-label="Phóng to" onClick={() => setZoom((z) => Math.min(3, +(z + 0.15).toFixed(2)))} className="p-1 rounded-lg hover:bg-zinc-100 cursor-pointer">
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
+    <div
+      className="w-full h-full flex flex-col min-h-0"
+      data-testid="pdf-viewer"
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          setFindOpen(true);
+        }
+      }}
+    >
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-200 bg-white text-[11px] flex-shrink-0 flex-wrap">
+        <label className="flex items-center gap-1 font-bold text-zinc-700" data-testid="pdf-page-indicator">
+          Trang
+          <input
+            type="number"
+            min={1}
+            max={sizes.length || 1}
+            value={current}
+            aria-label="Số trang"
+            onChange={(e) => {
+              const n = Math.min(Math.max(1, Number(e.target.value) || 1), sizes.length || 1);
+              if (pdfViewerRef.current) pdfViewerRef.current.currentPageNumber = n;
+            }}
+            className="w-10 px-1 py-0.5 rounded-md border border-zinc-200 text-center tabular-nums"
+          />
+          / {sizes.length || '…'}
+        </label>
+        <button type="button" aria-label="Thu nhỏ" onClick={() => pdfViewerRef.current?.decreaseScale()} className={btn}>
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Vừa chiều rộng"
+          onClick={() => {
+            if (pdfViewerRef.current) pdfViewerRef.current.currentScaleValue = 'page-width';
+          }}
+          className="w-10 text-center tabular-nums text-zinc-500 hover:bg-zinc-100 rounded-lg cursor-pointer"
+        >
+          {zoom}%
+        </button>
+        <button type="button" aria-label="Phóng to" onClick={() => pdfViewerRef.current?.increaseScale()} className={btn}>
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" aria-label="Tìm trong PDF" data-testid="pdf-find-toggle" onClick={() => setFindOpen((v) => !v)} className={btn}>
+          <Search className="w-3.5 h-3.5" />
+        </button>
+        <a href={url} download="article.pdf" title="Tải PDF xuống" className={btn}>
+          <Download className="w-3.5 h-3.5" />
+        </a>
+        <a href={url} target="_blank" rel="noreferrer" title="Mở PDF trong tab mới (trình xem gốc của trình duyệt, để in hoặc xem đánh dấu trang)" className={btn}>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
         {backTo !== null && (
           <button
             type="button"
             data-testid="pdf-back"
             onClick={() => {
-              scrollRef.current?.scrollTo({ top: backTo, behavior: 'smooth' });
+              boxRef.current?.scrollTo({ top: backTo, behavior: 'smooth' });
               setBackTo(null);
             }}
             className="px-2 py-1 rounded-lg font-bold flex items-center gap-1 text-sky-700 bg-sky-50 hover:bg-sky-100 cursor-pointer"
@@ -266,9 +360,6 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
             <ArrowLeft className="w-3.5 h-3.5" /> Quay lại
           </button>
         )}
-        <a href={url} target="_blank" rel="noreferrer" title="Mở PDF trong tab mới (trình xem gốc của trình duyệt)" className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-600">
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
         {onRotatePage && (
           <div className="ml-auto flex items-center gap-1" role="group" aria-label="Hướng giấy của trang đang xem">
             <span className="text-zinc-500 hidden sm:inline">Trang này:</span>
@@ -293,6 +384,31 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
           </div>
         )}
       </div>
+      {findOpen && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-zinc-200 bg-zinc-50 text-[11px] flex-shrink-0" data-testid="pdf-find-bar">
+          <input
+            autoFocus
+            value={query}
+            placeholder="Tìm trong PDF"
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') find(!!found, e.shiftKey);
+              if (e.key === 'Escape') setFindOpen(false);
+            }}
+            className="flex-1 min-w-0 px-2 py-1 rounded-md border border-zinc-200"
+          />
+          <span className="tabular-nums text-zinc-500 w-14 text-center">{found ? `${found.current}/${found.total}` : query ? '0' : ''}</span>
+          <button type="button" aria-label="Kết quả trước" onClick={() => find(true, true)} className={btn}>
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+          <button type="button" aria-label="Kết quả sau" onClick={() => find(!!found, false)} className={btn}>
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+          <button type="button" aria-label="Đóng tìm kiếm" onClick={() => setFindOpen(false)} className={btn}>
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       {open.length > 0 && onFillPage && (
         <div data-testid="pdf-fill-notice" className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-[11px] text-amber-900 flex-shrink-0 flex-wrap">
           <span>
@@ -306,133 +422,15 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
           </button>
         </div>
       )}
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-auto bg-zinc-200 py-2">
-        {sizes.map((sz, i) => (
-          <PdfPage
-            key={`${url}-${i}`}
-            index={i}
-            size={sz}
-            scale={scaleOf(i)}
-            doc={docRef}
-            hit={hit && hit.page === i + 1 ? hit : null}
-            onDest={goDest}
-            setRef={(el) => {
-              pageEls.current[i] = el;
-            }}
-            onClick={onPickText ? (e) => handleClick(i + 1, e) : undefined}
-          />
-        ))}
+      <div className="relative flex-1 min-h-0">
+        <div ref={boxRef} className="absolute inset-0 overflow-auto bg-zinc-200" onDoubleClick={handleDoubleClick} onClickCapture={rememberJump}>
+          <div ref={viewerRef} className="pdfViewer" />
+        </div>
       </div>
-    </div>
-  );
-};
-
-interface PdfPageProps {
-  index: number;
-  size: PageSize;
-  scale: number;
-  doc: React.MutableRefObject<any>;
-  hit: Hit | null;
-  setRef: (el: HTMLDivElement | null) => void;
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  onDest: (dest: unknown) => void;
-}
-
-const PdfPage: React.FC<PdfPageProps> = ({ index, size, scale, doc, hit, setRef, onClick, onDest }) => {
-  const box = useRef<HTMLDivElement | null>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const [visible, setVisible] = useState(false);
-  const [links, setLinks] = useState<PdfLink[]>([]);
-
-  useEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && setVisible(true), { rootMargin: '600px' });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!visible || !canvas.current || !doc.current) return;
-    let task: any;
-    let dead = false;
-    (async () => {
-      const page = await doc.current.getPage(index + 1);
-      if (dead || !canvas.current) return;
-      const dpr = window.devicePixelRatio || 1;
-      const vp = page.getViewport({ scale: scale * dpr });
-      const c = canvas.current;
-      c.width = Math.floor(vp.width);
-      c.height = Math.floor(vp.height);
-      const ctx = c.getContext('2d');
-      if (!ctx) return;
-      task = page.render({ canvasContext: ctx, viewport: vp });
-      await task.promise.catch(() => undefined);
-    })();
-    return () => {
-      dead = true;
-      task?.cancel?.();
-    };
-  }, [visible, scale, index, doc]);
-
-  // the links of the PDF (citations, DOI, cross references) stay clickable on top of the drawing
-  useEffect(() => {
-    if (!visible || !doc.current) return;
-    let dead = false;
-    (async () => {
-      const page = await doc.current.getPage(index + 1);
-      const annots: any[] = await page.getAnnotations({ intent: 'display' });
-      if (dead) return;
-      setLinks(
-        annots
-          .filter((a) => a.subtype === 'Link' && a.rect && (a.url || a.dest))
-          .map((a) => ({ rect: a.rect as [number, number, number, number], url: a.url || undefined, dest: a.dest }))
-      );
-    })().catch(() => undefined);
-    return () => {
-      dead = true;
-    };
-  }, [visible, index, doc]);
-
-  return (
-    <div
-      ref={(el) => {
-        box.current = el;
-        setRef(el);
-      }}
-      data-testid={`pdf-page-${index + 1}`}
-      onClick={onClick}
-      className={`relative mx-auto mb-3 bg-white shadow-md ${onClick ? 'cursor-pointer' : ''}`}
-      style={{ width: size.w * scale, height: size.h * scale }}
-    >
-      <canvas ref={canvas} style={{ width: '100%', height: '100%' }} />
-      {links.map((l, i) => {
-        const [x1, y1, x2, y2] = l.rect;
-        const style = { left: x1 * scale, top: (size.h - y2) * scale, width: (x2 - x1) * scale, height: (y2 - y1) * scale };
-        const cls = 'absolute block rounded-sm hover:bg-sky-300/25 hover:outline hover:outline-1 hover:outline-sky-500 cursor-pointer';
-        return l.url ? (
-          <a key={i} data-testid="pdf-link" href={l.url} target="_blank" rel="noreferrer" title={l.url} className={cls} style={style} onClick={(e) => e.stopPropagation()} />
-        ) : (
-          <button
-            key={i}
-            type="button"
-            data-testid="pdf-link"
-            title="Đi tới nội dung được liên kết"
-            className={cls}
-            style={style}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDest(l.dest);
-            }}
-          />
-        );
-      })}
-      {hit && (
-        <div
-          data-testid="pdf-hit"
-          className="absolute pointer-events-none rounded-sm"
-          style={{ left: hit.left, top: hit.top, width: hit.w, height: hit.h, background: 'rgba(120,200,65,0.28)', outline: '1.5px solid #78C841' }}
-        />
+      {onPickText && (
+        <p className="px-3 py-1 text-[10px] text-zinc-500 border-t border-zinc-200 bg-white flex-shrink-0" data-testid="pdf-hint">
+          Nhấp đúp vào nội dung để mở mục tương ứng trong trình soạn.
+        </p>
       )}
     </div>
   );

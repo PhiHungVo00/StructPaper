@@ -10,9 +10,7 @@ import {
   lineAtPoint,
   matchLinesToSection,
   normalizeForMatch,
-  rotatePageAt,
 } from '@/lib/editor/pdf-section-map';
-import { derivePageGroups } from '@/lib/editor/page-groups';
 
 const para = (id: string, content: string, extra: Partial<PaperSection> = {}): PaperSection => ({ id, type: 'paragraph', content, ...extra });
 const sections: PaperSection[] = [
@@ -62,38 +60,6 @@ describe('lines and clicks', () => {
     expect(lines.map((l) => l.text)).toEqual(['Phát triển bền vững', 'Dòng hai']);
     expect(lineAtPoint(items, lines, 70, 103)).toBe(0);
     expect(lineAtPoint(items, lines, 20, 88)).toBe(1);
-  });
-});
-
-describe('rotating one page', () => {
-  const body = [para('a', 'A'), para('b', 'B'), para('c', 'C'), para('d', 'D')];
-
-  it('turns the page that starts at the anchor and restores the layout on the next page', () => {
-    const out = rotatePageAt(body, 'b', 'c', 'landscape', defaults);
-    expect(out.find((s) => s.id === 'b')!.pageLayout).toEqual({ orientation: 'landscape' });
-    expect(out.find((s) => s.id === 'c')!.pageLayout).toEqual({ orientation: 'portrait' });
-    const groups = derivePageGroups(out, defaults);
-    expect(groups.map((g) => g.orientation)).toEqual(['portrait', 'landscape', 'portrait']);
-  });
-
-  it('keeps the columns the page had when it comes back', () => {
-    const src = [para('a', 'A'), para('b', 'B', { pageLayout: { columns: '1-column' } }), para('c', 'C')];
-    const out = rotatePageAt(src, 'b', 'c', 'landscape', defaults);
-    expect(out.find((s) => s.id === 'b')!.pageLayout).toEqual({ columns: '1-column', orientation: 'landscape' });
-    expect(out.find((s) => s.id === 'c')!.pageLayout).toEqual({ orientation: 'portrait', columns: '1-column' });
-  });
-
-  it('does not touch a marker that already starts the next page, and is a no-op when nothing changes', () => {
-    const src = [para('a', 'A'), para('b', 'B'), para('c', 'C', { pageLayout: { orientation: 'portrait' } })];
-    const out = rotatePageAt(src, 'b', 'c', 'landscape', defaults);
-    expect(out.find((s) => s.id === 'c')!.pageLayout).toEqual({ orientation: 'portrait' });
-    expect(rotatePageAt(body, 'b', 'c', 'portrait', defaults)).toBe(body);
-  });
-
-  it('works on the last page (no next section) and for an unknown anchor', () => {
-    const out = rotatePageAt(body, 'd', null, 'landscape', defaults);
-    expect(out.find((s) => s.id === 'd')!.pageLayout).toEqual({ orientation: 'landscape' });
-    expect(rotatePageAt(body, 'zz', null, 'landscape', defaults)).toBe(body);
   });
 });
 

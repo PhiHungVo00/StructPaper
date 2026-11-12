@@ -1,5 +1,4 @@
 import type { PaperMetadata, PaperReference, PaperSection } from '@/types/paper';
-import { derivePageGroups, type GroupOrientation, type PageDefaults } from './page-groups';
 
 /**
  * Maps text read from the compiled PDF back to the section of the editor that produced it, so a click in the
@@ -219,37 +218,4 @@ export function lineAtPoint(items: PdfTextItem[], lines: PdfLine[], px: number, 
     }
   });
   return best;
-}
-
-/**
- * Rotates the page that starts at `anchorId`: that section opens a new page with the chosen orientation and the
- * section that opens the following page (`nextId`) gets a marker that brings back the layout the pages had
- * before, so exactly one page changes. An existing marker on the next page is left alone.
- */
-export function rotatePageAt(
-  sections: PaperSection[],
-  anchorId: string,
-  nextId: string | null,
-  orientation: GroupOrientation,
-  defaults: PageDefaults
-): PaperSection[] {
-  const ai = sections.findIndex((s) => s.id === anchorId);
-  if (ai < 0) return sections;
-  const groups = derivePageGroups(sections, defaults);
-  const before = groups.find((g) => g.startIdx <= ai && ai <= g.endIdx);
-  if (!before) return sections;
-  if (before.orientation === orientation && !(sections[ai].pageLayout && sections[ai].pageLayout!.orientation !== orientation)) {
-    return sections;
-  }
-  const ni = nextId && nextId !== anchorId ? sections.findIndex((s) => s.id === nextId) : -1;
-  return sections.map((s, i) => {
-    if (i === ai) return { ...s, pageLayout: { ...(s.pageLayout || {}), orientation } };
-    if (i === ni && ni > ai && !s.pageLayout && before.endIdx >= ni) {
-      return {
-        ...s,
-        pageLayout: { orientation: before.orientation, ...(before.inherits.columns ? {} : { columns: before.columns }) },
-      };
-    }
-    return s;
-  });
 }

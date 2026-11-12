@@ -6,8 +6,9 @@ import { CompileErrorModal } from '../preview/CompileErrorModal';
 import { exportToLatex } from '@/lib/exporters';
 import { RefreshCw, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { PdfInteractiveViewer, type PdfFillIssue, type PdfPickContext, type PdfRotateContext } from '../preview/PdfInteractiveViewer';
+import { rotatePageAt } from '@/lib/editor/page-turn';
 import { equationIndex, extendRotatedRange, resolveClick } from '@/lib/editor/pdf-click-target';
-import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab, rotatePageAt } from '@/lib/editor/pdf-section-map';
+import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab } from '@/lib/editor/pdf-section-map';
 
 export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   paper,
