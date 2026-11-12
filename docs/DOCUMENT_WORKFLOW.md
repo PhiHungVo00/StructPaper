@@ -233,6 +233,14 @@ Bản gốc và nhánh này cùng viết lại trình soạn theo hai hướng; 
 
 Kiểm tra sau gộp: 46 file test web (455 test) đều đạt, các gói con đạt (riêng `platform-desktop` có 2 test gọi GitHub thật bị quá thời gian, không liên quan). Hai test của bản gốc phải chỉnh nhẹ vì giao diện nhánh này có thêm ô tên trên menu Tệp (chọn đúng ô tiêu đề ở tab Tựa đề). Thử thật trên trình duyệt: nhập hàng loạt 2 tệp hai mẫu khác nhau, mở bài, thêm công thức "Trải 2 cột", trạng thái "Đã lưu", tải lại vẫn còn. `EditorLeftDock.tsx` của bản gốc dài 768 dòng (vượt mốc 553): đã tách thành `DockIconButton`, `DockDownloadMenu`, `DockStatusMenu` (còn ~400 dòng), giữ nguyên hành vi. Test `live-updater-e2e` (gọi GitHub thật) chỉ chạy khi đặt `RUN_LIVE_UPDATER_E2E=1`.
 
+### Kiểm tra mất thông tin với bài mẫu template tiếng Việt
+So từng dòng của file Word với bài đã nhập (378 dòng, không tính trang hướng dẫn): chỉ phát hiện hai chỗ mất, đã sửa.
+| Mất gì | Nguyên nhân | Sửa |
+| --- | --- | --- |
+| Đề mục "Nguồn dữ liệu" (và nội dung ngay dưới) | luật nhận đề mục in đậm-nghiêng loại nhầm mọi dòng bắt đầu bằng "Nguồn" (định để loại dòng "Nguồn: …"); dòng ngắn (≤ 20 ký tự) lại bị bỏ | chỉ loại "Nguồn:", "Ghi chú:", "Chú thích:", "Hình N", "Bảng N" |
+| Cơ quan tiếng Anh ("University of Economics and Law, …") | file ghi tác giả và cơ quan trên **cùng một dòng**; bộ đọc trang tiếng Anh bỏ cả dòng | tách phần cơ quan (từ University/Institute/Hospital/…) làm tên cơ quan tiếng Anh |
+Các dòng còn lại không có trong nội dung (nhãn "Ngày nhận bài", "Từ khóa", tác giả, đơn vị, "Tóm tắt", "Tài liệu tham khảo", khối tiếng Anh) đã vào đúng trường siêu dữ liệu. 5 bảng giữ đủ số ô. Trên trình duyệt thật (không thấy treo): nhập 0,3–1 s, mở trình soạn < 2 s, đổi giữa các thẻ < 130 ms, biên dịch PDF 23 s.
+
 ### Còn lại / giới hạn đã biết
 * Tập, số, trang, DOI không có trong file Word nên in "?" cho tới khi tòa soạn nhập (cố ý, không tự bịa).
 * Tiêu đề "MỞ ĐẦU" lấy từ file Word (PDF mẫu của tạp chí ghi "GIỚI THIỆU").

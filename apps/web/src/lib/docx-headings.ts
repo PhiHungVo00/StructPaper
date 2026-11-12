@@ -21,7 +21,8 @@ export function extractListHeadings(docXml: string): Map<string, number> {
     if (!numbered && !handTyped) continue;
     const text = p.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
     if (text.length < 3 || text.length > 80 || /[.;:,]$/.test(text) || !/^[A-ZÀ-Ỹ]/.test(text)) continue;
-    if (handTyped && /^(hình|bảng|figure|table|nguồn|source|ghi chú|note)\b/i.test(text)) continue;
+    // Captions and source/notes lines stay text. "Nguồn dữ liệu" is a heading: only "Nguồn: …" is a source line.
+    if (handTyped && (/^(hình|bảng|figure|table)\s*\d/i.test(text) || /^(nguồn|source|ghi chú|chú thích|notes?)\s*:/i.test(text))) continue;
     out.set(text, numbered ? Math.min(Number(lvl), 2) : 1);
   }
   return out;
