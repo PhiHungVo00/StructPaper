@@ -117,3 +117,26 @@ describe('back-matter "none" marks', () => {
     }
   }, 60_000);
 });
+
+describe('nothing from the template body or English block is lost', () => {
+  it('keeps the "Nguồn dữ liệu" sub-heading (a bold-italic line starting with "Nguồn")', async () => {
+    const buf = fs.readFileSync(FIXTURE);
+    const p = await parseDocxFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, 'vi.docx');
+    const i = p.sections.findIndex((s) => s.type === 'h2' && s.title === 'Nguồn dữ liệu');
+    expect(i).toBeGreaterThan(0);
+    expect(p.sections[i - 1].content).toMatch(/^Nghiên cứu sử dụng dữ liệu|Để xác định mô hình/);
+  }, 60_000);
+
+  it('reads the English affiliation written on the same line as the English authors', async () => {
+    const buf = fs.readFileSync(FIXTURE);
+    const p = await parseDocxFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, 'vi.docx');
+    expect(p.metadata.affiliations[0].nameEn).toMatch(/^University of Economics and Law, Vietnam National University/);
+    expect(p.metadata.affiliations[0].nameEn).not.toMatch(/Pham My Duyen/);
+  }, 60_000);
+
+  it('"Nguồn: …" and "Hình 1 …" bold-italic lines are still not headings', () => {
+    const para = (t: string) => `<w:p><w:r><w:rPr><w:b/><w:i/></w:rPr><w:t>${t}</w:t></w:r></w:p>`;
+    const m = extractListHeadings(para('Nguồn dữ liệu') + para('Nguồn: Tác giả tổng hợp') + para('Hình 1 Mô hình') + para('Chú thích: ghi chú'));
+    expect([...m.keys()]).toEqual(['Nguồn dữ liệu']);
+  });
+});
