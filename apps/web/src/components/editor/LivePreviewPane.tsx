@@ -5,9 +5,14 @@ import { LivePreviewPaneProps } from './types';
 import { CompileErrorModal } from '../preview/CompileErrorModal';
 import { exportToLatex } from '@/lib/exporters';
 import { RefreshCw, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import type { PaperSection, SectionPageLayout } from '@/types/paper';
 import { PdfInteractiveViewer, type PdfFillIssue, type PdfPickContext, type PdfRotateContext } from '../preview/PdfInteractiveViewer';
+import { rotatePageAt } from '@/lib/editor/page-turn';
 import { equationIndex, extendRotatedRange, resolveClick } from '@/lib/editor/pdf-click-target';
-import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab, rotatePageAt } from '@/lib/editor/pdf-section-map';
+import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab } from '@/lib/editor/pdf-section-map';
+
+/** Every section's page-layout marker by id (undefined where it has none). */
+const markersOf = (sections: PaperSection[]) => new Map(sections.map((s) => [s.id, s.pageLayout] as [string, SectionPageLayout | undefined]));
 
 export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   paper,
@@ -24,6 +29,8 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   layoutDefaults = { oneColumn: false, landscape: false },
 }) => {
   const [viewerFailed, setViewerFailed] = useState(false);
+  /** Markers as they were before the last turn or fill, so it can be taken back without touching the text. */
+  const [snapshot, setSnapshot] = useState<Map<string, SectionPageLayout | undefined> | null>(null);
   const sectionIndex = useMemo(() => buildSectionIndex(paper.sections), [paper.sections]);
   const equations = useMemo(() => equationIndex(paper.sections), [paper.sections]);
   const frontIndex = useMemo(() => buildFrontIndex(paper.metadata, paper.references), [paper.metadata, paper.references]);
@@ -53,10 +60,26 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
       const id = fillTarget(issue);
       if (!id) return;
       const updated = extendRotatedRange(paper.sections, id);
-      if (updated !== paper.sections) onSectionsChange?.(updated);
+      if (updated !== paper.sections) {
+        setSnapshot(markersOf(paper.sections));
+        onSectionsChange?.(updated);
+      }
     },
     [fillTarget, paper.sections, onSectionsChange]
   );
+
+  const handleUndo = useCallback(() => {
+    if (!snapshot) return;
+    onSectionsChange?.(
+      paper.sections.map((s) => {
+        if (!snapshot.has(s.id)) return s;
+        const { pageLayout: _drop, ...rest } = s;
+        const marker = snapshot.get(s.id);
+        return (marker ? { ...rest, pageLayout: marker } : rest) as typeof s;
+      })
+    );
+    setSnapshot(null);
+  }, [snapshot, paper.sections, onSectionsChange]);
 
   const handleRotate = useCallback(
     (ctx: PdfRotateContext) => {
@@ -64,7 +87,10 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
       if (!anchor) return;
       const next = ctx.nextLines ? firstNewSectionOnPage(sectionIndex, ctx.nextLines, ctx.lines) : null;
       const updated = rotatePageAt(paper.sections, anchor, next, ctx.orientation, layoutDefaults);
-      if (updated !== paper.sections) onSectionsChange?.(updated);
+      if (updated !== paper.sections) {
+        setSnapshot(markersOf(paper.sections));
+        onSectionsChange?.(updated);
+      }
       onFocusSection?.(anchor);
     },
     [sectionIndex, paper.sections, layoutDefaults, onSectionsChange, onFocusSection]
@@ -187,6 +213,7 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
               onRotatePage={onSectionsChange ? handleRotate : undefined}
               canFill={canFill}
               onFillPage={onSectionsChange ? handleFill : undefined}
+              onUndoTurn={snapshot ? handleUndo : undefined}
               onLoadError={() => setViewerFailed(true)}
             />
           ) : compiledPdfUrl ? (
