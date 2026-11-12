@@ -154,7 +154,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     [formData.id, remoteSync]
   );
 
-  const { isExportingDocx, isExportingZip, isExportingPdf, isExportingXml, handleDownloadDocx, handleDownloadZip, handleDownloadPdf, handleDownloadXml } =
+  const { isExportingDocx, isExportingZip, isExportingPdf, isExportingXml, handleDownloadDocx, handleDownloadZip, handleDownloadPdf, handleDownloadXml, handleDownloadXmlPackage } =
     useEditorExport({ formData, compiledPdfUrl, compileLatexToPdf, onExported: handleExported });
 
   const handleSave = useCallback(async () => {
@@ -461,6 +461,9 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         onDownloadDocx={() => requestExport('docx')}
         isExportingDocx={isExportingDocx || pendingExport === 'docx'}
         onDownloadZip={handleDownloadZip}
+        onDownloadXml={handleDownloadXml}
+        onDownloadXmlPackage={handleDownloadXmlPackage}
+        isExportingXml={isExportingXml}
         isExportingZip={isExportingZip}
         onDownloadPdf={() => requestExport('pdf')}
         isExportingPdf={isExportingPdf || pendingExport === 'pdf'}

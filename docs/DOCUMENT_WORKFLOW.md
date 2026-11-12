@@ -137,6 +137,8 @@ Giá trị được làm sạch (`lib/theme-config.ts`) trước khi chèn vào 
 Xuất theo JATS 1.2 (`lib/jats-export.ts`): `front` (tạp chí, tác giả, đơn vị, ngày, tóm tắt, từ khóa), `body` lồng mục đúng cấp, công thức, `fig`/`table-wrap` kèm nguồn, `ref-list` có `xref` tới `[n]`. Đường dẫn ảnh theo quy ước của hệ thống tạp chí khi biết mã bài (`a-#`):
 `https://static.vnuhcmjournal.com.vn/articles/<viết tắt tạp chí>/v-<tập>/i-<số>/a-<mã bài>/img-<n>.<ext>`; nếu chưa có mã bài thì dùng `images/img-<n>.<ext>`. Kiểm tra bằng <https://jats4r.niso.org/jats4r-validator/>.
 
+**Tải XML trong ứng dụng:** menu Tải xuống ở thanh bên trái có hai mục. "XML (JATS)" tải `<Mã bài>.xml` (chưa có mã bài thì lấy tên tài liệu). "XML + hình" tải một gói zip gồm `<Mã bài>.xml` và hình đặt đúng thư mục `articles/<viết tắt tạp chí>/v-<tập>/i-<số>/a-<mã bài>/img-<n>.<ext>` để đưa lên máy chủ tĩnh (chưa đủ Tập/Số/Mã bài thì hình nằm ở `images/`). Thiếu thông tin hoặc có hình ở địa chỉ ngoài thì thông báo nhắc bổ sung. Mã: `lib/jats-package.ts`, `figureRelPath`/`listJatsFigures` trong `lib/jats-export.ts`.
+
 ## 9. Nhập từ Word: những gì được khôi phục
 
 Kiểm tra bằng bài mẫu EBL ID1750 (so với PDF của tạp chí):
@@ -191,6 +193,7 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | `8ecb161` | Biên dịch/xuất có trạng thái chờ rõ ràng: khung xem trước "Đang biên dịch… Ns", thanh menu "Đang xuất PDF…", mục xuất bị khoá, báo lỗi bằng thông báo nổi (không dùng `alert`). Sửa lỗi lần biên dịch bị thay thế làm tắt vòng quay của lần đang chạy. |
 | `7e8aabd` | **Tạo bài mới bị treo / bị đè về bài cũ.** `PaperContext` tạo lại `setPaper`/`setCurrentJournal` mỗi lần render, làm effect nạp bài theo `?id=` chạy lại vô hạn (đọc IndexedDB + ghi ~4 MB vào `sessionStorage` mỗi vòng) và đặt lại bài cũ lên bài mới. Hàm nay ổn định. Tự lưu không còn coi việc *mở* bài là chỉnh sửa và không lưu bài cũ vào bài mới. |
 | (mới) | **Loại bài báo không còn bị gán cứng.** Chọn gợi ý theo tạp chí hoặc "Khác — tự nhập…" để gõ tên tiếng Việt và tên tiếng Anh riêng (`metadata.articleTypeEn`, lưu qua v1↔v2). Tên tiếng Anh in ở trang tiếng Anh, Word và XML (`article-type` theo JATS, hoặc slug của tên đã gõ). Mã: `lib/article-types.ts`, `ArticleTypeField.tsx`. |
+| (mới) | **Xuất XML có trong menu Tải xuống.** Thêm "XML (JATS)" và "XML + hình (.zip)" vào menu bên trái; tên file theo Mã bài; hình đặt theo quy ước `articles/<tạp chí>/v-#/i-#/a-#`; cảnh báo khi thiếu Tập/Số/Mã bài; số hình trong XML và trong gói luôn khớp. |
 
 ### Nhập từ Word
 | Commit | Thay đổi |
