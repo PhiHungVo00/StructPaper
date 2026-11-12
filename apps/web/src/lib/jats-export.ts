@@ -5,6 +5,7 @@ import { stripCaptionLabel } from './docx-table-extras';
 import { resolvePublication, hasPublicationValue } from './publication';
 import { displayHeading } from './headings';
 import { resolveTheme } from './theme-config';
+import { articleTypeJats } from './article-types';
 /**
  * JATS 1.2 XML export for the VNUHCM journal platform.
  *
@@ -217,7 +218,7 @@ export function exportToJatsXml(paper: CompletePaper, opts: JatsOptions = {}): s
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD v1.2 20190208//EN" "JATS-archivearticle1.dtd">
-<article xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML" dtd-version="1.2" article-type="${xmlEscape(md.articleType || 'research-article')}" xml:lang="vi">
+<article xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML" dtd-version="1.2" article-type="${xmlEscape(articleTypeJats(md))}" xml:lang="vi">
 <front>
 <journal-meta>
 <journal-id journal-id-type="publisher-id">${xmlEscape(md.journalId)}</journal-id>

@@ -190,6 +190,7 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | --- | --- |
 | `8ecb161` | Biên dịch/xuất có trạng thái chờ rõ ràng: khung xem trước "Đang biên dịch… Ns", thanh menu "Đang xuất PDF…", mục xuất bị khoá, báo lỗi bằng thông báo nổi (không dùng `alert`). Sửa lỗi lần biên dịch bị thay thế làm tắt vòng quay của lần đang chạy. |
 | `7e8aabd` | **Tạo bài mới bị treo / bị đè về bài cũ.** `PaperContext` tạo lại `setPaper`/`setCurrentJournal` mỗi lần render, làm effect nạp bài theo `?id=` chạy lại vô hạn (đọc IndexedDB + ghi ~4 MB vào `sessionStorage` mỗi vòng) và đặt lại bài cũ lên bài mới. Hàm nay ổn định. Tự lưu không còn coi việc *mở* bài là chỉnh sửa và không lưu bài cũ vào bài mới. |
+| (mới) | **Loại bài báo không còn bị gán cứng.** Chọn gợi ý theo tạp chí hoặc "Khác — tự nhập…" để gõ tên tiếng Việt và tên tiếng Anh riêng (`metadata.articleTypeEn`, lưu qua v1↔v2). Tên tiếng Anh in ở trang tiếng Anh, Word và XML (`article-type` theo JATS, hoặc slug của tên đã gõ). Mã: `lib/article-types.ts`, `ArticleTypeField.tsx`. |
 
 ### Nhập từ Word
 | Commit | Thay đổi |
