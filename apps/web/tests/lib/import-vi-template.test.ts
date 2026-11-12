@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { CompletePaper } from '@/types/paper';
 import { parseDocxFile } from '@/lib/docx-parser';
-import { breakLongEquation, mathVisibleLength } from '@/lib/latex-equation-break';
+import { breakLongEquation } from '@/lib/latex-equation-break';
+import { mathWidthEm } from '@/lib/latex-math-width';
 import { extractListHeadings } from '@/lib/docx-headings';
 import { exportToLatex } from '@/lib/latex-template';
 import { normalizeCompletePaper } from '@/types/paper';
@@ -42,7 +43,7 @@ describe('real file: journal Vietnamese template sample', () => {
     expect(eq).toContain('\\begin{aligned}');
     const lines = eq.match(/\\begin\{aligned\}([\s\S]*?)\\end\{aligned\}/)![1].split('\\\\');
     expect(lines.length).toBeGreaterThan(1);
-    for (const l of lines) expect(mathVisibleLength(l.replace(/&|\\quad/g, ''))).toBeLessThanOrEqual(42);
+    for (const l of lines) expect(mathWidthEm(l.replace(/&|\\quad/g, ''))).toBeLessThanOrEqual(23);
     expect(eq).toContain('\\tag{1}');
   });
 });
@@ -51,11 +52,11 @@ describe('breakLongEquation', () => {
   const long = String.raw`y_{i,t}=\beta_1+\beta_2 a_{i,t}+\beta_3 b_{i,t}+\beta_4 c_{i,t}+\beta_5 d_{i,t}+\beta_6 e_{i,t}+\epsilon_{i,t}`;
 
   it('keeps a short formula as it is', () => {
-    expect(breakLongEquation('a=b+c', 40)).toBe('a=b+c');
+    expect(breakLongEquation('a=b+c', 21)).toBe('a=b+c');
   });
 
   it('splits at top-level operators and loses nothing', () => {
-    const out = breakLongEquation(long, 30);
+    const out = breakLongEquation(long, 12);
     expect(out.startsWith('\\begin{aligned}')).toBe(true);
     const flat = out.replace(/\\begin\{aligned\}|\\end\{aligned\}|\\\\|&|\\quad|\s/g, '');
     expect(flat).toBe(long.replace(/\s/g, ''));
@@ -64,7 +65,7 @@ describe('breakLongEquation', () => {
 
   it('does not split inside braces, fractions or \\left…\\right', () => {
     const f = String.raw`x=\frac{a+b+c+d+e+f+g}{h+i+j+k+l+m+n}+\left(p+q+r+s+t+u\right)+z`;
-    const out = breakLongEquation(f, 20);
+    const out = breakLongEquation(f, 8);
     for (const line of out.split('\\\\')) {
       expect((line.match(/\\left/g) || []).length).toBe((line.match(/\\right/g) || []).length);
       expect((line.match(/\{/g) || []).length).toBe((line.match(/\}/g) || []).length);
@@ -77,7 +78,7 @@ describe('breakLongEquation', () => {
   });
 
   it('does not treat a sign after an operator or a script as a break point', () => {
-    const out = breakLongEquation(String.raw`a=b^{-1}+c_{-2}+-d+e+f+g+h+i+j`, 8);
+    const out = breakLongEquation(String.raw`a=b^{-1}+c_{-2}+-d+e+f+g+h+i+j`, 4);
     for (const line of out.split('\\\\')) expect((line.match(/\{/g) || []).length).toBe((line.match(/\}/g) || []).length);
   });
 });

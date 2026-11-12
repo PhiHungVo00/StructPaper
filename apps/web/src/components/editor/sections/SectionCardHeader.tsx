@@ -5,6 +5,7 @@ import { PaperSection, PaperTable, PaperFigure } from '@/types/paper';
 import { FigureSettingsModal } from '../FigureSettingsModal';
 import { TableSettingsModal } from '../TableSettingsModal';
 import { PageLayoutBadge, PageLayoutControl } from './PageLayoutControl';
+import { SplitGroupButton } from './PageGroupHeader';
 import { AnimatePresence } from 'framer-motion';
 import {
   Table as TableIcon,
@@ -47,6 +48,8 @@ export interface SectionCardHeaderProps {
   onCloseSettings: () => void;
   onSaveFigureSettings: (index: number, updated: PaperFigure) => void;
   onSaveTableSettings: (index: number, updated: PaperTable) => void;
+  /** Page groups are shown: the group header edits the layout, so only a "split here" action is offered. */
+  groupMode?: boolean;
 }
 
 const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
@@ -71,6 +74,7 @@ const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
   onCloseSettings,
   onSaveFigureSettings,
   onSaveTableSettings,
+  groupMode = false,
 }) => {
   const isHeading = sec.type === 'h1' || sec.type === 'h2' || sec.type === 'h3';
   const isParagraph = sec.type === 'paragraph';
@@ -166,7 +170,7 @@ const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
           </span>
         )}
 
-        <PageLayoutBadge layout={sec.pageLayout} />
+        {!groupMode && <PageLayoutBadge layout={sec.pageLayout} />}
 
         {/* Heading Level Switcher & Convert to Paragraph */}
         {isHeading && (
@@ -244,7 +248,11 @@ const SectionCardHeaderBase: React.FC<SectionCardHeaderProps> = ({
 
       {/* Right Action Icons (Reorder, Page Break & Delete) */}
       <div className="flex items-center gap-1.5 ml-auto">
-        <PageLayoutControl sec={sec} idx={idx} onUpdateSection={onUpdateSection} />
+        {!groupMode ? (
+          <PageLayoutControl sec={sec} idx={idx} onUpdateSection={onUpdateSection} />
+        ) : (
+          !sec.pageLayout && <SplitGroupButton sec={sec} idx={idx} onUpdateSection={onUpdateSection} />
+        )}
 
         {/* Page Break Toggle */}
         <button

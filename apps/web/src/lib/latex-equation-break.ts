@@ -1,3 +1,5 @@
+import { mathWidthEm } from './latex-math-width';
+
 /**
  * A long one-line formula (the journal template's regression model has seven terms) runs past the
  * 8 cm column. Word wraps it by itself; LaTeX does not. Break it at top-level "=", "+" and "−" signs and
@@ -75,12 +77,14 @@ function breakPoints(latex: string): { at: number; isRelation: boolean }[] {
 const HAS_STRUCTURE = /\\begin\s*\{|\\\\|&|\\tag\b|\\label\b/;
 
 /**
- * Returns the formula as an `aligned` block when it is wider than `maxChars`, else the input unchanged.
- * Never touches formulas that already carry their own environment, line breaks or alignment marks.
+ * Returns the formula as an `aligned` block when it is wider than `maxWidth` (ems, see latex-math-width.ts),
+ * else the input unchanged. Lines are filled greedily at the top-level "=", "+", "-" signs; continuation
+ * lines are aligned under the first "=" and are measured with that indent. Never touches formulas that
+ * already carry their own environment, line breaks or alignment marks.
  */
-export function breakLongEquation(latex: string, maxChars: number): string {
+export function breakLongEquation(latex: string, maxWidth: number, measure: (s: string) => number = mathWidthEm): string {
   const src = latex.trim();
-  if (!src || HAS_STRUCTURE.test(src) || mathVisibleLength(src) <= maxChars) return src;
+  if (!src || HAS_STRUCTURE.test(src) || measure(src) <= maxWidth) return src;
   const points = breakPoints(src);
   if (points.length === 0) return src;
 
@@ -89,10 +93,15 @@ export function breakLongEquation(latex: string, maxChars: number): string {
   const pieces: string[] = [];
   for (let i = 0; i < cuts.length - 1; i++) pieces.push(src.slice(cuts[i], cuts[i + 1]).trim());
 
+  // Where the "=" column is: the left-hand side before the first "=" (continuation lines start there + a quad).
+  const firstEq = points.find((p) => p.isRelation);
+  const indent = firstEq ? measure(src.slice(0, firstEq.at)) + 1 : 1;
+
   const lines: string[] = [];
   let cur = '';
   for (const piece of pieces) {
-    if (cur && mathVisibleLength(cur + piece) > maxChars) {
+    const room = lines.length === 0 ? 0 : indent;
+    if (cur && room + measure(`${cur} ${piece}`) > maxWidth) {
       lines.push(cur);
       cur = piece;
     } else cur += (cur ? ' ' : '') + piece;
@@ -100,7 +109,6 @@ export function breakLongEquation(latex: string, maxChars: number): string {
   if (cur) lines.push(cur);
   if (lines.length < 2) return src;
 
-  // Align continuation lines under the first "=" when the first line has one, else indent them.
   const first = lines[0];
   const eq = breakPoints(first).find((p) => p.isRelation);
   const head = eq ? `${first.slice(0, eq.at).trim()} &${first.slice(eq.at).trim()}` : first;

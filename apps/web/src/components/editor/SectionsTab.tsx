@@ -18,6 +18,8 @@ import {
   useSectionMediaHandlers,
   useSectionInspectors,
   getSectionId,
+  PageGroupOverview,
+  useSectionPageGroups,
   type DisplayedSectionItem,
 } from './sections';
 import { useEditorCommandBus } from './command-bus-adapter';
@@ -27,6 +29,9 @@ import {
   dispatchRemoveSection,
   dispatchReorderSections,
 } from './dispatchers/sections-dispatchers';
+import { matchesSectionFilter } from '@/lib/editor/section-filter';
+
+const DEFAULT_PAGE_DEFAULTS = { oneColumn: false, landscape: false };
 
 const useIsomorphicLayoutEffect =
   typeof document !== 'undefined' ? useLayoutEffect : useEffect;
@@ -36,6 +41,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
   onChange,
   references,
   commandBus: propCommandBus,
+  layoutDefaults = DEFAULT_PAGE_DEFAULTS,
 }) => {
   const contextCommandBus = useEditorCommandBus().commandBus;
   const activeBus = propCommandBus || contextCommandBus;
@@ -198,6 +204,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     paragraph: number;
     table: number;
     figure: number;
+    equation: number;
     citation: number;
   } | null>(null);
 
@@ -208,6 +215,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     let paragraph = 0;
     let table = 0;
     let figure = 0;
+    let equation = 0;
     let citation = 0;
 
     for (let i = 0; i < sections.length; i++) {
@@ -225,6 +233,8 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         table++;
       } else if (type === 'figure') {
         figure++;
+      } else if (type === 'equation') {
+        equation++;
       }
     }
 
@@ -236,12 +246,13 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       prev.paragraph === paragraph &&
       prev.table === table &&
       prev.figure === figure &&
+      prev.equation === equation &&
       prev.citation === citation
     ) {
       return prev;
     }
 
-    const next = { all, heading, paragraph, table, figure, citation };
+    const next = { all, heading, paragraph, table, figure, equation, citation };
     prevSectionCountsRef.current = next;
     return next;
   }, [sections]);
@@ -256,9 +267,21 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       paragraphs: sectionCounts.paragraph,
       tables: sectionCounts.table,
       figures: sectionCounts.figure,
+      equations: sectionCounts.equation,
     }),
     [sectionCounts]
   );
+
+  // Page groups: runs of sections that share one page layout (a marker starts a new page)
+  const pageGroups = useSectionPageGroups(sections, layoutDefaults);
+  const [scrollRequest, setScrollRequest] = useState<{ id: string; n: number } | null>(null);
+  const jumpToSection = useCallback((id: string) => {
+    if (filterTypeRef.current !== 'all') {
+      filterTypeRef.current = 'all';
+      setFilterType('all');
+    }
+    setScrollRequest((r) => ({ id, n: (r?.n ?? 0) + 1 }));
+  }, []);
 
   // Filtered display entries with precomputed adjacent-figure context
   const displayedItems = useMemo<DisplayedSectionItem[]>(() => {
@@ -267,17 +290,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       const sec = sections[originalIdx];
       if (sec.type === 'citation') continue;
 
-      if (
-        filterType === 'heading' &&
-        sec.type !== 'h1' &&
-        sec.type !== 'h2' &&
-        sec.type !== 'h3'
-      ) {
-        continue;
-      }
-      if (filterType === 'paragraph' && sec.type !== 'paragraph') continue;
-      if (filterType === 'table' && sec.type !== 'table') continue;
-      if (filterType === 'figure' && sec.type !== 'figure') continue;
+      if (!matchesSectionFilter(sec, filterType)) continue;
 
       const prevSec = originalIdx > 0 ? sections[originalIdx - 1] : undefined;
       const isPrevFigure = prevSec?.type === 'figure';
@@ -288,10 +301,12 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         originalIdx,
         isPrevFigure,
         prevFigureCaption: isPrevFigure ? prevSec.figure?.caption : undefined,
+        pageGroup: pageGroups.infos[pageGroups.groupOf.get(sec.id) ?? 0],
+        isGroupStart: pageGroups.startIds.has(sec.id),
       });
     }
     return items;
-  }, [sections, filterType]);
+  }, [sections, filterType, pageGroups]);
 
   // Handlers for section modification via dispatchers (stable callbacks reading latest refs)
   const handleUpdateSection = useCallback((index: number, updated: PaperSection) => {
@@ -565,6 +580,9 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         counts={toolbarCounts}
       />
 
+      {/* Page groups at a glance */}
+      <PageGroupOverview groups={pageGroups.groups} onJump={jumpToSection} />
+
       {/* Main Scrollable Sections & Blocks List */}
       <SectionBlockList
         sections={sections}
@@ -574,6 +592,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         filterType={filterType}
         setFilterType={handleFilterChange}
         newlyAddedId={newlyAddedId}
+        scrollRequest={scrollRequest}
         deletingIds={deletingIds}
         activeEditingParaId={activeEditingParaId}
         setActiveEditingParaId={setActiveEditingParaId}

@@ -3,7 +3,7 @@ import { CompletePaper, LayoutSettings, DEFAULT_LAYOUT_SETTINGS } from '@/types/
 import { getJournalTemplate } from './templates';
 import { resolveTheme, hexToRgb as themeHexToRgb } from './theme-config';
 import { sanitizeMathForLatex } from './math-text';
-import { equationToLatex } from './latex-equation';
+import { equationToLatex, EQUATION_FIT_MACRO } from './latex-equation';
 import { PageLayoutTracker } from './latex-page-layout';
 import { escapeLatex } from './latex-escape';
 import { tableToLatex } from './latex-table';
@@ -426,6 +426,7 @@ ${sec.figure.source ? `\\vspace{-0.3em}\\centering{\\footnotesize\\textit{${esca
     }
   });
 
+  if (bodyLatex.includes('\\fiteq{')) bodyLatex = EQUATION_FIT_MACRO + bodyLatex;
   if (!bodyLatex.trim()) {
     bodyLatex = `\n\\section*{\\textbf{NỘI DUNG BẢN THẢO}}\nChưa có nội dung bài báo. Vui lòng thêm các đề mục, đoạn văn bản, bảng số liệu hoặc hình ảnh minh họa tại thẻ Nội dung.\n`;
   }
