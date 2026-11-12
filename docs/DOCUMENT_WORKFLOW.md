@@ -211,6 +211,9 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | Commit | Thay đổi |
 | --- | --- |
 | `69b6312` | Thẻ công thức có nút "Trong 1 cột / Trải 2 cột"; mọi thẻ mục có nút "Bố cục trang" (trang mới, cột, hướng) và huy hiệu "Trang mới · 1 cột · Ngang"; Giao diện → "Hướng trang (toàn bộ nội dung)". Xem trước HTML cho công thức Trải 2 cột chiếm cả hai cột. |
+| `117661b` | PDF: công thức dài không còn lồi ra lề (độ rộng ước lượng bằng em + hộp tự co vừa khổ làm lưới an toàn). |
+| `b0bca08` | Tab Nội dung: thêm chip lọc **Công thức (n)** (trước đây các chip cộng lại ít hơn "Tất cả" đúng bằng số công thức). |
+| `9d3c42c` | **Nhóm trang**: dải tổng quan, thanh đầu nhóm điều khiển chung hướng giấy/số cột cho cả nhóm, vạch màu, "Tách nhóm trang" / "Gộp vào nhóm trên" (xem mục 6b). |
 
 ### Xuất Word (.docx)
 | Commit | Thay đổi |
