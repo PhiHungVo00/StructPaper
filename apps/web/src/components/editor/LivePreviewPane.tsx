@@ -5,8 +5,9 @@ import { LivePreviewPaneProps } from './types';
 import { CompileErrorModal } from '../preview/CompileErrorModal';
 import { exportToLatex } from '@/lib/exporters';
 import { RefreshCw, AlertTriangle, Check, Loader2 } from 'lucide-react';
-import { PdfInteractiveViewer, type PdfPickContext, type PdfRotateContext } from '../preview/PdfInteractiveViewer';
-import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab, matchLinesToSection, rotatePageAt } from '@/lib/editor/pdf-section-map';
+import { PdfInteractiveViewer, type PdfFillIssue, type PdfPickContext, type PdfRotateContext } from '../preview/PdfInteractiveViewer';
+import { equationIndex, extendRotatedRange, resolveClick } from '@/lib/editor/pdf-click-target';
+import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab, rotatePageAt } from '@/lib/editor/pdf-section-map';
 
 export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   paper,
@@ -24,16 +25,37 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
 }) => {
   const [viewerFailed, setViewerFailed] = useState(false);
   const sectionIndex = useMemo(() => buildSectionIndex(paper.sections), [paper.sections]);
+  const equations = useMemo(() => equationIndex(paper.sections), [paper.sections]);
   const frontIndex = useMemo(() => buildFrontIndex(paper.metadata, paper.references), [paper.metadata, paper.references]);
 
   const handlePick = useCallback(
     (ctx: PdfPickContext) => {
-      const id = matchLinesToSection(sectionIndex, ctx.lines, ctx.center);
+      const id = resolveClick(sectionIndex, equations, ctx.lines, ctx.center);
       if (id) return onFocusSection?.(id);
       const tab = matchLineToFrontTab(frontIndex, ctx.lines[ctx.center] ?? '');
       if (tab) onFocusTab?.(tab);
     },
-    [sectionIndex, frontIndex, onFocusSection, onFocusTab]
+    [sectionIndex, equations, frontIndex, onFocusSection, onFocusTab]
+  );
+
+  /** The section that opens the page after a page cut short by an orientation change, when it carries the marker. */
+  const fillTarget = useCallback(
+    (issue: PdfFillIssue) => {
+      const id = firstNewSectionOnPage(sectionIndex, issue.nextLines, issue.lines);
+      const sec = id ? paper.sections.find((s) => s.id === id) : undefined;
+      return sec?.pageLayout ? sec.id : null;
+    },
+    [sectionIndex, paper.sections]
+  );
+  const canFill = useCallback((issue: PdfFillIssue) => !!fillTarget(issue), [fillTarget]);
+  const handleFill = useCallback(
+    (issue: PdfFillIssue) => {
+      const id = fillTarget(issue);
+      if (!id) return;
+      const updated = extendRotatedRange(paper.sections, id);
+      if (updated !== paper.sections) onSectionsChange?.(updated);
+    },
+    [fillTarget, paper.sections, onSectionsChange]
   );
 
   const handleRotate = useCallback(
@@ -163,6 +185,8 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
               url={compiledPdfUrl}
               onPickText={onFocusSection ? handlePick : undefined}
               onRotatePage={onSectionsChange ? handleRotate : undefined}
+              canFill={canFill}
+              onFillPage={onSectionsChange ? handleFill : undefined}
               onLoadError={() => setViewerFailed(true)}
             />
           ) : compiledPdfUrl ? (
