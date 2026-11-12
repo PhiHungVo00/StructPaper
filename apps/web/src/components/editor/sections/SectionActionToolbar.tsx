@@ -10,11 +10,12 @@ import {
   Layers,
   Sigma,
 } from 'lucide-react';
+import type { SectionFilterType } from '../hooks/tab-view-state-store';
 
 export interface SectionActionToolbarProps {
   totalSections: number;
-  filterType: 'all' | 'heading' | 'paragraph' | 'table' | 'figure';
-  onFilterChange: (filter: 'all' | 'heading' | 'paragraph' | 'table' | 'figure') => void;
+  filterType: SectionFilterType;
+  onFilterChange: (filter: SectionFilterType) => void;
   onAddHeading: (level?: 'h1' | 'h2' | 'h3') => void;
   onAddParagraph: () => void;
   onAddTable: () => void;
@@ -26,6 +27,7 @@ export interface SectionActionToolbarProps {
     paragraphs: number;
     tables: number;
     figures: number;
+    equations?: number;
   };
 }
 
@@ -172,6 +174,20 @@ const SectionActionToolbarBase: React.FC<SectionActionToolbarProps> = ({
         >
           <ImageIcon className="w-3 h-3" />
           <span>Hình ({counts.figures})</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="filter-equation"
+          onClick={() => onFilterChange('equation')}
+          className={`px-3 py-1 rounded-full font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            filterType === 'equation'
+              ? 'bg-[#1A1A1A] text-white shadow-2xs'
+              : 'bg-zinc-200/60 text-zinc-600 hover:bg-zinc-200'
+          }`}
+        >
+          <Sigma className="w-3 h-3" />
+          <span>Công thức ({counts.equations ?? 0})</span>
         </button>
       </div>
     </div>
