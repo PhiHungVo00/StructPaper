@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { LivePreviewPaneProps } from './types';
 import { CompileErrorModal } from '../preview/CompileErrorModal';
 import { exportToLatex } from '@/lib/exporters';
 import { RefreshCw, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { PdfInteractiveViewer, type PdfPickContext, type PdfRotateContext } from '../preview/PdfInteractiveViewer';
+import { buildSectionIndex, firstNewSectionOnPage, matchLinesToSection, rotatePageAt } from '@/lib/editor/pdf-section-map';
 
 export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   paper,
@@ -15,7 +17,33 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   onClearError,
   compileStartedAt,
   busyLabel,
+  onFocusSection,
+  onSectionsChange,
+  layoutDefaults = { oneColumn: false, landscape: false },
 }) => {
+  const [viewerFailed, setViewerFailed] = useState(false);
+  const sectionIndex = useMemo(() => buildSectionIndex(paper.sections), [paper.sections]);
+
+  const handlePick = useCallback(
+    (ctx: PdfPickContext) => {
+      const id = matchLinesToSection(sectionIndex, ctx.lines, ctx.center);
+      if (id) onFocusSection?.(id);
+    },
+    [sectionIndex, onFocusSection]
+  );
+
+  const handleRotate = useCallback(
+    (ctx: PdfRotateContext) => {
+      const anchor = firstNewSectionOnPage(sectionIndex, ctx.lines, ctx.prevLines);
+      if (!anchor) return;
+      const next = ctx.nextLines ? firstNewSectionOnPage(sectionIndex, ctx.nextLines, ctx.lines) : null;
+      const updated = rotatePageAt(paper.sections, anchor, next, ctx.orientation, layoutDefaults);
+      if (updated !== paper.sections) onSectionsChange?.(updated);
+      onFocusSection?.(anchor);
+    },
+    [sectionIndex, paper.sections, layoutDefaults, onSectionsChange, onFocusSection]
+  );
+
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
     if (!isCompilingPdf) return;
@@ -126,7 +154,14 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
 
         {/* The PDF Iframe Wrapper */}
         <div className="w-full flex-1 min-h-0 h-full rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-inner">
-          {compiledPdfUrl ? (
+          {compiledPdfUrl && !viewerFailed ? (
+            <PdfInteractiveViewer
+              url={compiledPdfUrl}
+              onPickText={onFocusSection ? handlePick : undefined}
+              onRotatePage={onSectionsChange ? handleRotate : undefined}
+              onLoadError={() => setViewerFailed(true)}
+            />
+          ) : compiledPdfUrl ? (
             <iframe
               src={`${compiledPdfUrl}#toolbar=1&navpanes=0`}
               className="w-full h-full border-none"

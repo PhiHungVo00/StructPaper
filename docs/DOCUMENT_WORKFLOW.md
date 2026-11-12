@@ -107,11 +107,10 @@ Mỗi trang tiếp theo có dòng **"Table N continued"** phía trên và **"Con
 | Một công thức | Trong 1 cột / Trải 2 cột | thẻ công thức | `equation.columnSpan` |
 | Lọc danh sách | Tất cả / Tiêu đề / Đoạn văn / Bảng / Hình / **Công thức** | dải lọc tab Nội dung | |
 
-* **Nhóm trang (giao diện nội dung):** các mục dùng chung một bố cục được gom thành **nhóm** và điều khiển chung, nhìn một lượt là thấy:
-  * **Dải "Nhóm trang"** phía trên danh sách: mỗi nhóm một viên (màu, hướng giấy, số cột, số mục); bấm để nhảy tới nhóm (đang lọc thì tự về "Tất cả").
-  * **Thanh đầu nhóm** trên mục đầu của mỗi nhóm kèm vạch màu bên trái các thẻ của nhóm: chọn **Dọc/Ngang**, **1/2 cột** cho cả nhóm; "Theo cài đặt chung" (bỏ hướng/cột riêng, vẫn sang trang mới); "Gộp vào nhóm trên" (không sang trang mới ở đây). Nhóm 1 là bố cục chung của tài liệu (đổi ở Cài đặt dàn trang).
-  * **"Tách nhóm trang"** trên một mục bắt đầu nhóm mới từ mục đó (thay cho hộp "Bố cục trang" ở từng thẻ).
-  * Nhóm tính từ chính các dấu `pageLayout` (không có trường lưu mới) bằng đúng luật của PDF (`PageLayoutTracker`): trường để trống theo mặc định tài liệu, dấu rỗng = trang mới theo mặc định, tài liệu ngang thì ngang từ mục đầu; có test so khớp từng mục. Mã: `lib/editor/page-groups.ts`, `sections/PageGroupHeader.tsx`, `sections/PageGroupOverview.tsx`. Đây là "nhóm bố cục", không phải trang in thật (chưa biên dịch thì chưa biết chỗ ngắt trang).
+* **Xem trước PDF tương tác (thay cho "Tách nhóm trang"):** khung xem trước vẽ PDF bằng pdf.js (`components/preview/PdfInteractiveViewer.tsx`) nên bấm được vào nội dung:
+  * **Bấm vào chữ trong PDF** thì tab "Nội dung" mở đúng thẻ tạo ra đoạn chữ đó và làm nổi bật thẻ; dòng vừa bấm được tô trên PDF. Ghép chữ PDF với mục dựa trên chữ và số (bỏ khoảng trắng, dấu nối từ, công thức), câu lặp ở hai mục được phân biệt bằng phần chữ phía sau (`lib/editor/pdf-section-map.ts`). Tiêu đề chạy, số trang, công thức không ghép được thì không làm gì.
+  * **"Trang này: Dọc | Ngang"** trên thanh công cụ của khung xem trước xoay trang đang xem: mục bắt đầu trang đó nhận dấu `pageLayout` với hướng đã chọn, mục bắt đầu trang kế tiếp nhận dấu đưa về bố cục cũ (nếu chưa có dấu), rồi tự biên dịch lại. Vì dấu gắn với mục chứ không phải trang vật lý nên trang sau khi xoay có thể chứa lượng nội dung khác.
+  * Chỉ còn hộp "Bố cục trang" ở từng thẻ (huy hiệu "Trang mới · …" cho thẻ có dấu) để chỉnh hoặc gỡ dấu. Đã bỏ dải "Nhóm trang", thanh đầu nhóm và nút "Tách nhóm trang". `lib/editor/page-groups.ts` vẫn dùng để tính bố cục đang có khi xoay trang.
 * **Dấu bố cục trang** (`pageLayout`): mục mang dấu này **bắt đầu một trang mới** với số cột/hướng đã chọn; bố cục giữ nguyên **cho đến mục kế tiếp có dấu**. Trường để trống = theo mặc định của tài liệu; dấu rỗng `{}` = "trang mới, quay về bố cục chung".
 * **Hướng ngang toàn bài** có hiệu lực từ mục thân bài đầu tiên; trang 1 (khối tiêu đề có cột thông tin bên trái) luôn để dọc, trang tiếng Anh cuối bài luôn dọc.
 * Bảng đặt "xoay ngang" nằm trong một trang đã ngang thì không bị xoay thêm lần nữa.
@@ -194,6 +193,7 @@ Mỗi dòng ứng với một lần commit; hash dùng với `git show <hash>`.
 | `7e8aabd` | **Tạo bài mới bị treo / bị đè về bài cũ.** `PaperContext` tạo lại `setPaper`/`setCurrentJournal` mỗi lần render, làm effect nạp bài theo `?id=` chạy lại vô hạn (đọc IndexedDB + ghi ~4 MB vào `sessionStorage` mỗi vòng) và đặt lại bài cũ lên bài mới. Hàm nay ổn định. Tự lưu không còn coi việc *mở* bài là chỉnh sửa và không lưu bài cũ vào bài mới. |
 | (mới) | **Loại bài báo không còn bị gán cứng.** Chọn gợi ý theo tạp chí hoặc "Khác — tự nhập…" để gõ tên tiếng Việt và tên tiếng Anh riêng (`metadata.articleTypeEn`, lưu qua v1↔v2). Tên tiếng Anh in ở trang tiếng Anh, Word và XML (`article-type` theo JATS, hoặc slug của tên đã gõ). Mã: `lib/article-types.ts`, `ArticleTypeField.tsx`. |
 | (mới) | **Xuất XML có trong menu Tải xuống.** Thêm "XML (JATS)" và "XML + hình (.zip)" vào menu bên trái; tên file theo Mã bài; hình đặt theo quy ước `articles/<tạp chí>/v-#/i-#/a-#`; cảnh báo khi thiếu Tập/Số/Mã bài; số hình trong XML và trong gói luôn khớp. |
+| (mới) | **Xem trước PDF bấm được, bỏ "Tách nhóm trang".** Bấm vào chữ trong PDF để mở đúng thẻ ở tab Nội dung; nút "Trang này: Dọc/Ngang" xoay trang đang xem và tự biên dịch lại. Gỡ dải nhóm trang, thanh đầu nhóm và nút tách nhóm. |
 
 ### Nhập từ Word
 | Commit | Thay đổi |
