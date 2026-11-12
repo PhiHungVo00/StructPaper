@@ -50,6 +50,8 @@ interface PdfInteractiveViewerProps {
   /** Offered for a mostly empty page before a layout change; the host decides whether it can fill it. */
   canFill?: (issue: PdfFillIssue) => boolean;
   onFillPage?: (issue: PdfFillIssue) => void;
+  /** Put back the page-layout markers as they were before the last turn or fill. */
+  onUndoTurn?: () => void;
 }
 
 interface PageSize {
@@ -73,6 +75,7 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({
   onLoadError,
   canFill,
   onFillPage,
+  onUndoTurn,
 }) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -290,6 +293,7 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({
   };
 
   const open = issues.filter((i) => !dismissed.includes(i.page));
+  const edgePage = current === 1 || current === sizes.length;
   const landscape = !!sizes[current - 1] && sizes[current - 1].w > sizes[current - 1].h;
   const btn = 'p-1 rounded-lg hover:bg-zinc-100 cursor-pointer text-zinc-600';
 
@@ -372,15 +376,21 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({
                   type="button"
                   data-testid={`pdf-turn-${o}`}
                   aria-pressed={on}
+                  disabled={edgePage}
                   onClick={() => turn(o)}
-                  title={o === 'landscape' ? 'Xoay trang đang xem thành khổ ngang' : 'Đưa trang đang xem về khổ dọc'}
-                  className={`px-2 py-1 rounded-lg font-bold flex items-center gap-1 cursor-pointer ${on ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
+                  title={edgePage ? 'Trang tiêu đề và trang tiếng Anh cuối bài luôn để dọc' : o === 'landscape' ? 'Xoay trang đang xem thành khổ ngang' : 'Đưa trang đang xem về khổ dọc'}
+                  className={`px-2 py-1 rounded-lg font-bold flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${on ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {o === 'landscape' ? 'Ngang' : 'Dọc'}
                 </button>
               );
             })}
+            {onUndoTurn && (
+              <button type="button" data-testid="pdf-undo-turn" onClick={onUndoTurn} title="Trả các dấu xoay trang về như trước lần xoay hoặc lấp gần nhất" className="px-2 py-1 rounded-lg font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 cursor-pointer">
+                Hoàn tác
+              </button>
+            )}
           </div>
         )}
       </div>

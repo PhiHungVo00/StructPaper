@@ -94,10 +94,17 @@ describe('turning and turning back leaves the document as it was', () => {
     expect(roundTrip(src, 'b', 'c', 'portrait', defaults)).toEqual(src);
   });
 
-  it('turning back one page of a longer turned range gives back only that page', () => {
+  it('turning back the first page of a turned range gives back the whole range, however long it became', () => {
     const first = rotatePageAt(body(), 'b', 'd', 'landscape', portrait2);
+    // the turned text spilled onto a second landscape page: the next page now starts inside the range
     const back = rotatePageAt(first, 'b', 'c', 'portrait', portrait2);
-    expect(shape(back)).toEqual([['a', 'portrait'], ['c', 'landscape'], ['d', 'portrait']]);
+    expect(back).toEqual(body());
+  });
+
+  it('a page inside a turned range can still be turned on its own', () => {
+    const first = rotatePageAt(body(), 'b', 'e', 'landscape', portrait2);
+    const middle = rotatePageAt(first, 'c', 'd', 'portrait', portrait2);
+    expect(shape(middle)).toEqual([['a', 'portrait'], ['b', 'landscape'], ['c', 'portrait'], ['d', 'landscape'], ['e', 'portrait']]);
   });
 
   it('two neighbouring pages turned one after the other, then both turned back', () => {
