@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type { PaperSection } from '@/types/paper';
 import {
+  buildFrontIndex,
   buildSectionIndex,
+  matchLineToFrontTab,
   firstNewSectionOnPage,
   firstSectionOnPage,
   groupItemsIntoLines,
@@ -133,5 +135,25 @@ describe('a page that starts with a running header', () => {
     const page = ['VNUHCM Journal of Science and Technology Development 2026, ?(?):?-?', 'Dựa trên lý thuyết bộ ba cốt lõi bền vững', 'của Elkington, nghiên cứu phân tích'];
     expect(firstSectionOnPage(idx, page)).toBe('later');
     expect(matchLinesToSection(idx, page, 0)).toBeNull();
+  });
+});
+
+describe('title, abstract, authors and references have tabs of their own', () => {
+  const md: any = {
+    title: 'Các yếu tố tác động đến thực hiện mục tiêu phát triển bền vững',
+    abstract: 'Bài viết nhằm xác định và so sánh các yếu tố ảnh hưởng đến thực hiện Mục tiêu Phát triển Bền vững.',
+    keywords: ['Phát triển bền vững', 'tăng trưởng kinh tế'],
+    authors: [{ name: 'Phạm Mỹ Duyên' }],
+    affiliations: [{ name: 'Trường Đại học Kinh tế - Luật, Đại học Quốc gia TP.HCM' }],
+  };
+  const refs: any[] = [{ id: 1, raw: 'Brundtland G.H. Our common future. Oxford University Press; 1987.' }];
+  const idx = buildFrontIndex(md, refs);
+
+  it('finds the tab of a line', () => {
+    expect(matchLineToFrontTab(idx, 'Bài viết nhằm xác định và so sánh các yếu tố')).toBe('abstract');
+    expect(matchLineToFrontTab(idx, 'Các yếu tố tác động đến thực hiện mục tiêu')).toBe('metadata');
+    expect(matchLineToFrontTab(idx, 'Phạm Mỹ Duyên')).toBe('authors');
+    expect(matchLineToFrontTab(idx, 'Brundtland G.H. Our common future.')).toBe('refs');
+    expect(matchLineToFrontTab(idx, 'Ngày nhận: 08-09-2025')).toBeNull();
   });
 });

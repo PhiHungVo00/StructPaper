@@ -88,6 +88,8 @@ export interface LivePreviewPaneProps {
   busyLabel?: string;
   /** A click on text in the preview: open the section of the editor that produced it. */
   onFocusSection?: (sectionId: string) => void;
+  /** A click on the title, abstract, authors or references in the preview: open that tab. */
+  onFocusTab?: (tab: 'metadata' | 'authors' | 'abstract' | 'refs') => void;
   /** The preview turned a page: the changed sections. */
   onSectionsChange?: (sections: PaperSection[]) => void;
   /** What a document does when a section has no page-layout marker. */

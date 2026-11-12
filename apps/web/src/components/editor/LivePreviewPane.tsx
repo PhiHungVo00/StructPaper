@@ -6,7 +6,7 @@ import { CompileErrorModal } from '../preview/CompileErrorModal';
 import { exportToLatex } from '@/lib/exporters';
 import { RefreshCw, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { PdfInteractiveViewer, type PdfPickContext, type PdfRotateContext } from '../preview/PdfInteractiveViewer';
-import { buildSectionIndex, firstNewSectionOnPage, matchLinesToSection, rotatePageAt } from '@/lib/editor/pdf-section-map';
+import { buildFrontIndex, buildSectionIndex, firstNewSectionOnPage, matchLineToFrontTab, matchLinesToSection, rotatePageAt } from '@/lib/editor/pdf-section-map';
 
 export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   paper,
@@ -18,18 +18,22 @@ export const LivePreviewPane: React.FC<LivePreviewPaneProps> = ({
   compileStartedAt,
   busyLabel,
   onFocusSection,
+  onFocusTab,
   onSectionsChange,
   layoutDefaults = { oneColumn: false, landscape: false },
 }) => {
   const [viewerFailed, setViewerFailed] = useState(false);
   const sectionIndex = useMemo(() => buildSectionIndex(paper.sections), [paper.sections]);
+  const frontIndex = useMemo(() => buildFrontIndex(paper.metadata, paper.references), [paper.metadata, paper.references]);
 
   const handlePick = useCallback(
     (ctx: PdfPickContext) => {
       const id = matchLinesToSection(sectionIndex, ctx.lines, ctx.center);
-      if (id) onFocusSection?.(id);
+      if (id) return onFocusSection?.(id);
+      const tab = matchLineToFrontTab(frontIndex, ctx.lines[ctx.center] ?? '');
+      if (tab) onFocusTab?.(tab);
     },
-    [sectionIndex, onFocusSection]
+    [sectionIndex, frontIndex, onFocusSection, onFocusTab]
   );
 
   const handleRotate = useCallback(

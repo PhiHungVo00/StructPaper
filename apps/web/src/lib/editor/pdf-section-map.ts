@@ -1,4 +1,4 @@
-import type { PaperSection } from '@/types/paper';
+import type { PaperMetadata, PaperReference, PaperSection } from '@/types/paper';
 import { derivePageGroups, type GroupOrientation, type PageDefaults } from './page-groups';
 
 /**
@@ -106,6 +106,35 @@ export function matchLinesToSection(index: SectionKey[], lines: string[], center
     const q = normalizeForMatch(lines.slice(from, to + 1).join(' '));
     const hit = search(q, q);
     if (hit) return hit;
+  }
+  return null;
+}
+
+export type FrontTab = 'metadata' | 'authors' | 'abstract' | 'refs';
+
+/** Text that is not a body section but has its own tab: title, abstract, authors, references. */
+export function buildFrontIndex(md: PaperMetadata, refs: PaperReference[] = []): { tab: FrontTab; key: string }[] {
+  const add = (tab: FrontTab, texts: (string | undefined)[]) =>
+    texts.map((t) => ({ tab, key: normalizeForMatch(t || '') })).filter((e) => e.key.length >= 6);
+  return [
+    ...add('abstract', [md.abstract, md.abstractEn, (md.keywords || []).join(' '), (md.keywordsEn || []).join(' ')]),
+    ...add('metadata', [md.title, md.titleEn]),
+    ...add('authors', [
+      ...(md.authors || []).map((a) => a.name),
+      ...(md.affiliations || []).flatMap((a) => [a.name, a.nameEn]),
+    ]),
+    ...refs.flatMap((r) => add('refs', [r.raw])),
+  ];
+}
+
+/** The tab (not a body section) a line of the PDF belongs to, or null. */
+export function matchLineToFrontTab(index: { tab: FrontTab; key: string }[], line: string): FrontTab | null {
+  const q = normalizeForMatch(line);
+  if (q.length < 8) return null;
+  for (const w of windows(q)) {
+    if (w.length < 8) continue;
+    const hit = index.find((e) => e.key.includes(w));
+    if (hit) return hit.tab;
   }
   return null;
 }

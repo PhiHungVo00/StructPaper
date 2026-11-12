@@ -40,5 +40,5 @@ export function usePreviewLinks({ formData, setFormData, setIsDirty, setActiveSu
     [formData, setFormData, setIsDirty, recompile]
   );
 
-  return { focusRequest, paneProps: { onFocusSection, onSectionsChange, layoutDefaults } };
+  return { focusRequest, paneProps: { onFocusSection, onFocusTab: setActiveSubTab, onSectionsChange, layoutDefaults } };
 }
