@@ -1,7 +1,7 @@
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { EditorTabKey } from '../types';
 
-export type SectionFilterType = 'all' | 'heading' | 'paragraph' | 'table' | 'figure';
+export type SectionFilterType = 'all' | 'heading' | 'paragraph' | 'table' | 'figure' | 'equation';
 
 export interface SectionsTabViewState {
   filterType: SectionFilterType;

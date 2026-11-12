@@ -9,6 +9,8 @@ import {
   type SectionVirtualizerSnapshot,
 } from './useSectionVirtualizer';
 import { SectionCardItem } from './SectionCardItem';
+import { matchesSectionFilter } from '@/lib/editor/section-filter';
+import type { SectionFilterType } from '../hooks/tab-view-state-store';
 import {
   EndOfListIndicator,
   FilteredSectionsEmptyState,
@@ -27,8 +29,8 @@ export interface SectionBlockListProps {
   sections: PaperSection[];
   displayedItems?: DisplayedSectionItem[];
   totalSectionsCount?: number;
-  filterType: 'all' | 'heading' | 'paragraph' | 'table' | 'figure';
-  setFilterType: (filter: 'all' | 'heading' | 'paragraph' | 'table' | 'figure') => void;
+  filterType: SectionFilterType;
+  setFilterType: (filter: SectionFilterType) => void;
   newlyAddedId: string | null;
   deletingIds: Set<string>;
   activeEditingParaId: string | null;
@@ -140,17 +142,7 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
     for (let originalIdx = 0; originalIdx < sections.length; originalIdx++) {
       const sec = sections[originalIdx];
       if (sec.type === 'citation') continue;
-      if (
-        filterType === 'heading' &&
-        sec.type !== 'h1' &&
-        sec.type !== 'h2' &&
-        sec.type !== 'h3'
-      ) {
-        continue;
-      }
-      if (filterType === 'paragraph' && sec.type !== 'paragraph') continue;
-      if (filterType === 'table' && sec.type !== 'table') continue;
-      if (filterType === 'figure' && sec.type !== 'figure') continue;
+      if (!matchesSectionFilter(sec, filterType)) continue;
 
       const prevSec = originalIdx > 0 ? sections[originalIdx - 1] : undefined;
       const isPrevFigure = prevSec?.type === 'figure';

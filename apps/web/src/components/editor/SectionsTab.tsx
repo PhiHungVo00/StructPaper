@@ -27,6 +27,7 @@ import {
   dispatchRemoveSection,
   dispatchReorderSections,
 } from './dispatchers/sections-dispatchers';
+import { matchesSectionFilter } from '@/lib/editor/section-filter';
 
 const useIsomorphicLayoutEffect =
   typeof document !== 'undefined' ? useLayoutEffect : useEffect;
@@ -198,6 +199,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     paragraph: number;
     table: number;
     figure: number;
+    equation: number;
     citation: number;
   } | null>(null);
 
@@ -208,6 +210,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
     let paragraph = 0;
     let table = 0;
     let figure = 0;
+    let equation = 0;
     let citation = 0;
 
     for (let i = 0; i < sections.length; i++) {
@@ -225,6 +228,8 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
         table++;
       } else if (type === 'figure') {
         figure++;
+      } else if (type === 'equation') {
+        equation++;
       }
     }
 
@@ -236,12 +241,13 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       prev.paragraph === paragraph &&
       prev.table === table &&
       prev.figure === figure &&
+      prev.equation === equation &&
       prev.citation === citation
     ) {
       return prev;
     }
 
-    const next = { all, heading, paragraph, table, figure, citation };
+    const next = { all, heading, paragraph, table, figure, equation, citation };
     prevSectionCountsRef.current = next;
     return next;
   }, [sections]);
@@ -256,6 +262,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       paragraphs: sectionCounts.paragraph,
       tables: sectionCounts.table,
       figures: sectionCounts.figure,
+      equations: sectionCounts.equation,
     }),
     [sectionCounts]
   );
@@ -267,17 +274,7 @@ export const SectionsTab: React.FC<SectionsTabProps> = ({
       const sec = sections[originalIdx];
       if (sec.type === 'citation') continue;
 
-      if (
-        filterType === 'heading' &&
-        sec.type !== 'h1' &&
-        sec.type !== 'h2' &&
-        sec.type !== 'h3'
-      ) {
-        continue;
-      }
-      if (filterType === 'paragraph' && sec.type !== 'paragraph') continue;
-      if (filterType === 'table' && sec.type !== 'table') continue;
-      if (filterType === 'figure' && sec.type !== 'figure') continue;
+      if (!matchesSectionFilter(sec, filterType)) continue;
 
       const prevSec = originalIdx > 0 ? sections[originalIdx - 1] : undefined;
       const isPrevFigure = prevSec?.type === 'figure';
