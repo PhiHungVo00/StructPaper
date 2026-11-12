@@ -40,7 +40,7 @@ import {
   useSyncEditorSession,
   useUnsavedChangesWarning,
   useShowPaperOnSwitch,
-  usePageLayoutDefaults,
+  usePreviewLinks,
   useHydrateDisplayName,
   EditorTabStateProvider,
   useCreateEditorTabStateStore,
@@ -345,7 +345,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
     [deferredFormData]
   );
 
-  const layoutDefaults = usePageLayoutDefaults(formData.layoutSettings);
+  const { focusRequest, paneProps } = usePreviewLinks({ formData, setFormData, setIsDirty, setActiveSubTab, recompile: handleRecompile });
 
   const handleSectionsChange = useCallback((sections: PaperSection[]) => {
     setFormData((prev) => ({ ...prev, sections: assignEquationNumbers(sections) }));
@@ -411,9 +411,8 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
           <SectionsTab
             sections={formData.sections}
             onChange={handleSectionsChange}
-            layoutDefaults={layoutDefaults}
             metadata={formData.metadata}
-            references={formData.references}
+            references={formData.references} focusRequest={focusRequest}
           />
         )}
         {activeSubTab === 'refs' && <ReferencesTab references={formData.references} onChange={(r) => { setFormData((p) => ({ ...p, references: r })); setIsDirty(true); }} />}
@@ -435,6 +434,7 @@ export const UnifiedEditorView: React.FC<UnifiedEditorViewProps> = ({ paper, onU
         onClearError={() => setCompileErrorInfo(null)}
         compileStartedAt={compileStartedAt}
         busyLabel={pendingExport === 'pdf' ? 'Đang xuất PDF…' : undefined}
+        {...paneProps}
       />
     </div>
   );
