@@ -9,6 +9,7 @@ import {
   type SectionVirtualizerSnapshot,
 } from './useSectionVirtualizer';
 import { SectionCardItem } from './SectionCardItem';
+import type { PageGroupInfo } from './PageGroupHeader';
 import { matchesSectionFilter } from '@/lib/editor/section-filter';
 import type { SectionFilterType } from '../hooks/tab-view-state-store';
 import {
@@ -23,6 +24,9 @@ export interface DisplayedSectionItem {
   originalIdx: number;
   isPrevFigure: boolean;
   prevFigureCaption?: string;
+  /** Page group of the section (one stable object per group) and whether it opens the group. */
+  pageGroup?: PageGroupInfo;
+  isGroupStart?: boolean;
 }
 
 export interface SectionBlockListProps {
@@ -32,6 +36,8 @@ export interface SectionBlockListProps {
   filterType: SectionFilterType;
   setFilterType: (filter: SectionFilterType) => void;
   newlyAddedId: string | null;
+  /** Jump to a section (page-group overview); a new `n` repeats the jump to the same id. */
+  scrollRequest?: { id: string; n: number } | null;
   deletingIds: Set<string>;
   activeEditingParaId: string | null;
   setActiveEditingParaId: (id: string | null) => void;
@@ -91,6 +97,7 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
   filterType,
   setFilterType,
   newlyAddedId,
+  scrollRequest,
   deletingIds,
   activeEditingParaId,
   setActiveEditingParaId,
@@ -174,6 +181,11 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
     getSavedScrollOffset,
     onSaveSnapshot: onSaveVirtualSnapshot,
   });
+
+  useEffect(() => {
+    if (scrollRequest) scrollToSectionId(scrollRequest.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollRequest]);
 
   const lastHandledNewlyAddedRef = useRef<string | null>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -305,7 +317,7 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
               const entry = displayedItems[virtualItem.index];
               if (!entry) return null;
 
-              const { sec, secId, originalIdx, isPrevFigure, prevFigureCaption } = entry;
+              const { sec, secId, originalIdx, isPrevFigure, prevFigureCaption, pageGroup, isGroupStart } = entry;
               const isDeleting = deletingIds.has(secId);
               const isNewlyAdded = sec.id === newlyAddedId;
               const isEditing = activeEditingParaId === secId;
@@ -375,6 +387,8 @@ const SectionBlockListBase: React.FC<SectionBlockListProps> = ({
                     onAddFigure={onAddFigure}
                     onAddCitation={onAddCitation}
                     onAddEquation={onAddEquation}
+                    pageGroup={pageGroup}
+                    isGroupStart={isGroupStart}
                     setFileInputRef={setFileInputRef}
                     onStartEdit={resolvedOnStartEdit}
                     onEndEdit={resolvedOnEndEdit}

@@ -57,6 +57,8 @@ export interface SectionsTabProps {
   references?: PaperReference[];
   commandBus?: CommandBus;
   onDispatch?: (command: unknown) => void;
+  /** Document-wide layout (what a section without its own page layout follows); drives the page groups. */
+  layoutDefaults?: { oneColumn: boolean; landscape: boolean };
 }
 
 export interface ReferencesTabProps {

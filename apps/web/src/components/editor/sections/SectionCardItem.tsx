@@ -15,6 +15,8 @@ import { TableSectionItem } from './TableSectionItem';
 import { FigureSectionItem } from './FigureSectionItem';
 import { EquationSectionItem } from './EquationSectionItem';
 import { SectionInsertDivider } from './SectionInsertDivider';
+import { PageGroupHeader, type PageGroupInfo } from './PageGroupHeader';
+import { groupColor } from '@/lib/editor/page-groups';
 
 export interface SectionCardItemProps {
   sec: PaperSection;
@@ -58,6 +60,9 @@ export interface SectionCardItemProps {
   onAddFigure: (insertAfterIndex?: number) => void;
   onAddCitation?: (insertAfterIndex?: number) => void;
   onAddEquation?: (insertAfterIndex?: number) => void;
+  /** Page group this section belongs to (stable object per group) and whether it opens the group. */
+  pageGroup?: PageGroupInfo;
+  isGroupStart?: boolean;
   setFileInputRef: (idx: number, el: HTMLInputElement | null) => void;
   onStartEdit: (secId: string) => void;
   onEndEdit: () => void;
@@ -105,6 +110,8 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
   onAddFigure,
   onAddCitation,
   onAddEquation,
+  pageGroup,
+  isGroupStart = false,
   setFileInputRef,
   onStartEdit,
   onEndEdit,
@@ -131,7 +138,13 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
       } ${isNewlyAdded ? 'animate-section-enter' : ''}`}
     >
       <div className={`min-w-0 max-w-full w-full ${isDeleting ? 'overflow-hidden' : ''}`}>
+        {pageGroup && isGroupStart && pageGroup.groupTotal > 1 && (
+          <div className="mb-2 mt-1">
+            <PageGroupHeader sec={sec} idx={idx} info={pageGroup} onUpdateSection={onUpdateSection} />
+          </div>
+        )}
         <div
+          style={pageGroup && pageGroup.groupTotal > 1 ? { borderLeft: `4px solid ${groupColor(pageGroup.groupIndex)}` } : undefined}
           className={`p-3.5 rounded-3xl space-y-2.5 shadow-2xs transition-all duration-300 group min-w-0 max-w-full w-full bg-gray-200/50 hover:bg-gray-200/70 ${
             elevateStack ? 'z-50 relative' : 'z-0 relative'
           } ${
@@ -159,6 +172,7 @@ const SectionCardItemBase: React.FC<SectionCardItemProps> = ({
             onCloseSettings={onCloseSettings}
             onSaveFigureSettings={onSaveFigureSettings}
             onSaveTableSettings={onSaveTableSettings}
+            groupMode={!!pageGroup}
           />
 
           {/* 1. HEADING */}

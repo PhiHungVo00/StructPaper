@@ -79,6 +79,7 @@ Cùng bộ luật nhưng **mang tính cảnh báo**: bảng liệt kê mọi ph�
 * Khối **Công thức** (`+ Công thức`): nhập LaTeX, xem KaTeX trực tiếp, đánh số tự động `(n)`.
 * Công thức inline `$…$` và dòng riêng `$$…$$` trong đoạn văn cũng được hiển thị.
 * **Nhập Word:** công thức Word (OMML) được chuyển sang LaTeX bằng bộ chuyển theo cấu trúc (`lib/omml.ts`) và chèn lại đúng vị trí. Công thức *nằm giữa dòng chữ* chưa được khôi phục (chỉ công thức trên dòng riêng).
+* **Công thức luôn nằm trong lề:** độ rộng ước lượng bằng em (chữ hoa nghiêng như HDI/EXPO rộng hơn chữ thường, khoảng trắng quanh `=`/`+`, chỉ số, phân số, thụt lề căn thẳng hàng; `lib/latex-math-width.ts`) để chọn chỗ ngắt dòng; công thức gần giới hạn được đặt trong hộp **tự co vừa khổ** (`\fiteq`) chỉ co khi dòng vẫn quá rộng, số `(n)` luôn nằm cạnh trên cùng dòng. Đã kiểm bằng biên dịch thật bài mẫu (1 công thức) và EES (7 công thức): không còn Overfull do công thức.
 * **Độ rộng công thức:** mỗi công thức chọn **Trong 1 cột** (mặc định; công thức quá rộng được ngắt dòng tại dấu `=`, `+`, `−` ngoài cùng và xếp thẳng hàng trong khối `aligned`, số `(n)` vẫn bên phải) hoặc **Trải 2 cột** (một dòng liền mạch qua cả hai cột như bảng/hình rộng; PDF dùng khối nổi `figure*`, nên có thể nằm ở đầu trang). Lưu ở `equation.columnSpan`. Bố cục 1 cột thì lựa chọn này không có tác dụng.
 * **Xuất:** LaTeX/PDF dùng môi trường `equation`; **Word** xuất công thức Word gốc (chỉnh sửa được); **XML** xuất `<disp-formula>` / `<inline-formula>` với `<tex-math>`.
 
@@ -104,7 +105,13 @@ Mỗi trang tiếp theo có dòng **"Table N continued"** phía trên và **"Con
 | Từ một mục trở đi | Trang mới với số cột và hướng riêng | thẻ của mục → "Bố cục trang" | `section.pageLayout` |
 | Một bảng / hình | 1 cột / 2 cột; bảng xoay ngang | Cài đặt bảng / hình | `table`, `figure` |
 | Một công thức | Trong 1 cột / Trải 2 cột | thẻ công thức | `equation.columnSpan` |
+| Lọc danh sách | Tất cả / Tiêu đề / Đoạn văn / Bảng / Hình / **Công thức** | dải lọc tab Nội dung | |
 
+* **Nhóm trang (giao diện nội dung):** các mục dùng chung một bố cục được gom thành **nhóm** và điều khiển chung, nhìn một lượt là thấy:
+  * **Dải "Nhóm trang"** phía trên danh sách: mỗi nhóm một viên (màu, hướng giấy, số cột, số mục); bấm để nhảy tới nhóm (đang lọc thì tự về "Tất cả").
+  * **Thanh đầu nhóm** trên mục đầu của mỗi nhóm kèm vạch màu bên trái các thẻ của nhóm: chọn **Dọc/Ngang**, **1/2 cột** cho cả nhóm; "Theo cài đặt chung" (bỏ hướng/cột riêng, vẫn sang trang mới); "Gộp vào nhóm trên" (không sang trang mới ở đây). Nhóm 1 là bố cục chung của tài liệu (đổi ở Cài đặt dàn trang).
+  * **"Tách nhóm trang"** trên một mục bắt đầu nhóm mới từ mục đó (thay cho hộp "Bố cục trang" ở từng thẻ).
+  * Nhóm tính từ chính các dấu `pageLayout` (không có trường lưu mới) bằng đúng luật của PDF (`PageLayoutTracker`): trường để trống theo mặc định tài liệu, dấu rỗng = trang mới theo mặc định, tài liệu ngang thì ngang từ mục đầu; có test so khớp từng mục. Mã: `lib/editor/page-groups.ts`, `sections/PageGroupHeader.tsx`, `sections/PageGroupOverview.tsx`. Đây là "nhóm bố cục", không phải trang in thật (chưa biên dịch thì chưa biết chỗ ngắt trang).
 * **Dấu bố cục trang** (`pageLayout`): mục mang dấu này **bắt đầu một trang mới** với số cột/hướng đã chọn; bố cục giữ nguyên **cho đến mục kế tiếp có dấu**. Trường để trống = theo mặc định của tài liệu; dấu rỗng `{}` = "trang mới, quay về bố cục chung".
 * **Hướng ngang toàn bài** có hiệu lực từ mục thân bài đầu tiên; trang 1 (khối tiêu đề có cột thông tin bên trái) luôn để dọc, trang tiếng Anh cuối bài luôn dọc.
 * Bảng đặt "xoay ngang" nằm trong một trang đã ngang thì không bị xoay thêm lần nữa.
