@@ -3,6 +3,9 @@ import { looksEnglish } from './docx-affiliations';
 /** "Keywords", "Key words", and typos like "Keywwords". */
 export const KEYWORDS_EN_RE = /^key\s?w+ords?\b\s*[:.]?\s*/i;
 
+/** Where the institution starts inside an "authors, institution" line. */
+const INSTITUTION_RE = /\b(sub-?institute|university|institute|college|hospital|academy|faculty|school|centre|center|department)\b/i;
+
 /** Line that opens the second-language summary page placed after the reference list. */
 const MARKER_RE =
   /^((original\s+)?research|review)(\s+article)?$|^case report$|^short communication$|^phần ngôn ngữ thứ hai$/i;
@@ -56,9 +59,15 @@ export function findEnglishBackMatter(rawLines: string[]): EnglishBackMatter | n
     titleEn += ' ' + lines[k]; // a title wrapped onto a second paragraph: "in the southeastern area …"
     k = nonEmpty(k + 1);
   }
-  k++; // the English author line
-
+  // The English author line. Some manuscripts put the institution on the same line
+  // ("Pham My Duyen, Le Nguyen Thuy An, University of Economics and Law, …"): keep that part as the affiliation.
   const affiliationsEn: { id: number; name: string }[] = [];
+  const onAuthorLine = lines[k].match(INSTITUTION_RE);
+  if (onAuthorLine && onAuthorLine.index! > 0 && lines[k].slice(0, onAuthorLine.index).includes(',')) {
+    affiliationsEn.push({ id: 1, name: lines[k].slice(onAuthorLine.index).trim().replace(/[.\s]+$/, '') });
+  }
+  k++;
+
   for (; k < absIdx; k++) {
     const l = lines[k];
     if (!l) continue;
