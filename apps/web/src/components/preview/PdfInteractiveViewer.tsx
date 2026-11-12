@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Minus, Plus, RectangleHorizontal, RectangleVertical } from 'lucide-react';
-import { groupItemsIntoLines, lineAtPoint, type PdfLine, type PdfTextItem } from '@/lib/editor/pdf-section-map';
+import { ArrowLeft, ExternalLink, Minus, Plus, RectangleHorizontal, RectangleVertical } from 'lucide-react';
+import { groupItemsIntoLines, type PdfLine, type PdfTextItem } from '@/lib/editor/pdf-section-map';
+import { lineForClick, pageFill } from '@/lib/editor/pdf-click-target';
 
 export interface PdfPickContext {
   lines: string[];
@@ -17,6 +18,21 @@ export interface PdfRotateContext {
   nextLines: string[] | null;
 }
 
+/** A page that a change of paper orientation left mostly empty. */
+export interface PdfFillIssue {
+  page: number;
+  /** Share of the page height the text uses (0..1). */
+  used: number;
+  lines: string[];
+  nextLines: string[];
+}
+
+interface PdfLink {
+  rect: [number, number, number, number];
+  url?: string;
+  dest?: unknown;
+}
+
 interface PdfInteractiveViewerProps {
   url: string;
   /** A click on text: the lines of that page and the index of the clicked line. */
@@ -24,6 +40,9 @@ interface PdfInteractiveViewerProps {
   /** "Turn this page": the lines of the page and of the page after it. */
   onRotatePage?: (ctx: PdfRotateContext) => void;
   onLoadError?: () => void;
+  /** Offered for a mostly empty page before an orientation change; the host decides whether it can fill it. */
+  canFill?: (issue: PdfFillIssue) => boolean;
+  onFillPage?: (issue: PdfFillIssue) => void;
 }
 
 interface PageSize {
@@ -42,7 +61,7 @@ interface Hit {
 }
 
 /** The compiled PDF drawn with pdf.js so a click can be traced back to the editor and a page can be turned. */
-export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url, onPickText, onRotatePage, onLoadError }) => {
+export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url, onPickText, onRotatePage, onLoadError, canFill, onFillPage }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageEls = useRef<(HTMLDivElement | null)[]>([]);
   const docRef = useRef<any>(null);
@@ -53,6 +72,9 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
   const [zoom, setZoom] = useState(1);
   const [current, setCurrent] = useState(1);
   const [hit, setHit] = useState<(Hit & { page: number }) | null>(null);
+  const [issues, setIssues] = useState<PdfFillIssue[]>([]);
+  const [backTo, setBackTo] = useState<number | null>(null);
+  const [dismissed, setDismissed] = useState<number[]>([]);
 
   const scaleOf = useCallback((i: number) => (sizes[i] ? ((width - 24) / sizes[i].w) * zoom : 1), [sizes, width, zoom]);
 
@@ -135,6 +157,51 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     return entry;
   }, []);
 
+  // pages cut short by a layout change: little text, and the next page starts with a section that changes the layout
+  useEffect(() => {
+    if (!onFillPage || sizes.length < 3) {
+      setIssues([]);
+      return;
+    }
+    let dead = false;
+    setDismissed([]);
+    (async () => {
+      const found: PdfFillIssue[] = [];
+      for (let p = 1; p < sizes.length; p++) {
+        const a = sizes[p - 1];
+        const here = await loadText(p);
+        const next = await loadText(p + 1);
+        if (!here || !next) continue;
+        const used = pageFill(here.items, a.w, a.h);
+        if (used < 0.55) found.push({ page: p, used, lines: here.lines.map((l) => l.text), nextLines: next.lines.map((l) => l.text) });
+      }
+      if (!dead) setIssues(found.filter((i) => !canFill || canFill(i)));
+    })();
+    return () => {
+      dead = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sizes, onFillPage, canFill]);
+
+  /** Follows an internal link (a citation to its reference, a figure mention to the figure) and remembers where from. */
+  const goDest = async (dest: unknown) => {
+    const doc = docRef.current;
+    const box = scrollRef.current;
+    if (!doc || !box) return;
+    try {
+      const d: any = typeof dest === 'string' ? await doc.getDestination(dest) : dest;
+      if (!Array.isArray(d)) return;
+      const idx: number = typeof d[0] === 'object' && d[0] !== null ? await doc.getPageIndex(d[0]) : d[0];
+      const top = d[1]?.name === 'XYZ' ? d[3] : d[1]?.name === 'FitH' ? d[2] : null;
+      const el = pageEls.current[idx];
+      if (!el || !sizes[idx]) return;
+      setBackTo(box.scrollTop);
+      box.scrollTo({ top: el.offsetTop + (top != null ? (sizes[idx].h - top) * scaleOf(idx) : 0) - 24, behavior: 'smooth' });
+    } catch {
+      /* a destination that cannot be resolved is ignored */
+    }
+  };
+
   const handleClick = async (n: number, e: React.MouseEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const s = scaleOf(n - 1);
@@ -142,7 +209,7 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     const py = sizes[n - 1].h - (e.clientY - box.top) / s;
     const text = await loadText(n);
     if (!text || !text.lines.length) return;
-    const li = lineAtPoint(text.items, text.lines, px, py);
+    const li = lineForClick(text.items, text.lines, px, py);
     if (li < 0) return;
     const ln = text.lines[li];
     const used = text.items.slice(ln.from, ln.to + 1).filter((it) => it.str);
@@ -168,6 +235,7 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
     });
   };
 
+  const open = issues.filter((i) => !dismissed.includes(i.page));
   const landscape = !!sizes[current - 1] && sizes[current - 1].w > sizes[current - 1].h;
 
   return (
@@ -185,6 +253,22 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
+        {backTo !== null && (
+          <button
+            type="button"
+            data-testid="pdf-back"
+            onClick={() => {
+              scrollRef.current?.scrollTo({ top: backTo, behavior: 'smooth' });
+              setBackTo(null);
+            }}
+            className="px-2 py-1 rounded-lg font-bold flex items-center gap-1 text-sky-700 bg-sky-50 hover:bg-sky-100 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Quay lại
+          </button>
+        )}
+        <a href={url} target="_blank" rel="noreferrer" title="Mở PDF trong tab mới (trình xem gốc của trình duyệt)" className="p-1 rounded-lg hover:bg-zinc-100 text-zinc-600">
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
         {onRotatePage && (
           <div className="ml-auto flex items-center gap-1" role="group" aria-label="Hướng giấy của trang đang xem">
             <span className="text-zinc-500 hidden sm:inline">Trang này:</span>
@@ -209,6 +293,19 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
           </div>
         )}
       </div>
+      {open.length > 0 && onFillPage && (
+        <div data-testid="pdf-fill-notice" className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-[11px] text-amber-900 flex-shrink-0 flex-wrap">
+          <span>
+            Trang {open[0].page} còn trống khoảng {Math.round((1 - open[0].used) * 100)}% vì trang sau đổi bố cục (hướng giấy hoặc số cột).
+          </span>
+          <button type="button" data-testid="pdf-fill-page" onClick={() => onFillPage(open[0])} className="px-2 py-0.5 rounded-lg font-bold bg-amber-200 hover:bg-amber-300 cursor-pointer">
+            Lấp bằng nội dung kế tiếp
+          </button>
+          <button type="button" data-testid="pdf-fill-dismiss" onClick={() => setDismissed((d) => [...d, open[0].page])} className="px-2 py-0.5 rounded-lg font-bold text-amber-800 hover:bg-amber-100 cursor-pointer">
+            Bỏ qua
+          </button>
+        </div>
+      )}
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-auto bg-zinc-200 py-2">
         {sizes.map((sz, i) => (
           <PdfPage
@@ -218,6 +315,7 @@ export const PdfInteractiveViewer: React.FC<PdfInteractiveViewerProps> = ({ url,
             scale={scaleOf(i)}
             doc={docRef}
             hit={hit && hit.page === i + 1 ? hit : null}
+            onDest={goDest}
             setRef={(el) => {
               pageEls.current[i] = el;
             }}
@@ -237,12 +335,14 @@ interface PdfPageProps {
   hit: Hit | null;
   setRef: (el: HTMLDivElement | null) => void;
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onDest: (dest: unknown) => void;
 }
 
-const PdfPage: React.FC<PdfPageProps> = ({ index, size, scale, doc, hit, setRef, onClick }) => {
+const PdfPage: React.FC<PdfPageProps> = ({ index, size, scale, doc, hit, setRef, onClick, onDest }) => {
   const box = useRef<HTMLDivElement | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [visible, setVisible] = useState(false);
+  const [links, setLinks] = useState<PdfLink[]>([]);
 
   useEffect(() => {
     const el = box.current;
@@ -275,6 +375,25 @@ const PdfPage: React.FC<PdfPageProps> = ({ index, size, scale, doc, hit, setRef,
     };
   }, [visible, scale, index, doc]);
 
+  // the links of the PDF (citations, DOI, cross references) stay clickable on top of the drawing
+  useEffect(() => {
+    if (!visible || !doc.current) return;
+    let dead = false;
+    (async () => {
+      const page = await doc.current.getPage(index + 1);
+      const annots: any[] = await page.getAnnotations({ intent: 'display' });
+      if (dead) return;
+      setLinks(
+        annots
+          .filter((a) => a.subtype === 'Link' && a.rect && (a.url || a.dest))
+          .map((a) => ({ rect: a.rect as [number, number, number, number], url: a.url || undefined, dest: a.dest }))
+      );
+    })().catch(() => undefined);
+    return () => {
+      dead = true;
+    };
+  }, [visible, index, doc]);
+
   return (
     <div
       ref={(el) => {
@@ -287,6 +406,27 @@ const PdfPage: React.FC<PdfPageProps> = ({ index, size, scale, doc, hit, setRef,
       style={{ width: size.w * scale, height: size.h * scale }}
     >
       <canvas ref={canvas} style={{ width: '100%', height: '100%' }} />
+      {links.map((l, i) => {
+        const [x1, y1, x2, y2] = l.rect;
+        const style = { left: x1 * scale, top: (size.h - y2) * scale, width: (x2 - x1) * scale, height: (y2 - y1) * scale };
+        const cls = 'absolute block rounded-sm hover:bg-sky-300/25 hover:outline hover:outline-1 hover:outline-sky-500 cursor-pointer';
+        return l.url ? (
+          <a key={i} data-testid="pdf-link" href={l.url} target="_blank" rel="noreferrer" title={l.url} className={cls} style={style} onClick={(e) => e.stopPropagation()} />
+        ) : (
+          <button
+            key={i}
+            type="button"
+            data-testid="pdf-link"
+            title="Đi tới nội dung được liên kết"
+            className={cls}
+            style={style}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDest(l.dest);
+            }}
+          />
+        );
+      })}
       {hit && (
         <div
           data-testid="pdf-hit"
