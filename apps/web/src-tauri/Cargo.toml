@@ -1,6 +1,6 @@
 [package]
 name = "structpaper"
-version = "1.0.12"
+version = "1.0.13"
 description = "StructPaper Academic Publishing Desktop"
 authors = ["StructPaper Team"]
 edition = "2021"
